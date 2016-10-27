@@ -1,0 +1,27 @@
+
+language: python
+python:
+- '3.5'
+env:
+- TOXENV=py27
+- TOXENV=py34
+- TOXENV=py35
+branches:
+  except:
+  - "/^dev-.+$/"
+install:
+- pip install tox
+script:
+- tox
+deploy:
+  provider: pypi
+  user: andresmweber
+  on:
+    tags: true
+    repo: andresmweber/fixtureupper
+  password:
+    secure: Hs4th8x7w5qZx8bYv/DhJl1z8WtTy1yB5udKjj77eJ7MElGam1y1QtzaD/yLfPVZUI4cILHiDumv4BmCTlBzG3gxC5QUMAEtQLaWAB32nHHp4xNuOsV3+8XhAsodxqMv6bSMAV4+kELLW4TRKI2MaMliuihE24e80QDofSbvnXoHf9nUQwIR2laxzeSRDAvk405lY8oduHt1JjDBGYJ3dWBHTbkKMdIGnRGsLV6lfskpw6vEwOqqmCJrBdhuXv1FMyKeegMBGODni0icigZgu3gXktmuXa5rf7L9+A4Gr09HD7bSDJwPczfB8qrOZh8Dh+4u5vBrNw8BU3FaGF7lY/Zkba9Ypo8IvWn0KnrL/U99Goek6x7jkL/a6MrE94R3F2QIjdRtjLa1rULvN6lyCF0gsG3SCMYzIW+rgnTCDdMbAn6zHQTRh2f5HHfsGbXfPoSGdVE3ySs0B8L4YDbjbN/1uE1+oPGsyxjBwiXgUeGuThryMoizKkSIX6Hra0mSBwMzxDx76BofAim1cz0Z4D/0oC6ZlrX6PEQfMrXrXNb11Tp89p7NcOt+VNZhlHaB58L3O4mfggn26ZxaYjoEizHUh5OBar+zxZF8MySfaJYozH5xlN8AwiuAGN5AVPKRWhCxfYFkS1w8gwlikxPt64leSK6PlDT4dTpA7rmyyCU=
+notifications:
+  slack:
+    on_success: change
+    on_failure: always
