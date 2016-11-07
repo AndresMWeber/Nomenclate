@@ -5,17 +5,17 @@
     :synopsis: This module can name any asset according to a config file
     :plans: None
 """
+from nomenclate.core import toolbox as tb
+from nomenclate.core import configparser as cp
+import re
+import string
+
 __author__ = "Andres Weber"
 __email__ = "andresmweber@gmail.com"
 __version__ = 1.1
 
-# General imports
-import re
-import string
-
-# Import my own setup to get the config file's path
-from Forge.Forge import toolbox as tb
 reload(tb)
+reload(cp)
 
 
 class NameAttr(object):
@@ -48,7 +48,18 @@ class Nomenclate(object):
     def __init__(self, **kwargs):
         """ Set default a
         """
-        self.cfg = ConfigParse(tb.get_config_filepath())
+        self.format_order = None
+        self.subsets = None
+        self.format_string = None
+        self.format_options = None
+        self.suffix_LUT = None
+        self.format_capitals = None
+        self.side_opt = None
+        self.var_opt = None
+        self.location_opt = None
+        self.type_opt = None
+
+        self.cfg = cp.ConfigParse(tb.get_config_filepath())
         self.camel_case = True
         self.refresh()
         self.init_from_suffix_lut()
@@ -60,7 +71,7 @@ class Nomenclate(object):
             name (str or dict): string for the name or a dictionary that will update the current
         Returns (None):
         """
-        if isinstance(name,str):
+        if isinstance(name, str):
             self.name.set(name)
             
         elif isinstance(name, dict):
@@ -95,18 +106,18 @@ class Nomenclate(object):
         """ Initialize all the needed attributes for the format order to succeed
         """
         for format_key in self.format_order:
-            if not format_key in self.__dict__:
+            if format_key not in self.__dict__:
                 setattr(self, format_key, NameAttr("", self))
     
     def reset(self, input_dict):
         """ Re-Initialize all the needed attributes for the format order to succeed
         Args:
-            kwargs (dict): any overrides the user wants to specify instead of reset to ""
+            input_dict (dict): any overrides the user wants to specify instead of reset to ""
         Returns None
         """
         # Just in case we're working with a string, we assume that's a name
         if isinstance(input_dict, str) or isinstance(input_dict, unicode):
-            input_dict = {'name':input_dict}
+            input_dict = {'name': input_dict}
         
         # Now replace all self.__dict__ attributes to a NameAttr with the given values
         for format_key in self.format_order:
@@ -154,14 +165,14 @@ class Nomenclate(object):
         Returns (dict): dictionary of relevant values
         """
         # Get every possible NameAttr out of the Nomenclate object
-        buffer=[]
+        tmp_dict = []
         for key, value in self.__dict__.iteritems():
             if self._is_format(key):
-                buffer.append(key)
+                tmp_dict.append(key)
                 
         # Now add all dictionary keys that aren't empty to the output dictionary
         output={}
-        for key in buffer:
+        for key in tmp_dict:
             output[key] = self.__dict__.get(key).get()
         
         # Now add in any extras the user wanted to override
@@ -175,18 +186,19 @@ class Nomenclate(object):
         """ Returns a list of names based on index values
         Args:
             end (int): integer for end of sequence
+            start (int): optional definition of start position
         Returns (list): generated object names
         """
         var_orig = self.var.get()
-        var_start, type = self._detect_type(self.var.get())
+        var_start, n_type = self._get_str_or_int_abc_pos(self.var.get())
         
         # Just in case the start hasn't been overridden it's based on the current var_opt index
         if start==None:
             start = var_start
         names = []
         for index in range(start, end+1):
-            if type in ['char_hi','char_lo']:
-                capital = True if type == 'char_hi' else False
+            if n_type in ['char_hi', 'char_lo']:
+                capital = True if n_type == 'char_hi' else False
                 self.var.set(self.get_alpha(index, capital))
                 
             else:
@@ -200,14 +212,14 @@ class Nomenclate(object):
     def get_camel_case(self, format_string):
         """ Returns which tokens need first letter capitalization
         Args:
-            formatted_string (string): format_string containing all tokenization
+            format_string (string): format_string containing all tokenization
         Returns [string]: list of tokens that need capitalization
         """
         # test = '{side}_{location}_{name}{decorator}J{var}_{childType}_{purpose}_{type}'
         token_sections = format_string.split('_')
         capitalize_firsts = []
         for token_section in token_sections:
-            num_tokens = token_section.count('}')
+            # num_tokens = token_section.count('}')
             tokens_ordered = self.get_format_order(token_section)
             if len(tokens_ordered) > 1:
                 capitalize_firsts = capitalize_firsts + tokens_ordered[1:]
@@ -217,14 +229,14 @@ class Nomenclate(object):
     def get_state(self, input_dict=None):
         """ Returns the current state of dictionary items
         """
-        if input_dict == None:
+        if input_dict is None:
             input_dict = self.__dict__
         return ["%s: %s #=%s"%(item, input_dict[item].get(), item.__hash__()) for item in input_dict 
                 if isinstance(input_dict[item], NameAttr)]
     
     @staticmethod
-    def _detect_type(qstring):
-        """ Given an input string of either int or char, returns what index and type it is
+    def _get_str_or_int_abc_pos(qstring):
+        """ Given an input string of either int or char, returns what index in the alphabet and case it is
         Args:
             qstring (str): query string
         Returns [int, str]: list of the index and type
@@ -286,6 +298,7 @@ class Nomenclate(object):
         """ Convert an integer value to a character. a-z then double aa-zz etc
         Args:
             value (int): integer index we're looking up
+            capital (bool): whether we convert to capitals or not
         Returns (str): alphanumeric representation of the index
         """
         # calculate number of characters required
@@ -308,23 +321,3 @@ class Nomenclate(object):
     
     def __repr__(self):
         return self.get()
-
-class NameParser(object):
-    @classmethod
-    def rig_nameLong(name):
-        pass
-        
-    @classmethod
-    def rig_nameShort(name):
-        pass
-        
-    @classmethod
-    def rig_nameGetSide(name):
-        pass
-        
-    @classmethod
-    def rig_nameGetBase(name):
-        pass
-        
-
-

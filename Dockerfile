@@ -1,4 +1,7 @@
-FROM andresmweber/docker-maya2017
+FROM daemonecles/ubuntu16-pyqt:latest
 
-RUN cd / && git clone https://github.com/AndresMWeber/Nomenclate.git && cd Nomenclate && \
+MAINTAINER andresmweber
+
+RUN mkdir /nomenclate && cd /nomenclate && \
+    git clone https://github.com/AndresMWeber/Nomenclate.git && \
     pip install -m requirements.txt
