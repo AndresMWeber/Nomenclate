@@ -3,6 +3,7 @@
     <words>
       <w>abbrs</w>
       <w>nameparser</w>
+      <w>namer</w>
       <w>nomenclate</w>
       <w>qstring</w>
       <w>tokenization</w>

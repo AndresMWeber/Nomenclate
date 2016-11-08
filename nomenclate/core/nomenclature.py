@@ -1,12 +1,16 @@
 #!/usr/bin/env python
+# Ensure Python 2/3 compatibility: http://python-future.org/compatible_idioms.html
+from __future__ import print_function
+from future.utils import iteritems
+from imp import reload
 """
 .. module:: nomenclate
     :platform: None
     :synopsis: This module can name any asset according to a config file
     :plans: None
 """
-from nomenclate.core import toolbox as tb
-from nomenclate.core import configparser as cp
+import nomenclate.core.toolbox as tb
+import nomenclate.core.configurator as cp
 import re
 import string
 
@@ -76,7 +80,7 @@ class Nomenclate(object):
             
         elif isinstance(name, dict):
             kwargs.update(name)
-            for attr, value in kwargs.iteritems():
+            for attr, value in iteritems(kwargs):
                 if self._is_format(attr):
                     setattr(self, attr, NameAttr(value, self))
     
@@ -99,7 +103,7 @@ class Nomenclate(object):
         self.var_opt = self.cfg.get_subsection_as_list('options', 'var')
         self.location_opt = self.cfg.get_subsection_as_list('options', 'location')
         
-        self.type_opt = [val for key, val in self.suffix_LUT.iteritems()]
+        self.type_opt = [val for key, val in self.suffix_LUT.items()]
         self.type_opt.sort()
     
     def init_from_suffix_lut(self):
@@ -131,19 +135,19 @@ class Nomenclate(object):
         dict_buffer = self.get_dict()
         
         # Set whatever the user has specified if it's a valid format token
-        for kwarg, value in kwargs.iteritems():
+        for kwarg, value in iteritems(kwargs):
             if self._is_format(kwarg):
                 dict_buffer[kwarg] = value
             
         result = self.format_string
         
-        for key, attr in dict_buffer.iteritems():
+        for key, attr in iteritems(dict_buffer):
             if key in result:
                 token_raw = attr
                 if token_raw:
                     replacement = str(token_raw)
                     # Check if the token is an actual suffix (from the UI)
-                    if token_raw in [v for k, v in self.suffix_LUT.iteritems()]:
+                    if token_raw in [v for k, v in iteritems(self.suffix_LUT)]:
                         replacement = token_raw
                     
                     # Or check through the suffix dictionary for a match
@@ -166,7 +170,7 @@ class Nomenclate(object):
         """
         # Get every possible NameAttr out of the Nomenclate object
         tmp_dict = []
-        for key, value in self.__dict__.iteritems():
+        for key, value in iteritems(self.__dict__):
             if self._is_format(key):
                 tmp_dict.append(key)
                 
@@ -176,7 +180,7 @@ class Nomenclate(object):
             output[key] = self.__dict__.get(key).get()
         
         # Now add in any extras the user wanted to override
-        for key, value in kwargs.iteritems():
+        for key, value in iteritems(kwargs):
             if key in self.format_string and isinstance(value, str):
                 output[key] = value
         

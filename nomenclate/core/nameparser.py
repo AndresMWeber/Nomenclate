@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-.. module:: nameparser
+    :module: nameparser
     :platform: N/A
     :synopsis: This module does name parsing to recover information about the name based on common conventions.
                 it will be very prone to missing information since names will be very variable, but hopefully

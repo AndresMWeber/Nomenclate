@@ -1,6 +1,12 @@
+# Ensure Python 2/3 compatibility: http://python-future.org/compatible_idioms.html
+from __future__ import print_function
+from imp import reload
+
 import unittest
+import itertools
 import nomenclate.core.nameparser as np
-import nomenclate.core.nameparser.datetime as datetime
+from nomenclate.core.nameparser import datetime
+
 reload(np)
 
 __author__ = "Andres Weber"
@@ -27,7 +33,10 @@ class TestNameparser(unittest.TestCase):
                         'prefix_part_up_%s']
 
         for side in ['left', 'right']:
-            permutations = np.NameParser._get_casing_permutations(np.NameParser._get_abbrs(side))
+            permutations = []
+            for abbr in np.NameParser._get_abbrs(side):
+                permutations = itertools.chain(permutations,
+                                               np.NameParser._get_casing_permutations(abbr))
             for permutation in permutations:
                 for test_option in test_options:
                     self.assertEquals(self.fixture.get_side(test_option % permutation), side)
@@ -60,7 +69,7 @@ class TestNameparser(unittest.TestCase):
 
         for order in orders:
             for test_format in test_formats:
-                self.assertEqual(self.fixture.get_date(order.format(input_time.strftime(test_format))),
+                self.assertEqual(self.fixture.get_date(order.format(DATE=input_time.strftime(test_format))),
                                  input_time)
 
     def test_get_abbr_options(self):

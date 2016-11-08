@@ -1,15 +1,18 @@
 #!/usr/bin/env python
+# Ensure Python 2/3 compatibility: http://python-future.org/compatible_idioms.html
+from __future__ import print_function
+from imp import reload
 """
-.. module:: configparser
+.. module:: configurator
     :platform: Ubuntu 16.04
     :synopsis: This module parses config files and retrieves data
-    :plans: None
+    :plans: Change this to YAML, more powerful and better for nested things etc
 """
 __author__ = "Andres Weber"
 __email__ = "andresmweber@gmail.com"
 __version__ = 1.1
 
-import ConfigParser
+import configparser
 import os
 from collections import OrderedDict
 from copy import deepcopy
@@ -35,7 +38,7 @@ class ConfigParse(object):
             subsection (str):subsection to query
         """
         self.path = path
-        self.parser = ConfigParser.SafeConfigParser()
+        self.parser = configparser.SafeConfigParser()
         self.parser.read(self.path)
         self.section = section
         self.subsection = subsection
@@ -67,7 +70,7 @@ class ConfigParse(object):
             self.parser.get(self.section, self.subsection)
             return True
         except:
-            print "Section %s and subsection %s do not exist" % (self.section, self.subsection)
+            print("Section %s and subsection %s do not exist" % (self.section, self.subsection))
 
     def get_section(self, section=None, raw=False):
         """ Getter for a specific subsection, will return as a dictionary all possible options in the section

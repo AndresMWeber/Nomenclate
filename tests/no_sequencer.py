@@ -1,7 +1,10 @@
-import unittest
-import string
+# Ensure Python 2/3 compatibility: http://python-future.org/compatible_idioms.html
+from __future__ import print_function
+from imp import reload
 
 import nomenclate.core.sequencer as seq
+import unittest
+import string
 reload(seq)
 
 

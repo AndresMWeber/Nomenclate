@@ -1,9 +1,14 @@
 #!/usr/bin/env python
-__author__ = "Andres Weber"
-__email__ = "andresmweber@gmail.com"
-'''This module has random os functions that are useful'''
 import os
 import inspect
+__author__ = "Andres Weber"
+__email__ = "andresmweber@gmail.com"
+"""
+    :module: toolbox
+    :platform: N/A
+    :synopsis: This module has random os functions that are useful
+    :plans:
+"""
 
 
 def module_path(local_function):

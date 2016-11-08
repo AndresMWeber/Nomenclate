@@ -7,6 +7,8 @@
       <sourceFolder url="file://$MODULE_DIR$/designer" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/icons" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/db" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/nomenclate/core" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/nomenclate/ui" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/.eggs" />
       <excludeFolder url="file://$MODULE_DIR$/.idea" />
       <excludeFolder url="file://$MODULE_DIR$/build" />

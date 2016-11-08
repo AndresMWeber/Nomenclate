@@ -17,3 +17,4 @@ coverage
 nose
 numpy
 tox
+future
