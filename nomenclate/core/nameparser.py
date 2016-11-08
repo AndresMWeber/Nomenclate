@@ -20,7 +20,7 @@ class NameParser(object):
     """ This parses names of assets.  It assumes the usual convention of strings separated by underscores.
     """
     @classmethod
-    def short(cls, name):
+    def get_short(cls, name):
         """ Returns the short name of a Maya asset name
         Args:
             name (str): string that represents a possible name of an object
@@ -61,11 +61,25 @@ class NameParser(object):
         raise NotImplementedError
 
     @staticmethod
-    def _get_abbrs(name):
+    def _get_abbrs(input_string):
         """ Generates abbreviations for
         Args:
 
         Returns: [str]: list of all combinations that include the first letter (possible abbreviations)
         """
-        for i, j in itertools.combinations(range(len(name[1:]) + 1), 2):
-            yield name[0] + name[1:][i:j]
+        for i, j in itertools.combinations(range(len(input_string[1:]) + 1), 2):
+            yield input_string[0] + input_string[1:][i:j]
+
+    @staticmethod
+    def _get_casing_permutations(input_string):
+        if not input_string:
+            yield ""
+        else:
+            first = input_string[:1]
+            if first.lower() == first.upper():
+                for sub_casing in NameParser._get_casing_permutations(input_string[1:]):
+                    yield first + sub_casing
+            else:
+                for sub_casing in NameParser._get_casing_permutations(input_string[1:]):
+                    yield first.lower() + sub_casing
+                    yield first.upper() + sub_casing

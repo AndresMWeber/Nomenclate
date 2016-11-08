@@ -1,7 +1,7 @@
 import unittest
 import string
 
-import forge.sequencer as seq
+import nomenclate.core.sequencer as seq
 reload(seq)
 
 
@@ -66,7 +66,6 @@ class TestSequencer(unittest.TestCase):
                                                       sequence="hexa"),
                           test_hex)
 
-    
     def test_seq(self):
         test_seq = "CatPlane CatTrain CatApple DogCat DogDog DogCar DogPlane".split(' ')
         self.assertEquals(self.seq.name_sequence_fill(3,
@@ -75,7 +74,6 @@ class TestSequencer(unittest.TestCase):
                                                       sequence=["Cat","Dog","Car","Plane","Train","Apple"]),
                           test_seq)
 
-    
     def test_sequence_input(self):
         with self.assertRaises(KeyError):
             self.seq.name_sequence_fill(3, 7, sequence="fail")

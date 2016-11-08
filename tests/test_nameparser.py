@@ -1,7 +1,10 @@
 import unittest
 import nomenclate.core.nameparser as np
-from nomenclate.core.nameparser.datetime import datetime as datetime
+import nomenclate.core.nameparser.datetime as datetime
 reload(np)
+
+__author__ = "Andres Weber"
+__email__ = "andresmweber@gmail.com"
 
 
 class TestNameparser(unittest.TestCase):
@@ -17,29 +20,20 @@ class TestNameparser(unittest.TestCase):
         self.assertEqual(self.fixture.get_short('robotsLight8|robotLight2|l_arm_up_LOC'), 'l_arm_up_LOC')
 
     def test_get_side_options(self):
-        test_options = ''
-        self.assertEqual(self.fixture.get_side('l_arm_up_LOC'), 'left')
-        self.assertEqual(self.fixture.get_side('r_arm_up_LOC'), 'right')
-        self.assertEqual(self.fixture.get_side('R_arm_up_LOC'), 'right')
-        self.assertEqual(self.fixture.get_side('L_arm_up_LOC'), 'left')
-        self.assertEqual(self.fixture.get_side('prefix_l_part_dir_type'), 'left')
-        self.assertEqual(self.fixture.get_side('prefix_left_part_dir_type'), 'left')
-        self.assertEqual(self.fixture.get_side('prefix_lt_part_dir_type'), 'left')
-        self.assertEqual(self.fixture.get_side('prefix_le_part_dir_type'), 'left')
-        self.assertEqual(self.fixture.get_side('prefix_R_part_dir_type'), 'right')
-        self.assertEqual(self.fixture.get_side('prefix_r_part_dir_type'), 'right')
-        self.assertEqual(self.fixture.get_side('prefix_RGT_part_dir_type'), 'right')
-        self.assertEqual(self.fixture.get_side('prefix_RgT_part_dir_type'), 'right')
-        self.assertEqual(self.fixture.get_side('prefix_Rgt_part_dir_type'), 'right')
-        self.assertEqual(self.fixture.get_side('prefix_rgt_part_dir_type'), 'right')
-        self.assertEqual(self.fixture.get_side('prefix_part_dir_type_l'), 'left')
-        self.assertEqual(self.fixture.get_side('prefix_part_dir_type_lf'), 'left')
-        self.assertEqual(self.fixture.get_side('prefix_part_dir_type_LF'), 'left')
-        self.assertEqual(self.fixture.get_side('prefix_part_dir_type_left'), 'left')
-        self.assertEqual(self.fixture.get_side('prefix_part_dir_type_right'), 'right')
+        test_options = ['%s_arm_up_LOC',
+                        'prefix_%s_part_dir_type',
+                        'prefix_part%s_dir_type',
+                        'prefix_%spart_dir_type',
+                        'prefix_part_up_%s']
+
+        for side in ['left', 'right']:
+            permutations = np.NameParser._get_casing_permutations(np.NameParser._get_abbrs(side))
+            for permutation in permutations:
+                for test_option in test_options:
+                    self.assertEquals(self.fixture.get_side(test_option % permutation), side)
 
     def test_get_base_options(self):
-        self.assertEqual()
+        pass
 
     def test_get_date_options(self):
         test_formats = ['%Y-%m-%d_%H-%M-%S',
@@ -55,7 +49,7 @@ class TestNameparser(unittest.TestCase):
                         '%Y%m%d',
                         '%Y%m%d-%H%M%S',
                         '%Y%m%d-%H%M']
-        input_time = datetime(2016, 9, 16, 9, 30, 15)
+        input_time = datetime.datetime(2016, 9, 16, 9, 30, 15)
         orders = ['hotel_minatorOutpost_{DATE}_1.5.mb',
                   'hotel_minatorOutpost_1.5.mb_{DATE}',
                   '{DATE}_hotel_minatorOutpost_1.5.mb',
@@ -70,4 +64,4 @@ class TestNameparser(unittest.TestCase):
                                  input_time)
 
     def test_get_abbr_options(self):
-        self.assertEqual()
+        pass
