@@ -8,11 +8,15 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+.idea/
 env/
 build/
 develop-eggs/
 dist/
 downloads/
+designer/
+icons/
+.tox/
 eggs/
 .eggs/
 lib/
@@ -60,3 +64,4 @@ target/
 
 #Ipython Notebook
 .ipynb_checkpoints
+db/
