@@ -1,7 +1,7 @@
-FROM daemonecles/ubuntu16-pyqt:latest
+FROM daemonecles/ubuntu-pyqt:latest
 
 MAINTAINER andresmweber
 
-RUN mkdir /nomenclate && cd /nomenclate && \
-    git clone https://github.com/AndresMWeber/Nomenclate.git && \
-    pip install -m requirements.txt
+RUN mkdir /git && cd /git && \
+    git clone https://github.com/AndresMWeber/Nomenclate.git && cd Nomenclate && \
+    pip install -U pip && pip install -r requirements.txt
