@@ -17,6 +17,7 @@ class TestNameparser(unittest.TestCase):
         self.assertEqual(self.fixture.get_short('robotsLight8|robotLight2|l_arm_up_LOC'), 'l_arm_up_LOC')
 
     def test_get_side_options(self):
+        test_options = ''
         self.assertEqual(self.fixture.get_side('l_arm_up_LOC'), 'left')
         self.assertEqual(self.fixture.get_side('r_arm_up_LOC'), 'right')
         self.assertEqual(self.fixture.get_side('R_arm_up_LOC'), 'right')
@@ -36,7 +37,7 @@ class TestNameparser(unittest.TestCase):
         self.assertEqual(self.fixture.get_side('prefix_part_dir_type_LF'), 'left')
         self.assertEqual(self.fixture.get_side('prefix_part_dir_type_left'), 'left')
         self.assertEqual(self.fixture.get_side('prefix_part_dir_type_right'), 'right')
-''
+
     def test_get_base_options(self):
         self.assertEqual()
 

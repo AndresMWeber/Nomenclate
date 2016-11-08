@@ -5,12 +5,15 @@
     :synopsis: This module does name parsing to recover information about the name based on common conventions.
                 it will be very prone to missing information since names will be very variable, but hopefully
                 it will be more intelligent as time goes on.
-    :plans: None
+    :plans:
+        0.1.0: added base template functionality
+        0.2.0: added abbreviation generation technology
 """
 import datetime
+import itertools
 __author__ = "Andres Weber"
 __email__ = "andresmweber@gmail.com"
-__version__ = '0.1.0'
+__version__ = '0.2.0'
 
 
 class NameParser(object):
@@ -56,3 +59,13 @@ class NameParser(object):
                 name (str): string that represents a possible name of an object
         """
         raise NotImplementedError
+
+    @staticmethod
+    def _get_abbrs(name):
+        """ Generates abbreviations for
+        Args:
+
+        Returns: [str]: list of all combinations that include the first letter (possible abbreviations)
+        """
+        for i, j in itertools.combinations(range(len(name[1:]) + 1), 2):
+            yield name[0] + name[1:][i:j]
