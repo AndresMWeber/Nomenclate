@@ -36,7 +36,7 @@ class ToxWithRecreate(Tox):
 
 setup(
     name='nomenclate',
-    version='0.1.0',
+    version='0.2.0',
     packages=['nomenclate'],
     url='https://github.com/andresmweber/nomenclate',
     license='MIT',
@@ -47,7 +47,7 @@ setup(
     
     entry_points={
         'console_scripts':[
-            'foo = nomenclate.app:run',
+            'nomenclate = nomenclate.app:run',
         ]
     },
     
@@ -62,7 +62,14 @@ setup(
     ],
 
     install_requires=[
-        'future >= 0.14.3, < 0.16',
+        'coverage == 4.2',
+        'future == 0.16.0',
+        'nose == 1.3.7',
+        'requests == 2.11.1',
+        'tox == 2.4.1',
+        'virtualenv == 15.0.3',
+        'pluggy==0.4.0',
+        'py==1.4.31'
     ],
 
     # tox is responsible for setting up the test runner and its dependencies

@@ -6,6 +6,8 @@
       <w>namer</w>
       <w>nomenclate</w>
       <w>qstring</w>
+      <w>regexes</w>
+      <w>seos</w>
       <w>tokenization</w>
     </words>
   </dictionary>
