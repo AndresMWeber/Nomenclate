@@ -84,6 +84,22 @@ class NameParser(object):
         raise NotImplementedError
 
     @classmethod
+    def get_version(cls, name):
+        """ Checks a string for a possible base name of an object (no prefix, no suffix)
+        Args:
+            name (str): string that represents a possible name of an object
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def get_udim(cls, name):
+        """ Checks a string for a possible base name of an object (no prefix, no suffix)
+        Args:
+            name (str): string that represents a possible name of an object
+        """
+        raise NotImplementedError
+
+    @classmethod
     def get_date(cls, name):
         """ Checks a string for a possible date formatted into the name.  It assumes dates do not have other
             numbers at the front or head of the date.  Heavily relies on datetime for error checking to see

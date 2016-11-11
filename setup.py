@@ -62,7 +62,7 @@ setup(
     ],
 
     install_requires=[
-        'configparser==3.5.0',
+	'configparser==3.5.0',
 	'coverage==4.2',
 	'extras==1.0.0',
 	'fixtures==3.0.0',
@@ -78,6 +78,7 @@ setup(
 	'py==1.4.31',
 	'pyfakefs==2.9',
 	'python-mimeparse==1.6.0',
+	'PyYAML==3.12',
 	'requests==2.11.1',
 	'six==1.10.0',
 	'testtools==2.2.0',

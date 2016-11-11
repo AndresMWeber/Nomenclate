@@ -5,10 +5,11 @@ language: python
 services:
   - docker
 
+# Going to re-add support for 3.5 later to reduce builds in Travis for now.
 env:
   - TOXENV=py27
-  - TOXENV=py34
-  - TOXENV=py35
+#  - TOXENV=py34
+#  - TOXENV=py35
 
 before_install:
   - docker build -t daemonecles/nomenclate .
@@ -37,3 +38,8 @@ deploy:
 
 notifications:
   slack: andresrules:YFZedni7L0ayOhn3SsX2vQI5
+    template:
+      - "%{repository}#%{build_number} (%{branch} - %{commit} : %{author}): %{message}"
+      - "Change view : %{compare_url}"
+      - "Build details : %{build_url}"
+      - "Results : %{result}
