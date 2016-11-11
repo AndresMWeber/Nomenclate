@@ -1,10 +1,9 @@
-#!/usr/bin/env python
 # Ensure Python 2/3 compatibility: http://python-future.org/compatible_idioms.html
 from __future__ import print_function
 from imp import reload
 """
 .. module:: configurator
-    :platform: Ubuntu 16.04
+    :platform: Win/Linux/Mac
     :synopsis: This module parses config files and retrieves data
     :plans: Change this to YAML, more powerful and better for nested things etc
 """
@@ -12,36 +11,39 @@ __author__ = "Andres Weber"
 __email__ = "andresmweber@gmail.com"
 __version__ = 1.1
 
-import configparser
+
 import os
+import configparser
 from collections import OrderedDict
+import nomenclate.core.toolbox as tb
 from copy import deepcopy
 
+reload(tb)
 
 class ConfigParse(object):
+    """ A class for retrieving config information for the system
     """
-    testing:
-        a = ConfigParse('D:\\Dropbox\\Dropbox\\_GIT\\Forge\\package\\env.ini')
-        a.get_section('subset_formats')
-        a.get_sections()
-        a.get_section_options('naming_subsets')
-        a.get('suffixes','mesh')
-        a.get_subsection_as_list("naming_subsets", "subsets")
-        a.get_subsection_as_dict("naming_subsets", "subsets")
-        a.get_subsection_as_str("naming_subsets", "subsets")
-    """
-
-    def __init__(self, path, section="", subsection=""):
+    def __init__(self, path=None, section="", subsection=""):
         """
         Args:
             section (str): section to query
             subsection (str):subsection to query
         """
         self.path = path
-        self.parser = configparser.SafeConfigParser()
-        self.parser.read(self.path)
+        if not path:
+            self.path = tb.get_config_filepath()
+        self.parser = configparser.ConfigParser()
         self.section = section
         self.subsection = subsection
+
+        self.load_config(self.path)
+
+    def load_config(self, path):
+        if os.path.isfile(path):
+            self.path=path
+            self.parser.read(self.path)
+        else:
+            IOError('Input config file not found: %s' % path)
 
     def get_data(self, raw=False):
         return self.parser.get(self.section, self.subsection, raw=raw)
@@ -58,19 +60,17 @@ class ConfigParse(object):
         self.subsection = subsection or self.subsection
         if options:
             return self.parser.options(self.section)
-        if self.exists():
+        if self.query_valid_entry(self.section, self.subsection):
             return self.get_data(raw=raw)
 
-    def exists(self):
+    def query_valid_entry(self, section, subsection):
         """ Function to check if the config section/subsection data exists
         """
-        if not os.path.exists(self.path):
-            raise IOError("Cannot find ini file %s" % self.path)
         try:
-            self.parser.get(self.section, self.subsection)
+            self.parser.get(section, subsection)
             return True
-        except:
-            print("Section %s and subsection %s do not exist" % (self.section, self.subsection))
+        except (configparser.NoOptionError, configparser.NoSectionError):
+            raise IOError("Section %s and subsection %s do not exist" % (self.section, self.subsection))
 
     def get_section(self, section=None, raw=False):
         """ Getter for a specific subsection, will return as a dictionary all possible options in the section

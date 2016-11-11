@@ -2,11 +2,10 @@
 from __future__ import print_function
 from imp import reload
 
-import re
 import unittest
 import itertools
+import datetime
 import nomenclate.core.nameparser as np
-from nomenclate.core.nameparser import datetime
 
 reload(np)
 
@@ -49,7 +48,7 @@ class TestNameparser(unittest.TestCase):
             for permutation in permutations:
                 for test_option in test_options:
                     # Removing unlikely permutations like LeF: they could be mistaken for camel casing on other words
-                    if re.findall('^([A-Z]+[a-z]*)(?![A-Z])$', permutation):
+                    if self.fixture._valid_camel(permutation):
                         self.assertEquals(self.fixture.get_side(test_option % permutation), [side, permutation])
 
     def test_get_date_options(self):
@@ -102,4 +101,5 @@ class TestNameparser(unittest.TestCase):
                           ['te', 'ts', 'tt'])
 
     def test_get_base_options(self):
-        self.fixture.get_base('test')
+        self.assertEquals(self.fixture.get_base('test'),
+                          '')

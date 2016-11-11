@@ -5,21 +5,25 @@ from future.utils import iteritems
 from imp import reload
 """
 .. module:: nomenclate
-    :platform: None
+    :platform: Win/Linux/Mac
     :synopsis: This module can name any asset according to a config file
-    :plans: None
+    :plans:
+        - Using nameparser to parse existing nomenclature
+        - General cleanup of code and code-review with Stuart Schwartz next major revision 2.0.0
+    :changelog:
+        1.1.1 - excised code from original Forge repository
+        1.1.2 - removed nomenclate.core.toolbox so configurator auto-configures
+        1.2.0 -
 """
-import nomenclate.core.toolbox as tb
-import nomenclate.core.configurator as cp
 import re
 import string
+import nomenclate.core.configurator as config
 
 __author__ = "Andres Weber"
 __email__ = "andresmweber@gmail.com"
 __version__ = 1.1
 
-reload(tb)
-reload(cp)
+reload(config)
 
 
 class NameAttr(object):
@@ -63,7 +67,7 @@ class Nomenclate(object):
         self.location_opt = None
         self.type_opt = None
 
-        self.cfg = cp.ConfigParse(tb.get_config_filepath())
+        self.cfg = config.ConfigParse()
         self.camel_case = True
         self.refresh()
         self.init_from_suffix_lut()

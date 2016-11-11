@@ -1,21 +1,30 @@
 #!/usr/bin/env python
+# Ensure Python 2/3 compatibility: http://python-future.org/compatible_idioms.html
+from __future__ import print_function
+from future.utils import iteritems
+from imp import reload
 """
-    :module: nameparser
-    :platform: N/A
+.. module:: nameparser
+    :platform: Win/Linux/Mac
     :synopsis: This module does name parsing to recover information about the name based on common conventions.
                 it will be very prone to missing information since names will be very variable, but hopefully
                 it will be more intelligent as time goes on.
     :plans:
-        0.1.0: added base template functionality
-        0.2.0: added abbreviation generation technology
+        0.1.0: Added base template functionality
+        0.2.0: Added abbreviation generation technology
+        0.2.1: Removed nomenclate.core.toolbox opting to auto-configure config path
+               Optimized get_side to use the env.ini settings
 """
+import re
 import datetime
 import itertools
-import re
+import nomenclate.core.configurator as config
+
 __author__ = "Andres Weber"
 __email__ = "andresmweber@gmail.com"
-__version__ = '0.2.0'
+__version__ = '0.3.0'
 
+reload(config)
 
 class NameParser(object):
     """ This parses names of assets.  It assumes the usual convention of strings separated by underscores.
@@ -36,8 +45,7 @@ class NameParser(object):
         Args:
             name (str): string that represents a possible name of an object
         """
-        sides = ['left', 'right', 'center', 'front', 'back', 'rear', 'top', 'bottom']
-
+        sides = config.ConfigParse().get_subsection_as_list(section='options', subsection='side')
         for side in sides:
             # Have to check for longest first and remove duplicates
             abbreviations = list(set([i for i in cls._get_abbrs(side)]))
