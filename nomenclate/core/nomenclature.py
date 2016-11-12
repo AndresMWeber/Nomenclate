@@ -94,7 +94,7 @@ class Nomenclate(object):
         # Setting initial options from config file
         self.format_string = self.cfg.get_subsection_as_str('naming_format', 'format')
         self.suffix_LUT = self.cfg.get_section('suffixes')
-        self.subsets = self.cfg.get_subsection_as_list('naming_subsets', 'subsets')
+        self.subsets = self.cfg.get_subsection('naming_subsets', 'subsets')
         self.format_options = self.cfg.get_section('naming_format')
         
         # Self parsing
@@ -103,9 +103,9 @@ class Nomenclate(object):
             self.format_capitals = self.get_camel_case(self.format_string)
         
         # Setting options for option fields in the UI generated from the config file
-        self.side_opt = self.cfg.get_subsection_as_list('options', 'side')
-        self.var_opt = self.cfg.get_subsection_as_list('options', 'var')
-        self.location_opt = self.cfg.get_subsection_as_list('options', 'location')
+        self.side_opt = self.cfg.get_subsection('options', 'side')
+        self.var_opt = self.cfg.get_subsection('options', 'var')
+        self.location_opt = self.cfg.get_subsection('options', 'location')
         
         self.type_opt = [val for key, val in self.suffix_LUT.items()]
         self.type_opt.sort()

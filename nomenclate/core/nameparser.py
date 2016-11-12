@@ -3,6 +3,7 @@
 from __future__ import print_function
 from future.utils import iteritems
 from imp import reload
+from six import string_types
 """
 .. module:: nameparser
     :platform: Win/Linux/Mac
@@ -45,10 +46,10 @@ class NameParser(object):
         Args:
             name (str): string that represents a possible name of an object
         """
-        sides = config.ConfigParse().get_subsection_as_list(section='options', subsection='side')
+        sides = config.ConfigParse().get_subsection(section='options', subsection='side')
         for side in sides:
             # Have to check for longest first and remove duplicates
-            abbreviations = list(set([i for i in cls._get_abbrs(side)]))
+            abbreviations = list(set([i for i in cls._get_abbrs(side)])) + [side[0]]
             abbreviations.sort()
             abbreviations.reverse()
             for abbr in abbreviations:
@@ -80,29 +81,88 @@ class NameParser(object):
         """ Checks a string for a possible base name of an object (no prefix, no suffix)
         Args:
             name (str): string that represents a possible name of an object
+        Returns (str): the detected basename
         """
+        parse_sections = ['basename', 'version', 'date', 'side', 'udim']
+        parse_dict = dict.fromkeys(parse_sections, '')
+
+        date = cls.get_date(name)
+        if date:
+            date = [date[0], date[0].strftime(date[1])]
+        parse_dict['version'] = cls.get_version(name)
+        parse_dict['date'] = date
+        parse_dict['udim'] = str(cls.get_udim(name)) if cls.get_udim(name) else None
+        parse_dict['side'] = cls.get_side(name)
+        print('name ', name, 'parse_dict ', parse_dict)
+        for parse_section in parse_sections:
+            try:
+                print(parse_dict[parse_section])
+                word = parse_dict[parse_section][-1]
+                if isinstance(word, string_types):
+                    word = [word]
+                print('before replacement ', name)
+                for replacement in word:
+                    print('trying to replace ', replacement)
+                    name = name.replace(replacement, '')
+                print('after replacement ', name)
+            except (IndexError, TypeError) as e:
+                pass
+
+        regex_basename = '(?:^[-._]+)?([a-zA-Z0-9_\-|]+?)(?=[-._]{2,}|\.)'
+        try:
+            parse_dict['basename'] = re.findall(regex_basename, name)[0]
+        except IndexError:
+            parse_dict['basename'] = None
+        print(parse_dict)
+        return parse_dict
+
+    @classmethod
+    def get_discipline(cls, name):
         raise NotImplementedError
 
     @classmethod
     def get_version(cls, name):
-        """ Checks a string for a possible base name of an object (no prefix, no suffix)
+        """ Checks a string for a possible version of an object (no prefix, no suffix).
+            Assumes only up to 4 digit padding
         Args:
             name (str): string that represents a possible name of an object
+        Returns (float|int, [str]): gets the version number as a float or int if whole then the string matches or None
         """
-        raise NotImplementedError
+        # Dates can confuse this stuff, so we'll check for that first and remove it from the string if found
+        date = cls.get_date(name)
+        if date:
+            formatted_date = date[0].strftime(date[1])
+            name = name.replace(formatted_date, '')
+
+        regex = '(?:^|[a-z]{2,}|[._-])([vV]?[0-9]{1,4})(?=[._-]|$)'
+        matches = re.findall(regex, name)
+        if matches:
+            match_numbers = [int(match.upper().replace('V', '')) for match in matches]
+            if len(matches) > 1:
+                # Two or more version numbers so we can assume this is trying to get sub versions for the
+                # last two found, so return as decimal value
+                return match_numbers[-2] + match_numbers[-1]*.1, matches[-2:]
+            return match_numbers[-1], matches[-1:]
+        return None
 
     @classmethod
     def get_udim(cls, name):
         """ Checks a string for a possible base name of an object (no prefix, no suffix)
         Args:
             name (str): string that represents a possible name of an object
+        Returns (int): the last found match because convention keeps UDIM markers at the end.
         """
-        raise NotImplementedError
+        regex = '(?:[a-zA-Z]|[._-])(1[0-9]{3})(?:[._-])'
+        matches = re.findall(regex, name)
+        if matches:
+            return int(matches[-1])
+        return None
 
     @classmethod
     def get_date(cls, name):
         """ Checks a string for a possible date formatted into the name.  It assumes dates do not have other
-            numbers at the front or head of the date.  Heavily relies on datetime for error checking to see
+            numbers at the front or head of the date.  Currently only supports dates in 1900 and 2000.
+            Heavily relies on datetime for error checking to see
             if date is actually viable. It follows similar ideas to this post:
             http://stackoverflow.com/questions/9978534/match-dates-using-python-regular-expressions
             Args:
@@ -121,11 +181,12 @@ class NameParser(object):
                         '%m_%d_%Y',
                         '%m_%d_%y',
                         '%m%d%y',
-                        '%m%d%Y']
+                        '%m%d%Y',
+                        '%d_%m_%Y',
+                        '%Y']
 
-        mapping = [('%Y', '(20\d{2})'), ('%y', '(\d{2})'), ('%d', '(\d{2})'), ('%m', '(\d{2})'),
+        mapping = [('%Y', '((19|20)\d{2})'), ('%y', '(\d{2})'), ('%d', '(\d{2})'), ('%m', '(\d{2})'),
                    ('%H', '(\d{2})'), ('%M', '(\d{2})'), ('%S', '(\d{2})')]
-
         time_regexes = []
         for time_format in time_formats:
             for k, v in mapping:
@@ -136,7 +197,7 @@ class NameParser(object):
             try:
                 mat = re.findall('(?<!\d)(%s)(?!\d)' % time_regex, name)
                 if mat is not None:
-                    return datetime.datetime.strptime(mat[0][0], time_format)
+                    return datetime.datetime.strptime(mat[0][0], time_format), time_format
             except (ValueError, IndexError) as e:
                 pass
         return None

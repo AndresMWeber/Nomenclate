@@ -1,8 +1,8 @@
 # Ensure Python 2/3 compatibility: http://python-future.org/compatible_idioms.html
 from __future__ import print_function
 from imp import reload
+import six
 
-import copy
 import unittest
 import mock
 import configparser
@@ -39,9 +39,9 @@ class TestNameparser(unittest.TestCase):
             del fixture
 
     @mock.patch('nomenclate.core.configurator.os.path')
-    def test_get_data_no_file(self, mock_path):
+    def test_valid_file_no_file(self, mock_path):
         mock_path.isfile.return_value = False
-        self.assertRaises(IOError, self.fixture.valid_file('/mock/config.ini'))
+        self.assertRaises(IOError, self.fixture.valid_file, '/mock/config.ini')
 
     @mock.patch('nomenclate.core.configurator.os.path')
     @mock.patch.object(configparser.ConfigParser, 'read')
@@ -51,12 +51,10 @@ class TestNameparser(unittest.TestCase):
         mock_parser_read.assert_called_with(self.fake_file_path)
 
     def test_get(self):
-        #section = None, subsection = None, options = False, raw = False
         self.assertEquals(self.fixture.get(section='naming_subsets', subsection='subsets', raw=True),
                           'modeling rigging texturing lighting utility')
 
     def test_get_options(self):
-        #section = None, subsection = None, options = False, raw = False
         self.assertEquals(self.fixture.get(section='naming_subsets', options=True),
                           ['subsets'])
 
@@ -88,8 +86,9 @@ class TestNameparser(unittest.TestCase):
                           'modeling rigging texturing lighting utility')
 
     def test_list_sections(self):
-        self.assertEquals(self.fixture.list_sections(),
-                          ['naming_subsets', 'subset_formats', 'suffix_pairs', 'suffixes', 'options', 'naming_format'])
+        six.assertCountEqual(self,
+                             self.fixture.list_sections(),
+                             ['naming_subsets', 'subset_formats', 'suffix_pairs', 'suffixes', 'options', 'naming_format'])
 
     def test_list_section_options(self):
         self.assertEquals(self.fixture.list_section_options('naming_subsets'),

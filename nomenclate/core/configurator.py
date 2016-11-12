@@ -2,6 +2,7 @@
 from __future__ import print_function
 from builtins import dict
 from imp import reload
+from six import string_types
 """
 .. module:: configurator
     :platform: Win/Linux/Mac
@@ -43,12 +44,12 @@ class ConfigParse(object):
         self.rebuild_config_cache(self.path)
 
     @classmethod
-    def valid_file(cls, file):
-        if os.path.isfile(file):
-            extsep = file.split(os.path.extsep)
+    def valid_file(cls, config_file):
+        if os.path.isfile(config_file):
+            extsep = config_file.split(os.path.extsep)
             if len(extsep) > 1 and extsep[-1] in cls.SUPPORTED_CONFIGS.keys():
                 return extsep[-1]
-        raise IOError('File %s is not a valid yml, ini or cfg file' % file)
+        raise IOError('File %s is not a valid yml, ini or cfg file' % config_file)
 
     def rebuild_config_cache(self, path):
         """ Loads from file and caches all data from the config file in the form of an OrderedDict to self.data
@@ -72,9 +73,22 @@ class ConfigParse(object):
         return False
 
     def get_data(self, section="", subsection="", raw=False):
+        self.query_valid_entry(section, subsection)
+        if not subsection:
+            query_result = self.data[section]
+        else:
+            query_result = self.data[section][subsection]
+        # In this situation a user is looking for a string, let's give it to em!
         if raw:
-            return self.data[section][subsection]
-        return self.data[section][subsection].split(' ')
+            if isinstance(query_result, list):
+                return ' '.join(query_result)
+            elif isinstance(query_result, string_types):
+                return query_result
+
+        # Now we want just a normal list result
+        if isinstance(query_result, string_types):
+            return query_result.split(' ')
+        return query_result
 
     def get(self, section=None, subsection=None, options=False, raw=False):
         """
@@ -84,18 +98,21 @@ class ConfigParse(object):
             options (bool): whether we want to just list the options for a section
             raw (bool): whether we want python formatted data or raw strings
         """
-        self.query_valid_entry(section, subsection)
         if options:
-            return self.get_section_options(section)
+            return self.list_section_options(section)
         return self.get_data(section, subsection, raw=raw)
 
-    def query_valid_entry(self, section, subsection):
+    def query_valid_entry(self, section='', subsection=''):
         """ Function to check if the config section/subsection data exists
         """
-        data_query = self.data.get(section, subsection)
-        if data_query:
-            return True
-        return False
+        data_query = None
+        if not subsection:
+            data_query = self.data.get(section, '')
+        else:
+            data_query = self.data.get(section, {}).get(subsection, '')
+        if not data_query:
+            raise IOError('Section: %s and Subsection: %s not found in current config file...' % (section, subsection))
+        return True
 
     def get_section(self, section=None, raw=False):
         """
@@ -103,14 +120,14 @@ class ConfigParse(object):
         """
         return self.get(section, raw=raw)
 
-    def get_subsection(self, section=None, subsection=None):
+    def get_subsection(self, section=None, subsection=None, raw=False):
         """ Return the given section/subsection pair as a list
         Args:
             section (str): section to query
             subsection (str): subsection to query
         Returns (dict): list of the subsection results
         """
-        return self.get(section=section, subsection=subsection)
+        return self.get(section=section, subsection=subsection, raw=False)
 
     def get_subsection_as_dict(self, section=None, subsection=None):
         """ Return the given section/subsection pair as a dictionary
@@ -133,9 +150,11 @@ class ConfigParse(object):
     def list_sections(self):
         """ Lists the sections possible to query
         Args (None)
-        Returns [str]: list of section key names
+        Returns [str]: list of section key names sorted by name so as not to mess with order.
         """
-        return self.data.values()
+        keys = list(self.data.keys())
+        keys.sort()
+        return keys
 
     def list_section_options(self, section):
         """ Lists a section's possible options to query
@@ -143,9 +162,12 @@ class ConfigParse(object):
             section (str): section for us to query
         Returns [str]: list of string represented options
         """
-        if isinstance(self.data[section], dict):
-            return self.data[section].keys()
-        return self.data[section]
+        query_data = self.data[section]
+        if isinstance(query_data, dict):
+            return [k for k in self.data[section].keys()]
+        elif isinstance(query_data, string_types):
+            return query_data.split(' ')
+        return query_data
 
     @staticmethod
     def _dict_to_ordered_dict(d):
@@ -155,10 +177,11 @@ class ConfigParse(object):
             d (dictionary): unsorted dictionary
         Returns (OrderedDictionary): dictionary in order...
         """
-        print (d)
-        print (OrderedDict(sorted(d.items(), key=lambda x: x[1], reverse=True)))
-        return OrderedDict(sorted(d.items(), key=lambda x: x[1], reverse=True))
-
+        try:
+            items = list(d.iteritems())
+        except AttributeError:
+            items = list(d.items())
+        return OrderedDict(sorted(items, key=lambda x: x[0], reverse=True))
 
     def __deepcopy__(self, memo):
         return self
