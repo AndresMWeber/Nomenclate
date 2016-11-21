@@ -39,6 +39,16 @@ class TestNameparser(unittest.TestCase):
         self.assertEquals(self.fixture.get_side('blah_is_no_type_of_side_LOC'),
                           None)
 
+    def test_side_edge_cases(self):
+        tests = [('r_foreLeg.obj', ['right', (0, 2), 'r']),
+                 ('jacket_substance_EXPORT.abc', ['center', (25, 27), 'c'])]
+
+        for test_string, test_value in tests:
+            result = self.fixture.get_side(test_string)
+            if result:
+                result = [result[val] for val in ['side', 'position_full', 'match']]
+            self.assertEquals(result, test_value)
+
     def _side_runner(self, test_options):
         for side in ['left', 'right']:
             permutations = []
@@ -49,7 +59,11 @@ class TestNameparser(unittest.TestCase):
                 for test_option in test_options:
                     # Removing unlikely permutations like LeF: they could be mistaken for camel casing on other words
                     if self.fixture._valid_camel(permutation):
-                        self.assertEquals(self.fixture.get_side(test_option % permutation), [side, permutation])
+                        tested_list = self.fixture.get_side(test_option % permutation)
+                        if tested_list:
+                            tested_list = [tested_list[val] for val in ['side', 'position_full', 'match']]
+                        for element in [side, permutation]:
+                            self.assertIn(element, tested_list)
 
     def test_get_date_options(self):
         test_formats = ['%Y-%m-%d_%H-%M-%S',
@@ -79,7 +93,10 @@ class TestNameparser(unittest.TestCase):
 
         for order in orders:
             for test_format in test_formats:
-                self.assertEqual(self.fixture.get_date(order.format(DATE=input_time.strftime(test_format))),
+                result = self.fixture.get_date(order.format(DATE=input_time.strftime(test_format)))
+                if result:
+                    result = (result['datetime'], result['format'])
+                self.assertEqual(result,
                                  (datetime.datetime.strptime(input_time.strftime(test_format), test_format), test_format))
 
     def test_valid_camel(self):
@@ -98,9 +115,13 @@ class TestNameparser(unittest.TestCase):
         # making sure it gives same results regardless of casing of original word
         self.assertEquals([i for i in self.fixture._get_casing_permutations('AfdS')],
                           [i for i in self.fixture._get_casing_permutations('Afds')])
+        # double checking shorter casing permutations...it fucks up on length two currently
+        self.assertEquals([i for i in self.fixture._get_casing_permutations('lf')],
+                          ['lf', 'Lf', 'lF', 'LF'])
 
     def test_get_abbrs_options(self):
         self.assertEquals([i for i in self.fixture._get_abbrs('test', 2)], ['te', 'ts', 'tt'])
+        self.assertEquals([i for i in self.fixture._get_abbrs('test')], ['te', 'tes', 'test', 'ts', 'tst', 'tt', 't'])
 
     def test_get_base_options(self):
         self.assertEquals(self.fixture.get_base('gus_clothing_v10_aw.ZPR')['basename'], 'gus_clothing')
@@ -158,14 +179,17 @@ class TestNameparser(unittest.TestCase):
         self.assertEquals(self.fixture.get_version('moleV01.001.jpg'), (1.1, ['V01', '001']))
 
     def test_get_udim_options(self):
-        self.assertEquals(self.fixture.get_udim('gus_clothing_v10_aw.ZPR'),  None)
-        self.assertEquals(self.fixture.get_udim('jacket_NORM.1004.tif'), 1004)
-        self.assertEquals(self.fixture.get_udim('jacket_NORM1004.tif'), 1004)
-        self.assertEquals(self.fixture.get_udim('jacket_NORM_1004_tif'), 1004)
-        self.assertEquals(self.fixture.get_udim('jacket_NORM1004poop.tif'), None) # Deemed a shitty case, not handling it.
-        self.assertEquals(self.fixture.get_udim('jacket_substance_EXPORT.abc'), None)
-        self.assertEquals(self.fixture.get_udim('27_12_2015'), None)
-        self.assertEquals(self.fixture.get_udim('QS_296.ZPR'), None)
-        self.assertEquals(self.fixture.get_udim('Nesquik_Light_Sign_Anim_Test-1080p_HD_Quicktime.mov'), None)
-        self.assertEquals(self.fixture.get_udim('IMG_20160509_140103743.jpg'), None)
-
+        tests = [('gus_clothing_v10_aw.ZPR', None),
+                 ('jacket_NORM.1004.tif', 1004),
+                 ('jacket_NORM1004.tif', 1004),
+                 ('jacket_NORM1004poop.tif', None), # Deemed a shitty case, not handling it.
+                 ('jacket_substance_EXPORT.abc', None),
+                 ('27_12_2015', None),
+                 ('QS_296.ZPR', None),
+                 ('Nesquik_Light_Sign_Anim_Test-1080p_HD_Quicktime.mov', None),
+                 ('IMG_20160509_140103743.jpg', None)]
+        for test_string, test_value in tests:
+            result = self.fixture.get_udim(test_string)
+            if result:
+                result = result['match_int']
+            self.assertEquals(result, test_value)
