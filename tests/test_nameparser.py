@@ -31,7 +31,7 @@ class TestNameparser(unittest.TestCase):
                            'prefix_%s_part_dir_type',
                            'prefix_part_up_%s'])
 
-    def test_get_side_combined(self):
+    def test_get_side_camel(self):
         self._side_runner(['prefix_part%s_dir_type',
                            'prefix_%sPart_dir_type'])
 
@@ -41,7 +41,7 @@ class TestNameparser(unittest.TestCase):
 
     def test_side_edge_cases(self):
         tests = [('r_foreLeg.obj', ['right', (0, 2), 'r']),
-                 ('jacket_substance_EXPORT.abc', ['center', (25, 27), 'c'])]
+                 ('jacket_substance_EXPORT.abc', None)]
 
         for test_string, test_value in tests:
             result = self.fixture.get_side(test_string)
@@ -55,6 +55,7 @@ class TestNameparser(unittest.TestCase):
             for abbr in np.NameParser._get_abbrs(side):
                 permutations = itertools.chain(permutations,
                                                np.NameParser._get_casing_permutations(abbr))
+
             for permutation in permutations:
                 for test_option in test_options:
                     # Removing unlikely permutations like LeF: they could be mistaken for camel casing on other words
@@ -62,8 +63,13 @@ class TestNameparser(unittest.TestCase):
                         tested_list = self.fixture.get_side(test_option % permutation)
                         if tested_list:
                             tested_list = [tested_list[val] for val in ['side', 'position_full', 'match']]
-                        for element in [side, permutation]:
-                            self.assertIn(element, tested_list)
+
+                        test_index = test_option.find('%s')-1
+                        if permutation[0].islower() and test_option[test_index].isalpha() and test_index != -1:
+                            self.assertIsNone(tested_list)
+                        else:
+                            for element in [side, permutation]:
+                                self.assertIn(element, tested_list)
 
     def test_get_date_options(self):
         test_formats = ['%Y-%m-%d_%H-%M-%S',
@@ -100,9 +106,12 @@ class TestNameparser(unittest.TestCase):
                                  (datetime.datetime.strptime(input_time.strftime(test_format), test_format), test_format))
 
     def test_valid_camel(self):
-        for test in [('aAaa', False), ('Aaaa', True), ('AAAaaaaa',True), ('AAAAaaaAAA', False),
-                     ('AaA', False), ('Aa', True), ('AA', True), ('aa', False)]:
+        for test in [('aAaa', True), ('Aaaa', False), ('AAAaaaaa', True), ('AAAAaaaAAA', True),
+                     ('AaA', True), ('Aa', False), ('AA', False), ('aa', False), ('camel', False),
+                     ('camelCase', True), ('CamelCase', True), ('CAMELCASE', False), ('camelcase', False),
+                     ('Camelcase', False), ('Case', False), ('camelCamelCase', True)]:
             test, val = test
+            print (test, val)
             self.assertEquals(self.fixture._valid_camel(test), val)
 
     def test_get_casing_permutations(self):
@@ -124,59 +133,73 @@ class TestNameparser(unittest.TestCase):
         self.assertEquals([i for i in self.fixture._get_abbrs('test')], ['te', 'tes', 'test', 'ts', 'tst', 'tt', 't'])
 
     def test_get_base_options(self):
-        self.assertEquals(self.fixture.get_base('gus_clothing_v10_aw.ZPR')['basename'], 'gus_clothing')
-        self.assertEquals(self.fixture.get_base('jacket_NORM.1004.tif')['basename'], 'jacket_NORM')
-        self.assertEquals(self.fixture.get_base('jacket_substance_EXPORT.abc')['basename'], 'jacket_substance_EXPORT')
-        self.assertEquals(self.fixture.get_base('27_12_2015')['basename'], None)
-        self.assertEquals(self.fixture.get_base('clothing_compiled_maya_v01_aw.mb')['basename'], 'clothing_compiled_maya')
-        self.assertEquals(self.fixture.get_base('QS_296.ZPR')['basename'], 'QS')
-        self.assertEquals(self.fixture.get_base('char_luchadorA-model1_qt1.mov')['basename'], 'char_luchadorA-model_qt')
-        self.assertEquals(self.fixture.get_base('kayJewelersPenguin_5402411_build_penguin_rigPuppet_penguin_v2.ma')['basename'],
+        self.assertEquals(self.fixture.get_base('gus_clothing_v10_aw.ZPR')['match'], 'gus_clothing')
+        self.assertEquals(self.fixture.get_base('jacket_NORM.1004.tif')['match'], 'jacket_NORM')
+        self.assertEquals(self.fixture.get_base('jacket_substance_EXPORT.abc')['match'], 'jacket_substance_EXPORT')
+        self.assertEquals(self.fixture.get_base('27_12_2015'), None)
+        self.assertEquals(self.fixture.get_base('clothing_compiled_maya_v01_aw.mb')['match'], 'clothing_compiled_maya')
+        self.assertEquals(self.fixture.get_base('QS_296.ZPR')['match'], 'QS')
+        self.assertEquals(self.fixture.get_base('char_luchadorA-model1_qt1.mov')['match'], 'char_luchadorA-model_qt')
+        self.assertEquals(self.fixture.get_base('kayJewelersPenguin_5402411_build_penguin_rigPuppet_penguin_v2.ma')['match'],
                           'kayJewelersPenguin_5402411_build_penguin_rigPuppet_penguin')
-        self.assertEquals(self.fixture.get_base('rig_makeGentooPenguin.mel')['basename'], 'rig_makeGentooPenguin')
-        self.assertEquals(self.fixture.get_base('r_foreLeg.obj')['basename'], 'foreLeg')
-        self.assertEquals(self.fixture.get_base('samsung_galaxy_s6_rough.stl')['basename'], 'samsung_galaxy_s6_rough')
-        self.assertEquals(self.fixture.get_base('mansur_gavriel_purse_back.stl')['basename'], 'mansur_gavriel_purse')
-        self.assertEquals(self.fixture.get_base('LSC_sh01_v8_Nesquick_SFX_MS_WIP_v3_032415-540p_Quicktime.mov')['basename'],
-                          'sh01')
-        self.assertEquals(self.fixture.get_base('Nesquik_Light_Sign_Anim_Test-1080p_HD_Quicktime.mov')['basename'],
-                          'Nesquik_Light_Sign')
-        self.assertEquals(self.fixture.get_base('12301121_004_Nesquik_Light_Sign_Anim_Test.mov')['basename'],
-                          'Nesquik_Light_Sign')
-        self.assertEquals(self.fixture.get_base('nesquikQuicky_5402876_build_char_quicky_model_quicky_lodA_v10.ma')['basename'],
-                          'nesquikQuicky_5402876_build_char_quicky')
-        self.assertEquals(self.fixture.get_base('IMG_20160509_140103743.jpg')['basename'], 'IMG')
-        self.assertEquals(self.fixture.get_base('hippydrome_2014.fbx')['basename'], 'hippydrome')
-        self.assertEquals(self.fixture.get_base('AM152_FBX.part03.rar')['basename'], 'AM152_FBX')
-        self.assertEquals(self.fixture.get_base('envelope_RB_v003_weights_groundhog.ma')['basename'], 'envelope')
-        self.assertEquals(self.fixture.get_base('envelope_weights_02_unsmoothedJoints.json')['basename'], 'envelope_weights')
-        self.assertEquals(self.fixture.get_base('icons_MDL_v006_aw.ma')['basename'], 'icons')
-        self.assertEquals(self.fixture.get_base('moleV01.001.jpg')['basename'], 'mole')
+        self.assertEquals(self.fixture.get_base('rig_makeGentooPenguin.mel')['match'], 'rig_makeGentooPenguin')
+        self.assertEquals(self.fixture.get_base('r_foreLeg.obj')['match'], 'foreLeg')
+        self.assertEquals(self.fixture.get_base('samsung_galaxy_s6_rough.stl')['match'], 'samsung_galaxy_s6_rough')
+        self.assertEquals(self.fixture.get_base('mansur_gavriel_purse_back.stl')['match'], 'mansur_gavriel_purse_back')
+        self.assertEquals(self.fixture.get_base('LSC_sh01_v8_Nesquick_SFX_MS_WIP_v3_032415-540p_Quicktime.mov')['match'],
+                          'LSC_sh')
+        self.assertEquals(self.fixture.get_base('Nesquik_Light_Sign_Anim_Test-1080p_HD_Quicktime.mov')['match'],
+                          'Nesquik_Light_Sign_Anim_Test-1080p_HD_Quicktime')
+        self.assertEquals(self.fixture.get_base('12302016_004_Nesquik_Light_Sign_Anim_Test.mov')['match'],
+                          'Nesquik_Light_Sign_Anim_Test')
+        self.assertEquals(self.fixture.get_base('nesquikQuicky_5402876_build_char_quicky_model_quicky_lodA_v10.ma')['match'],
+                          'nesquikQuicky_5402876_build_char_quicky_model_quicky_lodA')
+        self.assertEquals(self.fixture.get_base('IMG_20160509_140103743.jpg')['match'], 'IMG')
+        self.assertEquals(self.fixture.get_base('hippydrome_2014.fbx')['match'], 'hippydrome')
+        self.assertEquals(self.fixture.get_base('AM152_FBX.part03.rar')['match'], 'AM152_FBX')
+        self.assertEquals(self.fixture.get_base('envelope_RB_v003_weights_groundhog.ma')['match'], 'envelope_RB')
+        self.assertEquals(self.fixture.get_base('envelope_weights_02_unsmoothedJoints.json')['match'], 'envelope_weights')
+        self.assertEquals(self.fixture.get_base('icons_MDL_v006_aw.ma')['match'], 'icons_MDL')
+        self.assertEquals(self.fixture.get_base('moleV01.001.jpg')['match'], 'mole')
 
     def test_get_version_options(self):
-        self.assertEquals(self.fixture.get_version('gus_clothing_v10_aw.ZPR'), (10, ['v10']))
-        self.assertEquals(self.fixture.get_version('jacket_NORM.1004.tif'), (1004, ['1004']))
-        self.assertEquals(self.fixture.get_version('jacket_substance_EXPORT.abc'), None)
-        self.assertEquals(self.fixture.get_version('27_12_2015'), None)
-        self.assertEquals(self.fixture.get_version('clothing_compiled_maya_v01_aw.mb'), (1, ['v01']))
-        self.assertEquals(self.fixture.get_version('QS_296.ZPR'), (296, ['296']))
-        self.assertEquals(self.fixture.get_version('char_luchadorA-model1_qt1.mov'), (1.1, ['1', '1']))
-        self.assertEquals(self.fixture.get_version('kayJewelersPenguin_5402411_build_penguin_rigPuppet_penguin_v2.ma'), (2, ['v2']))
-        self.assertEquals(self.fixture.get_version('rig_makeGentooPenguin.mel'), None)
-        self.assertEquals(self.fixture.get_version('r_foreLeg.obj'), None)
-        self.assertEquals(self.fixture.get_version('samsung_galaxy_s6_rough.stl'), None)
-        self.assertEquals(self.fixture.get_version('mansur_gavriel_purse_back.stl'), None)
-        self.assertEquals(self.fixture.get_version('LSC_sh01_v8_Nesquick_SFX_MS_WIP_v3_032415-540p_Quicktime.mov'), (8.3, ['v8', 'v3']))
-        self.assertEquals(self.fixture.get_version('Ne1004squik_Light_Sign_Anim_Test-1080p_HD_Quicktime.mov'), None)
-        self.assertEquals(self.fixture.get_version('12301121_004_Nesquik_Light_Sign_Anim_Test.mov'), (4, ['004']))
-        self.assertEquals(self.fixture.get_version('nesquikQuicky_5402876_build_char_quicky_model_quicky_lodA_v10.ma'), (10, ['v10']))
-        self.assertEquals(self.fixture.get_version('IMG_20160509_140103743.jpg'), None)
-        self.assertEquals(self.fixture.get_version('hippydrome_2014.fbx'), None)
-        self.assertEquals(self.fixture.get_version('AM152_FBX.part03.rar'), (3, ['03']))
-        self.assertEquals(self.fixture.get_version('envelope_RB_v003_weights_groundhog.ma'), (3, ['v003']))
-        self.assertEquals(self.fixture.get_version('envelope_weights_02_unsmoothedJoints.json'), (2, ['02']))
-        self.assertEquals(self.fixture.get_version('icons_MDL_v0006_aw.ma'), (6, ['v0006']))
-        self.assertEquals(self.fixture.get_version('moleV01.001.jpg'), (1.1, ['V01', '001']))
+        tests = [('gus_clothing_v10_aw.ZPR', (10, 'v10')),
+                 ('jacket_NORM.1004.tif', (1004, '1004')),
+                 ('jacket_substance_EXPORT.abc', None),
+                 ('27_12_2015', None),
+                 ('clothing_compiled_maya_v01_aw.mb', (1, 'v01')),
+                 ('QS_296.ZPR', (296, '296')),
+                 ('char_luchadorA-model1_qt1.mov', ('1.1', '1')),
+                 ('kayJewelersPenguin_5402411_build_penguin_rigPuppet_penguin_v2.ma', (2, 'v2')),
+                 ('rig_makeGentooPenguin.mel', None),
+                 ('r_foreLeg.obj', None),
+                 ('samsung_galaxy_s6_rough.stl', None),
+                 ('mansur_gavriel_purse_back.stl', None),
+                 ('LSC_sh01_v8_Nesquick_SFX_MS_WIP_v3_032415-540p_Quicktime.mov', ('1.8.3', '01')),
+                 ('Ne1004squik_Light_Sign_Anim_Test-1080p_HD_Quicktime.mov', None),
+                 ('12301121_004_Nesquik_Light_Sign_Anim_Test.mov', (4, '004')),
+                 ('nesquikQuicky_5402876_build_char_quicky_model_quicky_lodA_v10.ma', (10, 'v10')),
+                 ('IMG_20160509_140103743.jpg', None),
+                 ('hippydrome_2014.fbx', None),
+                 ('AM152_FBX.part03.rar', (3, '03')),
+                 ('envelope_RB_v003_weights_groundhog.ma', (3, 'v003')),
+                 ('envelope_weights_02_unsmoothedJoints.json', (2, '02')),
+                 ('icons_MDL_v0006_aw.ma', (6, 'v0006')),
+                 ('moleV01.001.jpg', ('1.1', 'V01'))]
+
+        for test, value in tests:
+            test_result = self.fixture.get_version(test)
+            if test_result is not None:
+                version = test_result.get('version', None) or test_result.get('compound_version')
+                match = test_result.get('match', None)
+                try:
+                    match = test_result.get('compound_matches')[0].get('match')
+                except (IndexError, TypeError):
+                    pass
+                self.assertEquals((version, match), value)
+            else:
+                print (test_result)
+                self.assertEquals(test_result, value)
 
     def test_get_udim_options(self):
         tests = [('gus_clothing_v10_aw.ZPR', None),
