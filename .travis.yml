@@ -1,5 +1,8 @@
 sudo: required
 
+os:
+  - linux
+
 language: python
 
 services:
@@ -28,18 +31,20 @@ script:
 
 deploy:
   provider: pypi
+  distributions: "sdist bdist_wheel" # Your distributions here
+  repo: AndresMWeber/Nomenclate
   user: andresmweber
   password:
     secure: OaTjXC11whIUCljWbH+UNk2x002DuNlLKrGG7TtDYyStgGqiDzSZcFLUSPEBgqW3luX6UXBwpnP1UPopHSYSBgEWz22PbnR8VwTSdXWFHTcQEvYZvMvd2BFzJK/bYpcARPjVLBkgXF/lmEFNjjyf/+xsjBnO6r8VvYu4Z+dGbCjrqKVLwwQYlBvnGsoHFwESPlar3sIGUtAllNvg+ODczFfZp/clOD3eh2SR6EXov+0iAqiDpCo94sELFlUUzQCcgNZTcLn3tR82r8GQsmRm7kMCyol6ETMEAvTyKuKPGQnFLofhZ9l2MBAuaV4+di/1NhtyWc0WvTTPzh+5qRF9G4qwGo7yh4OWV0otk/n3vwVvZv89h1j6MeB+8jyWjn9oN3B1wHljzVVUmnjTUaEcv8fCBsu0tYMdGtiA+xrqCGqsvgGSAGSysm9xHFh0GupyY/63sKsX8aM4NzMScncAitP3dd0jyHOC3F3x4GUQ0ifO3RuIN2oMlFu8Hpso53yZghoZsbFf/qF4SGSIoYoPrHXrCZfrMOsp4Hfh918gz7K5UGCHeV3HJk2EptWYXDrblhBYDcebOndc0i5MUEc+e116KPliHDHk8Ypd8Y9X1MohKy2gEookGQwNVfkGiRlVAHPRn87Wd4Uvt2/g5vzlNKas5hbng5sxwIiwlvBvIn0=
   on:
     tags: true
-    distributions: sdist bdist_wheel
-    repo: AndresMWeber/Nomenclate
 
 notifications:
-  slack: andresrules:YFZedni7L0ayOhn3SsX2vQI5
+  slack:
+    rooms:
+      - andresrules:YFZedni7L0ayOhn3SsX2vQI5
     template:
-      - "%{repository}#%{build_number} (%{branch} - %{commit} : %{author}): %{message}"
+      - "%{repository} (%{commit}) %{build_number} (%{branch} - %{commit}: %{author}): %{message} "
       - "Change view : %{compare_url}"
       - "Build details : %{build_url}"
       - "Results : %{result}"
