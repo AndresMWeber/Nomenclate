@@ -16,14 +16,60 @@ __email__ = "andresmweber@gmail.com"
 class TestNameparser(unittest.TestCase):
     def setUp(self):
         self.fixture = np.NameParser()
+        self.test_filenames = ['VGS15_sh004_lgt_v002.ma',
+                               'vhcl_chevyTraverse_2018_interior_rig_v06_jf.ma',
+                               'nurs_enchant_lilies_hi_cn_flowers_receptacle_a_1002_tg',
+                               'HKY_010_lighting_v007.hip',
+                               'Will_102_060',
+                               'l33t_monkeyBalls_with 3 fishes.ma',
+                               'cdf0090_lighting_PROPS_FG_RIM_beauty_v011.1062.exr',
+                               'I_HKY_150_L1_v1_graded.1001.jpeg',
+                               'us.gcr.io_valued-geode-142207%2Fappengine_default.tar',
+                               '12-09-16_theStuff_photo_post1s_b02.psd']
 
     def tearDown(self):
         del self.fixture
+
+    def test_parse_options(self):
+        for test in self.test_filenames:
+            self.assertIsNone(self.fixture.parse_name(test))
 
     def test_short_options(self):
         self.assertEqual(self.fixture.get_short('robotsLight8|robotLight2|robotLight2Shape'), 'robotLight2Shape')
         self.assertEqual(self.fixture.get_short('robotLight2Shape'), 'robotLight2Shape')
         self.assertEqual(self.fixture.get_short('robotsLight8|robotLight2|l_arm_up_LOC'), 'l_arm_up_LOC')
+
+    def test_discipline_options_invalid(self):
+        tests = ['gus_clothing_v10_aw.ZPR',
+                 'Total_Protonic_reversal_v001_(Shane).exr',
+                 'jacket_NORM.1004.tif',
+                 'jacket_substance_EXPORT.abc',
+                 '27_12_2015',
+                 'clothing_compiled_maya_v01_aw.mb',
+                 'QS_296.ZPR',
+                 'r_foreLeg.obj',
+                 'samsung_galaxy_s6_rough.stl',
+                 'mansur_gavriel_purse_back.stl',
+                 'LSC_sh01_v8_Nesquick_SFX_MS_WIP_v3_032415-540p_Quicktime.mov',
+                 'IMG_20160509_140103743.jpg',
+                 'hippydrome_2014.fbx', 'AM152_FBX.part03.rar',
+                 'envelope_RB_v003_weights_groundhog.ma',
+                 'envelope_weights_02_unsmoothedJoints.json',
+                 'moleV01.001.jpg',
+                 'robots8|robot2|robott2Shape']
+        for test in tests:
+            self.assertIsNone(self.fixture.get_discipline(test))
+
+    def test_discipline_options_valid(self):
+        tests = [('char_luchadorA-model1_qt1.mov', 'model'),
+                 ('kayJewelersPenguin_5402411_build_penguin_rigPuppet_penguin_v2.ma', 'rig'),
+                 ('rig_makeGentooPenguin.mel', 'rig'),
+                 ('Nesquik_Light_Sign_Anim_Test-1080p_HD_Quicktime.mov', 'Anim'),
+                 ('12302016_004_Nesquik_Light_Sign_Anim_Test.mov', 'Anim'),
+                 ('nesquikQuicky_5402876_build_char_quicky_model_quicky_lodA_v10.ma', 'model'),
+                 ('icons_MDL_v006_aw.ma', 'MDL')]
+        for test, val in tests:
+            self.assertEquals(self.fixture.get_discipline(test)['match'], val)
 
     def test_get_side_options(self):
         # Testing for isolated by underscores
@@ -52,7 +98,7 @@ class TestNameparser(unittest.TestCase):
     def _side_runner(self, test_options):
         for side in ['left', 'right']:
             permutations = []
-            for abbr in np.NameParser._get_abbrs(side):
+            for abbr in np.NameParser._get_abbrs(side, 3):
                 permutations = itertools.chain(permutations,
                                                np.NameParser._get_casing_permutations(abbr))
 
@@ -129,7 +175,7 @@ class TestNameparser(unittest.TestCase):
                           ['lf', 'Lf', 'lF', 'LF'])
 
     def test_get_abbrs_options(self):
-        self.assertEquals([i for i in self.fixture._get_abbrs('test', 2)], ['te', 'ts', 'tt'])
+        self.assertEquals([i for i in self.fixture._get_abbrs('test', 2)], ['te', 'tes', 'test', 'ts', 'tst', 'tt'])
         self.assertEquals([i for i in self.fixture._get_abbrs('test')], ['te', 'tes', 'test', 'ts', 'tst', 'tt', 't'])
 
     def test_get_base_options(self):
@@ -144,7 +190,7 @@ class TestNameparser(unittest.TestCase):
                           'kayJewelersPenguin_5402411_build_penguin_rigPuppet_penguin')
         self.assertEquals(self.fixture.get_base('rig_makeGentooPenguin.mel')['match'], 'rig_makeGentooPenguin')
         self.assertEquals(self.fixture.get_base('r_foreLeg.obj')['match'], 'foreLeg')
-        self.assertEquals(self.fixture.get_base('samsung_galaxy_s6_rough.stl')['match'], 'samsung_galaxy_s6_rough')
+        self.assertEquals(self.fixture.get_base('samsung_galaxy_s6_rough.stl')['match'], 'samsung_galaxy_s_rough')
         self.assertEquals(self.fixture.get_base('mansur_gavriel_purse_back.stl')['match'], 'mansur_gavriel_purse_back')
         self.assertEquals(self.fixture.get_base('LSC_sh01_v8_Nesquick_SFX_MS_WIP_v3_032415-540p_Quicktime.mov')['match'],
                           'LSC_sh')
@@ -173,9 +219,9 @@ class TestNameparser(unittest.TestCase):
                  ('kayJewelersPenguin_5402411_build_penguin_rigPuppet_penguin_v2.ma', (2, 'v2')),
                  ('rig_makeGentooPenguin.mel', None),
                  ('r_foreLeg.obj', None),
-                 ('samsung_galaxy_s6_rough.stl', None),
+                 ('samsung_galaxy_s6_rough.stl', (6, '6')),
                  ('mansur_gavriel_purse_back.stl', None),
-                 ('LSC_sh01_v8_Nesquick_SFX_MS_WIP_v3_032415-540p_Quicktime.mov', ('1.8.3', '01')),
+                 ('LSC_sh01_v8_Nesquick_SFX_MS\-_WIP_v3_032415-540p_Quicktime.mov', ('1.8.3', '01')),
                  ('Ne1004squik_Light_Sign_Anim_Test-1080p_HD_Quicktime.mov', None),
                  ('12301121_004_Nesquik_Light_Sign_Anim_Test.mov', (4, '004')),
                  ('nesquikQuicky_5402876_build_char_quicky_model_quicky_lodA_v10.ma', (10, 'v10')),
@@ -185,7 +231,8 @@ class TestNameparser(unittest.TestCase):
                  ('envelope_RB_v003_weights_groundhog.ma', (3, 'v003')),
                  ('envelope_weights_02_unsmoothedJoints.json', (2, '02')),
                  ('icons_MDL_v0006_aw.ma', (6, 'v0006')),
-                 ('moleV01.001.jpg', ('1.1', 'V01'))]
+                 ('moleV01.001.jpg', ('1.1', 'V01')),
+                 ('VGS15_sh004_lgt_v002', (2, 'v002'))]
 
         for test, value in tests:
             test_result = self.fixture.get_version(test)
@@ -196,9 +243,9 @@ class TestNameparser(unittest.TestCase):
                     match = test_result.get('compound_matches')[0].get('match')
                 except (IndexError, TypeError):
                     pass
+                print (test_result)
                 self.assertEquals((version, match), value)
             else:
-                print (test_result)
                 self.assertEquals(test_result, value)
 
     def test_get_udim_options(self):

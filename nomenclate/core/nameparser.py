@@ -25,7 +25,6 @@ import re
 import datetime
 import itertools
 import nomenclate.core.configurator as config
-
 __author__ = "Andres Weber"
 __email__ = "andresmweber@gmail.com"
 __version__ = '0.3.0'
@@ -41,17 +40,15 @@ class NameParser(object):
     PARSE_ABLE = ['basename', 'version', 'date', 'side', 'udim']
 
     REGEX_BASENAME = r'(?:^[-._]+)?([a-zA-Z0-9_\-|]+?)(?=[-._]{2,}|\.)'
-    REGEX_SEPARATORS = r'[ ,_\-!?:]'
+    REGEX_SEPARATORS = r'[ ,_!?:\.\-]'
 
     REGEX_ABBR_ISLAND = r'(?:[{SEP}]+)({ABBR})(?:[{SEP}]+)'
     REGEX_ABBR_SEOS = r'(?:^|[a-z]|{SEP})({ABBR})(?:$|[A-Z][a-z]+|{SEP})'
     REGEX_ABBR_CAMEL = r'(?:[a-z])({ABBR})(?:$|[A-Z]|{SEP})'
 
-    REGEX_VERSION = r'(?:^|[a-z]{2,}|[._-])([vV]?[0-9]{1,4})(?=[._-]|$)'
+    REGEX_VERSION = r'(?:^|[a-z]{{2,}}[a-uw-z]+|{SEP}[a-z]?[a-uw-z]+|{SEP})([vV]?[0-9]{{1,4}})(?={SEP}|$)'
     REGEX_UDIM = r'(?:[a-zA-Z]|[._-])(1[0-9]{3})(?:[._-])'
     REGEX_DATE = r'(?<!\d)(%s)(?!\d)'
-    REGEX_CAMEL = r'[A-Z]+[a-z]*|[a-z]'
-    REGEX_CAMEL = r'(?:{SEP}?)([A-Z]*[a-z]+|[A-Z]+|[a-z]+)(?:{SEP}?)'
     REGEX_CAMEL = r'(?:{SEP}?)((?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z]))(?:{SEP}?)'
 
     @classmethod
@@ -59,7 +56,7 @@ class NameParser(object):
         """ Parses a name into a dictionary of identified subsections with accompanying information to
             correctly identify and replace if necessary
         Args:
-            name (str): string to be parsedp
+            name (str): string to be parsed
         Returns (dict): dictionary with relevant parsed information
         """
         parse_dict = dict.fromkeys(cls.PARSE_ABLE, None)
@@ -79,57 +76,37 @@ class NameParser(object):
             name (str): string that represents a possible name of an object
         """
         for side in cls.CONFIG_SIDES:
-            for permutations in cls.get_all_patterns(side):
-                print(permutations)
+            for permutations in cls.get_string_camel_patterns(side):
                 for permutation in permutations:
-                    patterns = [cls.REGEX_ABBR_SEOS,
-                                cls.REGEX_ABBR_ISLAND,
-                                cls.REGEX_ABBR_CAMEL]
-
-                    # One check for camel casing exception case
-                    print(permutation, side)
-                    if not permutation[0].isupper():
-                        patterns.remove(cls.REGEX_ABBR_CAMEL)
-
-                    for pattern in patterns:
-                        search_result = cls._get_regex_search(name,
-                                                              pattern.format(ABBR=permutation,
-                                                                             SEP=cls.REGEX_SEPARATORS),
-                                                              metadata={'side': side},
-                                                              match_index=0,
-                                                              ignore=ignore)
-                        if search_result is not None:
-                            if cls._valid_camel(search_result['match_full'], strcmp=search_result['match']):
-                                return search_result
+                    result = cls._generic_search(name, permutation, metadata={'side': side}, ignore=ignore)
+                    if result:
+                        return result
         return None
 
     @classmethod
-    def get_all_patterns(cls, name):
+    def get_discipline(cls, name, ignore='', min_length=3):
         """
         Args:
-            name (str): the name we need to get all possible permutations and abbreviations for
-        Return list(list(str)): list casing permutations of list of abbreviations
+            name (str): the string based object name
+            ignore (str): specific ignore string for the search to avoid
+            min_length (int): minimum length for possible abbrevations of disciplines.  Lower = more wrong guesses.
+        Returns (dict): match dictionary
         """
-        # Have to check for longest first and remove duplicates
-        patterns = []
-        abbreviations = list(set(cls._get_abbrs(name)))
-        abbreviations.sort(key=len, reverse=True)
-
-        for abbr in abbreviations:
-            # We won't check for abbreviations that are stupid eg something with apparent camel casing within
-            # the word itself like LeF, sorting from:
-            # http://stackoverflow.com/questions/13954841/python-sort-upper-case-and-lower-case
-            casing_permutations = list(set(cls._get_casing_permutations(abbr)))
-            casing_permutations.sort(key=lambda v: (v.upper(), v[0].islower(), len(v)))
-            permutations = [permutation for permutation in casing_permutations if cls._valid_camel(permutation)]
-            if permutations:
-                patterns.append(permutations)
-        return patterns
-
-    @classmethod
-    def get_discipline(cls, name):
-        print(cls.CONFIG_DISCIPLINES)
-        raise NotImplementedError
+        for discipline in cls.CONFIG_DISCIPLINES:
+            re_abbr = '({RECURSE}(?=[0-9]|[A-Z]|{SEPARATORS}))'.format(RECURSE=cls._build_abbreviation_regex(
+                discipline),
+                                                                       SEPARATORS=cls.REGEX_SEPARATORS)
+            matches = cls._get_regex_search(name, re_abbr, ignore=ignore)
+            if matches:
+                matches = [m for m in matches if re.findall('([a-z]{%d,})' % min_length, m['match'], flags=re.IGNORECASE)]
+                if matches:
+                    return matches[-1]
+                #for permutation in cls.get_string_camel_patterns(discipline, min_length=min_length):
+                #    for case in permutation:
+                #        result = cls._generic_search(name, case, metadata={'discipline': discipline}, ignore=ignore)
+                #        if result:
+                #            return result
+        return None
 
     @classmethod
     def get_base(cls, name):
@@ -139,6 +116,7 @@ class NameParser(object):
             name (str): string that represents a possible name of an object
         Returns (str): the detected basename
         """
+        pprint(cls.parse_name(name))
         return cls.parse_name(name).get('basename', None)
 
     @classmethod
@@ -159,7 +137,6 @@ class NameParser(object):
             name (str): string that represents a possible name of an object
         Returns (float|int, [str]): gets the version number as a float or int if whole then the string matches or None
         """
-        print ('checking version on ', name)
         # Dates can confuse th
         # is stuff, so we'll check for that first and remove it from the string if found
         try:
@@ -177,7 +154,7 @@ class NameParser(object):
             name (str): string that represents a possible name of an object
         Returns (float|int, [str]): gets the version number as a float or int if whole then the string matches or None
         """
-        match = cls._get_regex_search(name, cls.REGEX_VERSION, ignore=ignore)
+        match = cls._get_regex_search(name, cls.REGEX_VERSION.format(SEP=cls.REGEX_SEPARATORS), ignore=ignore)
 
         if match is not None:
             if len(match) > 1:
@@ -266,6 +243,31 @@ class NameParser(object):
         return None
 
     @classmethod
+    def get_string_camel_patterns(cls, name, min_length=0):
+        """
+        Args:
+            name (str): the name we need to get all possible permutations and abbreviations for
+            min_length (int): minimum length we want for abbreviations
+        Return list(list(str)): list casing permutations of list of abbreviations
+        """
+        # Have to check for longest first and remove duplicates
+        patterns = []
+        abbreviations = list(set(cls._get_abbrs(name, output_length=min_length)))
+        abbreviations.sort(key=len, reverse=True)
+
+        for abbr in abbreviations:
+            # We won't check for abbreviations that are stupid eg something with apparent camel casing within
+            # the word itself like LeF, sorting from:
+            # http://stackoverflow.com/questions/13954841/python-sort-upper-case-and-lower-case
+            casing_permutations = list(set(cls._get_casing_permutations(abbr)))
+            casing_permutations.sort(key=lambda v: (v.upper(), v[0].islower(), len(v)))
+            permutations = [permutation for permutation in casing_permutations if cls._valid_camel(permutation)]
+            if permutations:
+                patterns.append(permutations)
+
+        return patterns
+
+    @classmethod
     def _reduce_name(cls, name, parse_dict):
         """ Reduces a name against matches found in a parse dictionary
         Args:
@@ -305,6 +307,92 @@ class NameParser(object):
                 pass
         return name
 
+    @staticmethod
+    def _get_regex_search(input_string, regex, metadata={}, match_index=None, ignore='', flags=0):
+        """ Using this so that all results from the functions return similar results
+        Args:
+            input_string (str): input string to be checked
+            regex (str): input regex to be compiled and searched with
+            match_index (int or None): whether to get a specific match, if None returns all matches as list
+            metadata (dict): dictionary of extra metatags needed to identify information
+        Returns [dict]: list of dictionaries if multiple hits or a specific entry or None
+        """
+        generator = re.compile(regex, flags=flags).finditer(input_string)
+        matches = []
+        for obj in generator:
+            try:
+                span_a = obj.span(1)
+                group_a = obj.group(1)
+            except IndexError:
+                span_a = obj.span()
+                group_a = obj.group()
+
+            if obj.groups() == ('',):
+                # Not sure how to account for this situation yet, weird regex.
+                return True
+
+            if group_a not in ignore:
+                matches.append({'pattern': regex,
+                                'input': input_string,
+                                'position': span_a,
+                                'position_full': obj.span(),
+                                'match': group_a,
+                                'match_full': obj.group()})
+
+        if matches:
+            for match in matches:
+                match.update(metadata)
+            if match_index is not None:
+                return matches[match_index]
+            return matches
+        return None
+
+    @classmethod
+    def _generic_search(cls, name, search_string, metadata={}, ignore=''):
+        """ Searches for a specific string given three types of regex search types.  Also auto-checks for camel casing.
+        Args:
+            name (str): name of object in question
+            search_string (str): string to find and insert into the search regexes
+            metadata (dict): metadata to add to the result if we find a match
+            ignore (str): ignore specific string for the search
+        Returns (dict or None): dictionary of search results or None
+        """
+        patterns = [cls.REGEX_ABBR_SEOS,
+                    cls.REGEX_ABBR_ISLAND,
+                    cls.REGEX_ABBR_CAMEL]
+
+        if not search_string[0].isupper():
+            patterns.remove(cls.REGEX_ABBR_CAMEL)
+
+        for pattern in patterns:
+            search_result = cls._get_regex_search(name,
+                                                  pattern.format(ABBR=search_string, SEP=cls.REGEX_SEPARATORS),
+                                                  metadata=metadata,
+                                                  match_index=0,
+                                                  ignore=ignore)
+            if search_result is not None:
+                if cls._valid_camel(search_result['match_full'], strcmp=search_result['match']):
+                    return search_result
+        return None
+
+    @staticmethod
+    def _get_abbrs(input_string, output_length=0):
+        """ Generates abbreviations for input_string
+        Args:
+            input_string (str): name of object
+            output_length (num): optional specific length of abbreviations, default is off
+        Returns: [str]: list of all combinations that include the first letter (possible abbreviations)
+        """
+        for i, j in itertools.combinations(range(len(input_string[1:]) + 1), 2):
+            abbr = input_string[0] + input_string[1:][i:j]
+            if len(abbr) >= output_length:
+                yield abbr
+            elif output_length == 0:
+                yield abbr
+        # Have to add the solitary letter as well
+        if not output_length or output_length == 1:
+            yield input_string[0]
+
     @classmethod
     def _valid_camel(cls, input_string, strcmp=None, ignore=''):
         """ Checks to see if an input string is valid for use in camel casing
@@ -338,65 +426,6 @@ class NameParser(object):
     def _split_camel(name):
         return re.sub('(?!^)([A-Z][a-z]+)', r' \1', name).split()
 
-    @staticmethod
-    def _get_regex_search(input_string, regex, metadata={}, match_index=None, ignore=''):
-        """ Using this so that all results from the functions return similar results
-        Args:
-            input_string (str): input string to be checked
-            regex (str): input regex to be compiled and searched with
-            match_index (int or None): whether to get a specific match, if None returns all matches as list
-            metadata (dict): dictionary of extra metatags needed to identify information
-        Returns [dict]: list of dictionaries if multiple hits or a specific entry or None
-        """
-        generator = re.compile(regex).finditer(input_string)
-        matches = []
-
-        for obj in generator:
-            try:
-                span_a = obj.span(1)
-                group_a = obj.group(1)
-            except IndexError:
-                span_a = obj.span()
-                group_a = obj.group()
-
-            if obj.groups() == ('',):
-                # Not sure how to account for this situation yet, weird regex.
-                return True
-
-            if group_a not in ignore:
-                matches.append({'pattern': regex,
-                                'input': input_string,
-                                'position': span_a,
-                                'position_full': obj.span(),
-                                'match': group_a,
-                                'match_full': obj.group()})
-
-        if matches:
-            for match in matches:
-                match.update(metadata)
-            if match_index is not None:
-                return matches[match_index]
-            return matches
-        return None
-
-    @staticmethod
-    def _get_abbrs(input_string, output_length=0):
-        """ Generates abbreviations for input_string
-        Args:
-            input_string (str): name of object
-            output_length (num): optional specific length of abbreviations, default is off
-        Returns: [str]: list of all combinations that include the first letter (possible abbreviations)
-        """
-        for i, j in itertools.combinations(range(len(input_string[1:]) + 1), 2):
-            abbr = input_string[0] + input_string[1:][i:j]
-            if len(abbr) == output_length:
-                yield abbr
-            elif output_length == 0:
-                yield abbr
-        # Have to add the solitary letter as well
-        if not output_length or output_length == 1:
-            yield input_string[0]
-
     @classmethod
     def _get_casing_permutations(cls, input_string):
         """ Takes a string and gives all possible permutations of casing for comparative purposes
@@ -425,3 +454,16 @@ class NameParser(object):
         if 0 <= start < end <= len(input_str):
             return input_str[:start] + input_str[end:]
         return input_str
+
+    @staticmethod
+    def _build_abbreviation_regex(input_string):
+        """ builds a recursive regex based on an input string to find possible abbreviations more simply.
+            e.g. = punct(u(a(t(i(on?)?)?)?)?)?
+        Args:
+            input_string (str): input string
+        Returns (str): output regex
+        """
+        result = '([%s%s]' % (input_string[0].upper(), input_string[0].lower())
+        for char in input_string[1:]:
+            result += '[%s%s]?' % (char.upper(), char.lower())
+        return result + ')'
