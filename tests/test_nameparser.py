@@ -2,6 +2,7 @@
 from __future__ import print_function
 from imp import reload
 
+from pprint import pprint
 import unittest
 import itertools
 import datetime
@@ -21,7 +22,6 @@ class TestNameparser(unittest.TestCase):
                                'nurs_enchant_lilies_hi_cn_flowers_receptacle_a_1002_tg',
                                'HKY_010_lighting_v007.hip',
                                'Will_102_060',
-                               'l33t_monkeyBalls_with 3 fishes.ma',
                                'cdf0090_lighting_PROPS_FG_RIM_beauty_v011.1062.exr',
                                'I_HKY_150_L1_v1_graded.1001.jpeg',
                                'us.gcr.io_valued-geode-142207%2Fappengine_default.tar',
@@ -31,8 +31,19 @@ class TestNameparser(unittest.TestCase):
         del self.fixture
 
     def test_parse_options(self):
-        for test in self.test_filenames:
-            self.assertIsNone(self.fixture.parse_name(test))
+        self.assertEquals(self.fixture.parse_name(self.test_filenames[0])['basename']['match'], 'VGS15_sh_lgt')
+        self.assertEquals(self.fixture.parse_name(self.test_filenames[1])['basename']['match'], 'vhcl_chevyTraverse')
+        self.assertEquals(self.fixture.parse_name(self.test_filenames[2])['basename']['match'], 'nurs_enchant_lilies_hi')
+        self.assertEquals(self.fixture.parse_name(self.test_filenames[2])['side']['match'], 'cn')
+        self.assertEquals(self.fixture.parse_name(self.test_filenames[3])['basename']['match'], 'HKY')
+        self.assertEquals(self.fixture.parse_name(self.test_filenames[4])['basename']['match'], 'Will')
+        self.assertEquals(self.fixture.parse_name(self.test_filenames[5])['basename']['match'], 'cdf_lighting_PROPS_FG_RIM_beauty')
+        self.assertEquals(self.fixture.parse_name(self.test_filenames[6])['basename']['match'], 'I_HKY')
+        self.assertEquals(self.fixture.parse_name(self.test_filenames[7])['basename']['match'], 'us')
+        self.assertEquals(self.fixture.parse_name(self.test_filenames[8])['basename']['match'], 'theStuff_photo_post1s_b')
+        self.assertEquals(self.fixture.parse_name(self.test_filenames[8])['version']['version'], 2)
+        self.assertEquals(self.fixture.parse_name(self.test_filenames[8])['date']['match'], '12-09-16')
+
 
     def test_short_options(self):
         self.assertEqual(self.fixture.get_short('robotsLight8|robotLight2|robotLight2Shape'), 'robotLight2Shape')
@@ -106,16 +117,19 @@ class TestNameparser(unittest.TestCase):
                 for test_option in test_options:
                     # Removing unlikely permutations like LeF: they could be mistaken for camel casing on other words
                     if self.fixture._valid_camel(permutation):
-                        tested_list = self.fixture.get_side(test_option % permutation)
-                        if tested_list:
-                            tested_list = [tested_list[val] for val in ['side', 'position_full', 'match']]
+                        side_results = self.fixture.get_side(test_option % permutation)
+                        if side_results:
+                            side_results = [side_results[val] for val in ['side', 'position_full', 'match']]
 
                         test_index = test_option.find('%s')-1
                         if permutation[0].islower() and test_option[test_index].isalpha() and test_index != -1:
-                            self.assertIsNone(tested_list)
+                            self.assertIsNone(side_results)
                         else:
                             for element in [side, permutation]:
-                                self.assertIn(element, tested_list)
+                                self.assertIn(element, side_results)
+
+    def test_get_date_specific(self):
+        self.assertEquals(self.fixture.get_date('12-09-16_theStuff_photo_post1s_b02.psd')['match'], '12-09-16')
 
     def test_get_date_options(self):
         test_formats = ['%Y-%m-%d_%H-%M-%S',
@@ -215,7 +229,7 @@ class TestNameparser(unittest.TestCase):
                  ('27_12_2015', None),
                  ('clothing_compiled_maya_v01_aw.mb', (1, 'v01')),
                  ('QS_296.ZPR', (296, '296')),
-                 ('char_luchadorA-model1_qt1.mov', ('1.1', '1')),
+                 ('char_luchadorA-model1_qt1.mov', (1.1, '1')),
                  ('kayJewelersPenguin_5402411_build_penguin_rigPuppet_penguin_v2.ma', (2, 'v2')),
                  ('rig_makeGentooPenguin.mel', None),
                  ('r_foreLeg.obj', None),
@@ -231,8 +245,8 @@ class TestNameparser(unittest.TestCase):
                  ('envelope_RB_v003_weights_groundhog.ma', (3, 'v003')),
                  ('envelope_weights_02_unsmoothedJoints.json', (2, '02')),
                  ('icons_MDL_v0006_aw.ma', (6, 'v0006')),
-                 ('moleV01.001.jpg', ('1.1', 'V01')),
-                 ('VGS15_sh004_lgt_v002', (2, 'v002'))]
+                 ('moleV01.001.jpg', (1.1, 'V01')),
+                 ('VGS15_sh004_lgt_v002', (4.2, '004'))]
 
         for test, value in tests:
             test_result = self.fixture.get_version(test)

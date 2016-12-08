@@ -76,6 +76,14 @@ class NameParser(object):
             name (str): string that represents a possible name of an object
         """
         for side in cls.CONFIG_SIDES:
+            """ Tried using a regex, however it would've taken too long to debug
+            side_regex = cls._build_abbreviation_regex(side)
+            print ('side regex for side %s is %s'%(side, side_regex))
+            result = cls._generic_search(name, side_regex, metadata={'side': side}, ignore=ignore)
+            if result:
+                print ('found a result, coming back.')
+                return result
+            """
             for permutations in cls.get_string_camel_patterns(side):
                 for permutation in permutations:
                     result = cls._generic_search(name, permutation, metadata={'side': side}, ignore=ignore)
@@ -93,19 +101,13 @@ class NameParser(object):
         Returns (dict): match dictionary
         """
         for discipline in cls.CONFIG_DISCIPLINES:
-            re_abbr = '({RECURSE}(?=[0-9]|[A-Z]|{SEPARATORS}))'.format(RECURSE=cls._build_abbreviation_regex(
-                discipline),
+            re_abbr = '({RECURSE}(?=[0-9]|[A-Z]|{SEPARATORS}))'.format(RECURSE=cls._build_abbreviation_regex(discipline),
                                                                        SEPARATORS=cls.REGEX_SEPARATORS)
             matches = cls._get_regex_search(name, re_abbr, ignore=ignore)
             if matches:
                 matches = [m for m in matches if re.findall('([a-z]{%d,})' % min_length, m['match'], flags=re.IGNORECASE)]
                 if matches:
                     return matches[-1]
-                #for permutation in cls.get_string_camel_patterns(discipline, min_length=min_length):
-                #    for case in permutation:
-                #        result = cls._generic_search(name, case, metadata={'discipline': discipline}, ignore=ignore)
-                #        if result:
-                #            return result
         return None
 
     @classmethod
@@ -116,7 +118,6 @@ class NameParser(object):
             name (str): string that represents a possible name of an object
         Returns (str): the detected basename
         """
-        pprint(cls.parse_name(name))
         return cls.parse_name(name).get('basename', None)
 
     @classmethod
@@ -160,8 +161,10 @@ class NameParser(object):
             if len(match) > 1:
                 for m in match:
                     m.update({'version': int(m['match'].upper().replace('V', ''))})
+                compound_version = '.'.join([str(m['version']) for m in match])
+                compound_version = float(compound_version) if compound_version.count('.')==1 else compound_version
                 return {'compound_matches': match,
-                        'compound_version': '.'.join([str(m['version']) for m in match]),
+                        'compound_version': compound_version,
                         'pattern': match[0]['pattern'],
                         'input': match[0]['input']}
 
@@ -219,9 +222,10 @@ class NameParser(object):
                         '%m%d%Y',
                         '%d_%m_%Y',
                         '%Y',
+                        '%m-%d-%yy',
                         '%m%d%Y']
 
-        mapping = [('%Y', '((19|20)\d{2})'), ('%y', '(\d{2})'), ('%d', '(\d{2})'), ('%m', '(\d{2})'),
+        mapping = [('%yy', '(([01]\d{1}))'), ('%Y', '((19|20)\d{2})'), ('%y', '(\d{2})'), ('%d', '(\d{2})'), ('%m', '(\d{2})'),
                    ('%H', '(\d{2})'), ('%M', '(\d{2})'), ('%S', '(\d{2})')]
         time_regexes = []
         for time_format in time_formats:
@@ -236,7 +240,7 @@ class NameParser(object):
                                           match_index=0)
             if match:
                 try:
-                    match.update({'datetime': datetime.datetime.strptime(match['match'], time_format)})
+                    match.update({'datetime': datetime.datetime.strptime(match['match'], time_format.replace('%yy','%y'))})
                     return match
                 except ValueError:
                     pass
@@ -261,7 +265,7 @@ class NameParser(object):
             # http://stackoverflow.com/questions/13954841/python-sort-upper-case-and-lower-case
             casing_permutations = list(set(cls._get_casing_permutations(abbr)))
             casing_permutations.sort(key=lambda v: (v.upper(), v[0].islower(), len(v)))
-            permutations = [permutation for permutation in casing_permutations if cls._valid_camel(permutation)]
+            permutations = [permutation for permutation in casing_permutations if cls._valid_camel(permutation) or len(permutation) <= 2]
             if permutations:
                 patterns.append(permutations)
 
@@ -405,12 +409,13 @@ class NameParser(object):
                           (e.g. part of a section of text that's all lowercase)
         Returns (bool): whether it is valid or not
         """
+        # clear any non chars from the string
         input_string = ''.join([c for c in input_string if c.isalpha()])
         matches = cls._get_regex_search(input_string,
                                         cls.REGEX_CAMEL.format(SEP=cls.REGEX_SEPARATORS),
                                         match_index=0,
                                         ignore=ignore)
-        if matches:
+        if matches or input_string == strcmp:
             if strcmp:
                 index = input_string.find(strcmp)-1
                 is_camel = strcmp[0].isupper() and input_string[index].islower()
