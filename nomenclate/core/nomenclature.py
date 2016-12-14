@@ -71,22 +71,7 @@ class Nomenclate(object):
         self.camel_case = True
         self.refresh()
         self.init_from_suffix_lut()
-        self.set(kwargs)
-    
-    def set(self, name, **kwargs):
-        """ Sets a nomenclate object from a dictionary
-        Args:
-            name (str or dict): string for the name or a dictionary that will update the current
-        Returns (None):
-        """
-        if isinstance(name, str):
-            self.name.set(name)
-            
-        elif isinstance(name, dict):
-            kwargs.update(name)
-            for attr, value in iteritems(kwargs):
-                if self._is_format(attr):
-                    setattr(self, attr, NameAttr(value, self))
+        self.reset(kwargs)
     
     def refresh(self):
         """ Refresh the data from the look up table
@@ -117,7 +102,7 @@ class Nomenclate(object):
             if format_key not in self.__dict__:
                 setattr(self, format_key, NameAttr("", self))
     
-    def reset(self, input_dict):
+    def reset(self, input_dict={}):
         """ Re-Initialize all the needed attributes for the format order to succeed
         Args:
             input_dict (dict): any overrides the user wants to specify instead of reset to ""
@@ -223,7 +208,6 @@ class Nomenclate(object):
             format_string (string): format_string containing all tokenization
         Returns [string]: list of tokens that need capitalization
         """
-        # test = '{side}_{location}_{name}{decorator}J{var}_{childType}_{purpose}_{type}'
         token_sections = format_string.split('_')
         capitalize_firsts = []
         for token_section in token_sections:
@@ -235,27 +219,32 @@ class Nomenclate(object):
         return capitalize_firsts
     
     def get_state(self, input_dict=None):
-        """ Returns the current state of dictionary items
+        """ Returns the current state of dictionary items with hashes to resolve conflicts
         """
         if input_dict is None:
             input_dict = self.__dict__
-        return ["%s: %s #=%s"%(item, input_dict[item].get(), item.__hash__()) for item in input_dict 
-                if isinstance(input_dict[item], NameAttr)]
+        if input_dict:
+            input_dict = [item for item in input_dict if isinstance(input_dict[item], NameAttr)]
+            return {item: (input_dict[item].get(), item.__hash__()) for (item, value) in input_dict}
+        return None
     
     @staticmethod
-    def _get_str_or_int_abc_pos(qstring):
+    def _get_str_or_int_abc_pos(query_string):
         """ Given an input string of either int or char, returns what index in the alphabet and case it is
         Args:
-            qstring (str): query string
+            query_string (str): query string
         Returns [int, str]: list of the index and type
         """
         try:
-            return [int(qstring), 'int']
+            return [int(query_string), 'int']
         except ValueError:
-            if qstring.isupper():
-                return [string.uppercase.index(qstring), 'char_hi']
-            elif qstring.islower():
-                return [string.lowercase.index(qstring), 'char_lo']
+            if len(query_string) == 1:
+                if query_string.isupper():
+                    return [string.uppercase.index(query_string), 'char_hi']
+                elif query_string.islower():
+                    return [string.lowercase.index(query_string), 'char_lo']
+            else:
+                raise IOError('The input is a string longer than one character')
         return [0, 'char_hi']
     
     def _is_format(self, name):
@@ -299,7 +288,26 @@ class Nomenclate(object):
             return result
             
     def switch_naming_format(self, format_target):
-        self.format_string = self.get_format_info('naming_format', specific='format')
+        try:
+            # TODO: fix the config file subsection finder...we need to be able to get any level we want...
+            # NEED TO FIX THE ORIGINAL SHITTY CODING
+            self.format_string = self.cfg.get_subsection_as_str('naming_format', format_target)
+            return True
+        except IOError as e:
+            print(e)
+            if self._validate_format_string(format_target):
+                self.format_string = format_target
+                return True
+        return False
+
+    @staticmethod
+    def _validate_format_string(format_target):
+        regex = r'(?:(\{[a-z]+\})(?:[a-zA-Z])?)'
+        for section in format_target.split('_'):
+            if not re.findall(regex, section):
+                print (re.findall(regex, section), regex, section)
+                return False
+        return True
 
     @staticmethod
     def get_alpha(value, capital=False):
