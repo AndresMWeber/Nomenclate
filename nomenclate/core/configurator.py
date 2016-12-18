@@ -1,7 +1,5 @@
 # Ensure Python 2/3 compatibility: http://python-future.org/compatible_idioms.html
 from __future__ import print_function
-from imp import reload
-from six import string_types
 """
 .. module:: configurator
     :platform: Win/Linux/Mac
@@ -224,7 +222,6 @@ class ConfigEntryFormatter(object):
 
     def format_with_handler(self, query_result, return_type):
         handler = self.get_handler(type(query_result), return_type)
-        print(handler)
         return handler.format_result(query_result)
 
     def add_preceding_dict(self, config_entry, query_path, preceding_depth):

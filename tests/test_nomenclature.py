@@ -6,25 +6,11 @@ import unittest
 from pyfakefs import fake_filesystem
 import nomenclate.core.nomenclature as nm
 import nomenclate.core.configurator as config
-reload(nm)
 
 
-@unittest.skip("skipping until finished testing nomenclate")
 class TestNomenclate(unittest.TestCase):
     def setUp(self):
         self.cfg = config.ConfigParse()
-
-        # Creating a fake filesystem for testing
-        test_data = ('[naming_subsets]\nsubsets: modeling rigging texturing lighting utility\n[subset_formats]'
-                     '\nmodeling: format_topGroup_model format_modelling format_subset format_geometry format_curve format_deformer'
-                     '\n[suffix_pairs]\nformat_topGroup: group\n[suffixes]\nmesh : GEO\n[options]\nside: left right center'
-                     '\nvar: A a #\n[naming_format]\nformat: {side}_{location}_{name}{decorator}{var}_{childType}_{purpose}_{type}\n'
-                     '\nformat_b: {location}_{name}{decorator}{var}_{childType}_{purpose}_{type}_{side}\n')
-        fakefs = fake_filesystem.FakeFilesystem()
-        self.fake_file_path = '/var/env/foobar.ini'
-        fakefs.CreateFile(self.fake_file_path, contents=test_data)
-        fake_filesystem.FakeFile(fakefs)
-        self.cfg.rebuild_config_cache(self.fake_file_path)
         self.test_format = '{side}_{location}_{name}{decorator}J{var}_{childtype}_{purpose}_{type}'
         self.test_format_b = '{location}_{name}{decorator}J{var}_{childtype}_{purpose}_{type}_{side}'
 
@@ -35,7 +21,7 @@ class TestNomenclate(unittest.TestCase):
         self.nom.side.set('left')
         self.nom.name.set('testObject')
         self.nom.type.set('locator')
-        self.fixtures =[self.cfg, self.nom, self.fake_file_path]
+        self.fixtures =[self.cfg, self.nom]
 
     def tearDown(self):
         for fixture in self.fixtures:

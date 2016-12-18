@@ -72,14 +72,14 @@ class Nomenclate(object):
         """ Refresh the data from the look up table
         """
         # Setting initial options from config file
-        for setting, value in iteritems(self.cfg.get('overall_config', as_sub_dict=True)):
+        for setting, value in iteritems(self.cfg.get('overall_config', return_type=dict)):
             setattr(self, setting, value)
 
         self.format_string = self.switch_naming_format(['node', 'default'])
 
-        self.naming_formats = self.cfg.get('naming_formats', as_sub_dict=True)
-        self.options_LUT = self.cfg.get('options', as_sub_dict=True)
-        self.suffix_LUT =  self.cfg.get('suffixes', as_sub_dict=True)
+        self.naming_formats = self.cfg.get('naming_formats', return_type=dict)
+        self.options_LUT = self.cfg.get('options', return_type=dict)
+        self.suffix_LUT =  self.cfg.get('suffixes', return_type=dict)
 
     @staticmethod
     def get_format_order(format_string):
