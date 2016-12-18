@@ -67,6 +67,7 @@ class ConfigParse(object):
                                     -1 for the full traversal back up the path
                                     None is default for no traversal
         """
+        query_path = query_path if isinstance(query_path, list) else [query_path]
         self.validate_query_path(query_path)
         config_entry = self.get_path_entry_from_config(query_path)
         query_result = self.config_entry_handler.format_query_result(config_entry, query_path, return_type, preceding_depth)

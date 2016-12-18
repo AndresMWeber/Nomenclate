@@ -1,6 +1,7 @@
 # Ensure Python 2/3 compatibility: http://python-future.org/compatible_idioms.html
 from __future__ import print_function
 from imp import reload
+from future.utils import iteritems
 import six
 
 import unittest
@@ -87,15 +88,14 @@ class TestNameparser(unittest.TestCase):
                                         ['texturing', 'node']))
 
     def test_query_valid_entry(self):
-        self.assertEquals(self.fixture.validate_query_path([self.format_test]),
-                          True)
+        self.fixture.validate_query_path(self.format_test)
         self.assertRaises(IndexError, self.fixture.validate_query_path, [self.format_title, 'submuerts'])
         self.assertRaises(IndexError, self.fixture.validate_query_path, ['faming_subsets', self.default_format])
         self.assertRaises(IndexError, self.fixture.validate_query_path, ['faming_subsets', 'dubsteps'])
 
     def test_get_section_ordered_dict(self):
         self.assertEquals(self.fixture.get(self.discipline_path, return_type=OrderedDict),
-                          OrderedDict([(self.discipline_path[0], {self.discipline_path[1]: self.discipline_subsets})]))
+                          OrderedDict(sorted(iteritems(self.discipline_data), key=lambda x:x[1], reverse=True)))
 
     def test_get_section_ordered_dict_sub_dict(self):
         self.assertEquals(self.fixture.get(self.discipline_path, return_type=OrderedDict, preceding_depth=1),
@@ -117,13 +117,14 @@ class TestNameparser(unittest.TestCase):
         self.assertTrue(self.checkEqual(self.fixture.get(self.discipline_path, return_type=dict), self.discipline_subsets))
 
     def test_list_sections(self):
+        print(self.fixture.get([], return_type=list))
         six.assertCountEqual(self,
                              self.fixture.get([], return_type=list),
-                             [self.format_title, 'subset_formats', 'suffix_pairs', 'suffixes', 'options', 'naming_format'])
+                             ['overall_config', 'options', 'naming_formats'])
 
     def test_list_section_options(self):
-        self.assertEquals(self.fixture.list_section_options(self.format_title),
-                          [self.default_format])
+        self.assertEquals(self.fixture.get(self.format_title, return_type=list),
+                          ['node', 'texturing'])
 
     @staticmethod
     def checkEqual(L1, L2):
