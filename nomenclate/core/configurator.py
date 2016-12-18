@@ -1,6 +1,5 @@
 # Ensure Python 2/3 compatibility: http://python-future.org/compatible_idioms.html
 from __future__ import print_function
-from builtins import dict
 from imp import reload
 from six import string_types
 """
@@ -69,15 +68,18 @@ class ConfigParse(object):
         self.validate_query_path(query_path)
         config_entry = self.get_path_entry_from_config(query_path)
         query_result = self.config_entry_handler.format_query_result(config_entry, query_path, return_type, preceding_depth)
+        return query_result
 
     def get_path_entry_from_config(self, query_path):
+        if not query_path:
+            return list(self.data)
         cur_data = self.data
         for child in query_path:
             cur_data = cur_data.get(child)
         return cur_data
 
     @classmethod
-    def validate_file(cls, config_file):
+    def validate_config_file(cls, config_file):
         if not os.path.isfile(config_file):
             raise IOError('File %s is not a valid yml, ini or cfg file or does not exist' % config_file)
 
@@ -117,6 +119,11 @@ class FormatterRegistry(type):
 
     @classmethod
     def get_by_take_and_return_type(mcs, input_type, return_type):
+        print(mcs.CONVERSION_TABLE)
+        print(input_type)
+        print(return_type)
+        print(mcs.CONVERSION_TABLE.get(input_type))
+        print(mcs.CONVERSION_TABLE.get(input_type).get(return_type))
         return mcs.CONVERSION_TABLE.get(input_type).get(return_type)
 
 
@@ -183,7 +190,7 @@ class ListToStringEntryFormatter(BaseFormatter):
 
 
 class ConfigEntryFormatter(object):
-    def format_query_result(self, query_result, query_path, return_type=dict, preceding_depth=-1):
+    def format_query_result(self, query_result, query_path, return_type=dict, preceding_depth=None):
         """
         Args:
             query_result (dict|str|list): yaml query result
@@ -198,7 +205,9 @@ class ConfigEntryFormatter(object):
         else:
             converted_result = query_result
 
-        self.add_preceding_dict(converted_result, preceding_depth)
+        if preceding_depth is not None:
+            converted_result = self.add_preceding_dict(converted_result, query_path, preceding_depth)
+        return converted_result
 
     def get_handler(self, input_type, return_type):
         try:

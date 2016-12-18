@@ -77,14 +77,14 @@ class TestNameparser(unittest.TestCase):
     @mock.patch('nomenclate.core.configurator.os.path.isfile')
     def test_valid_file_no_file(self, mock_isfile):
         mock_isfile.return_value = False
-        self.assertRaises(IOError, self.fixture.validate_file, '/mock/config.yml')
+        self.assertRaises(IOError, self.fixture.validate_config_file, '/mock/config.yml')
 
     def test_get_as_string(self):
-        self.assertEquals(self.fixture.get([self.format_title, self.default_format], as_string=True),
+        self.assertEquals(self.fixture.get([self.format_title, self.default_format], return_type=str),
                           ' '.join(self.discipline_subsets))
 
     def test_get_options(self):
-        self.assertTrue(self.checkEqual(self.fixture.get([self.format_title], options=True),
+        self.assertTrue(self.checkEqual(self.fixture.get([self.format_title], return_type=list),
                                         ['texturing', 'node']))
 
     def test_query_valid_entry(self):
@@ -95,31 +95,31 @@ class TestNameparser(unittest.TestCase):
         self.assertRaises(IndexError, self.fixture.validate_query_path, ['faming_subsets', 'dubsteps'])
 
     def test_get_section_ordered_dict(self):
-        self.assertEquals(self.fixture.get(self.discipline_path, as_dict=True, as_ordered_dict=True, as_string=True),
+        self.assertEquals(self.fixture.get(self.discipline_path, return_type=OrderedDict),
                           OrderedDict([(self.discipline_path[0], {self.discipline_path[1]: self.discipline_subsets})]))
 
     def test_get_section_ordered_dict_sub_dict(self):
-        self.assertEquals(self.fixture.get(self.discipline_path, as_dict=True, as_sub_dict=True, as_ordered_dict=True),
+        self.assertEquals(self.fixture.get(self.discipline_path, return_type=OrderedDict, preceding_depth=1),
                           OrderedDict([(self.default_format, ' '.join(self.discipline_subsets))]))
 
     def test_get_as_string(self):
-        self.assertTrue(self.checkEqual(self.fixture.get(self.discipline_path, as_string=True).split(),
+        self.assertTrue(self.checkEqual(self.fixture.get(self.discipline_path, return_type=str).split(),
                                         self.discipline_subsets))
 
     def test_get_as_dict(self):
-        self.assertEquals(self.fixture.get(self.discipline_path, options=True, as_dict=True),
+        self.assertEquals(self.fixture.get(self.discipline_path, return_type=list, preceding_depth=-1),
                           {self.discipline_path[0]: {self.discipline_path[1]: self.discipline_subsets}})
 
     def test_get_as_dict_subdict(self):
-        self.assertEquals(self.fixture.get(self.discipline_path, as_dict=True, as_sub_dict=True),
+        self.assertEquals(self.fixture.get(self.discipline_path),
                           self.discipline_data)
 
     def test_get(self):
-        self.assertTrue(self.checkEqual(self.fixture.get(self.discipline_path, options=True), self.discipline_subsets))
+        self.assertTrue(self.checkEqual(self.fixture.get(self.discipline_path, return_type=dict), self.discipline_subsets))
 
     def test_list_sections(self):
         six.assertCountEqual(self,
-                             self.fixture.list_headers(),
+                             self.fixture.get([], return_type=list),
                              [self.format_title, 'subset_formats', 'suffix_pairs', 'suffixes', 'options', 'naming_format'])
 
     def test_list_section_options(self):
