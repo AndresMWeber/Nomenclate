@@ -10,11 +10,11 @@ import nomenclate.core.configurator as config
 
 class NameAttr(object):
     def __init__(self, value = None, parent = None):
-        self.val = value if value is not None else ""
+        self.value = value if value is not None else ""
         self.namer = parent
 
     def set(self, value):
-        self.val = value
+        self.value = value
     
     def get(self):
         return self.value
