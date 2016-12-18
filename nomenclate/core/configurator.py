@@ -11,24 +11,16 @@ from six import string_types
     :changelog:
         2.0 - Added YAML support
 """
-__author__ = "Andres Weber"
-__email__ = "andresmweber@gmail.com"
-__version__ = 2.0
 
 import yaml
 import os
-import configparser
 from collections import OrderedDict
 import nomenclate.core.toolbox as tb
-from copy import deepcopy
 
-reload(tb)
 
 
 class ConfigParse(object):
-    SUPPORTED_CONFIGS = {'yml': 'yaml',
-                         'ini': 'configparser',
-                         'cfg': 'configparser'}
+    SUPPORTED_CONFIGS = {'yml': 'yaml'}
 
     def __init__(self, path=None):
         """
@@ -38,18 +30,10 @@ class ConfigParse(object):
         """
         if not path:
             path = tb.get_config_filepath()
-        self.config_type = self.SUPPORTED_CONFIGS[self.valid_file(path)]
         self.path = path
         self.data = None
+        self.config_entry_handler = ConfigEntryHandler()
         self.rebuild_config_cache(self.path)
-
-    @classmethod
-    def valid_file(cls, config_file):
-        if os.path.isfile(config_file):
-            extsep = config_file.split(os.path.extsep)
-            if len(extsep) > 1 and extsep[-1] in cls.SUPPORTED_CONFIGS.keys():
-                return extsep[-1]
-        raise IOError('File %s is not a valid yml, ini or cfg file' % config_file)
 
     def rebuild_config_cache(self, path):
         """ Loads from file and caches all data from the config file in the form of an OrderedDict to self.data
@@ -58,96 +42,184 @@ class ConfigParse(object):
         Returns (bool): success status
         """
         data = None
-        if self.config_type == 'configparser':
-            parser = configparser.ConfigParser()
-            parser.read(path)
-            data = {s: dict(parser.items(s)) for s in parser.sections()}
-
-        elif self.config_type == 'yaml':
-            with open(self.path, 'r') as f:
+        try:
+            with open(path, 'r') as f:
                 data = yaml.load(f)
+            items = list(data.iteritems())
 
-        if data:
-            self.data = self._dict_to_ordered_dict(data)
-            return True
-        return False
+        except IOError:
+            raise IOError('Could not find file %s in the local directories' % path)
 
-    def get_data(self, section="", subsection="", raw=False):
-        self.query_valid_entry(section, subsection)
-        if not subsection:
-            query_result = self.data[section]
+        except AttributeError:
+            items = list(d.items())
+
+        self.data = OrderedDict(sorted(items, key=lambda x: x[0], reverse=True))
+        self.path = path
+
+    def get(self, query_path, default=None, return_type=dict, preceding_depth=-1):
+        """ Traverses the list of query paths to find the data requested
+        Args:
+            query_path [str]: list of query path branches
+            return_type (str): desired return type for the data:
+                                list
+                                str
+                                dict
+                                OrderedDict
+            preceding_depth (int): always returns a dictionary encapsulating the data
+                                    that traces back up the path for x depth
+        """
+        self.validate_query_path(query_path)
+        config_entry = self.get_path_entry_from_config(query_path)
+        query_result = self.config_entry_handler.format_query_result(config_entry, query_path, return_type, preceding_depth)
+
+    def get_path_entry_from_config(self, query_path):
+        cur_data = self.data
+        for child in query_path:
+            cur_data = cur_data.get(child)
+        return cur_data
+
+    @classmethod
+    def validate_file(cls, config_file):
+        if not os.path.isfile(config_file):
+            raise IOError('File %s is not a valid yml, ini or cfg file or does not exist' % config_file)
+
+        elif os.stat(config_file).st_size > 0:
+            raise IOError('File %s is empty' % config_file)
+
+        with open(config_file, 'r') as f:
+            if yaml.load(f) is None:
+                raise IOError('No YAML config was found in file %s' % config_file)
+
+    def validate_query_path(self, query_path):
+        """ Determines whether the query path given is found in the current dataset
+        Args:
+            query_path [str]: list of query paths to traverse
+        Returns (bool): True or raise IndexError on non found query
+        """
+        cur_data = self.data
+        for path in query_path:
+            cur_data = cur_data.get(path)
+            if cur_data is None:
+                raise IndexError('Trying to find entry: %s not found in current config file...' % ('|'.join(query_path)))
+
+
+class BaseDelegate(object):
+    converts = {'takes':None,
+                'returns':None}
+
+    def __init__(self, parent):
+        self.parent=parent
+
+    def format_result(self, input):
+        raise NotImplementedError
+
+
+class StringToListEntryFormatter(BaseDelegate):
+    converts = {'takes': str,
+                'returns': list}
+
+    def format_result(self, input):
+         pass
+
+
+class DictToStringEntryFormatter(BaseDelegate):
+    handles_type = {'takes': dict,
+                    'returns': list}
+
+    def format_result(self, input):
+        return ' '.join(list(input))
+
+
+class DictToListEntryFormatter(BaseDelegate):
+    handles_type = {'takes': dict,
+                    'returns': list}
+
+    def format_result(self, input):
+         pass
+
+
+class DictToOrderedDictEntryFormatter(BaseDelegate):
+    handles_type = {'takes': dict,
+                    'returns': OrderedDict}
+
+    def format_result(self, input):
+         pass
+
+
+class ListToStringEntryFormatter(BaseDelegate):
+    handles_type = {'takes': list,
+                    'returns': str}
+
+    def format_result(self, input):
+        return ' '.join(input)
+
+class ListToDictEntryFormatter(BaseDelegate):
+    handles_type = {'takes': list,
+                    'returns': dict}
+
+    def format_result(self, input):
+         pass
+
+class ConfigEntryHandler(object):
+    def __init__(self):
+        self.entry_formatters = [
+            StringToListEntryFormatter(self),
+            DictToOrderedDictEntryFormatter(self),
+            ListToStringEntryFormatter(self),
+            ListToDictEntryFormatter(self)
+        ]
+
+    def format_query_result(self, value, query_path, return_type, preceding_depth):
+        """
+        Args:
+            value:
+            query_path:
+            return_type (str): return type of object user desires
+            preceding_depth (int): the depth to which we want to encapsulate back up config tree
+                                    -1 : defaults to entire tree
+        Returns (dict|OrderedDict|str|list): specified return type
+        """
+        converted_result = self.get_handler(value, return_type).format_result(value)
+        self.to_dict_preceeding(converted_result, preceding_depth)
+
+    def get_handler(self, input, return_type):
+        for entry_formatter in self.entry_formatters:
+            if (entry_formatter.handles_type['takes'] == type(input) and
+                        entry_formatter.handles_type['takes'] == return_type):
+                return entry_formatter
+        raise TypeError('Entry type %s or requested type %s was not found in the handler list' % (type(input), return_type))
+
+    def add_preceeding_dict(self, config_entry):
+        pass
+
+
+
+    def _to_string(self, input):
+        """ Helper function that converts found data to strings depending on input type
+        """
+        if isinstance(input, list):
+        elif isinstance(input, dict):
+        elif isinstance(input, string_types):
+            return input
         else:
-            query_result = self.data[section][subsection]
-        # In this situation a user is looking for a string, let's give it to em!
-        if raw:
-            if isinstance(query_result, list):
-                return ' '.join(query_result)
-            elif isinstance(query_result, string_types):
-                return query_result
+            raise IndexError('The requested data (%s) was not a list or string.' % input)
 
-        # Now we want just a normal list result
-        if isinstance(query_result, string_types):
-            return query_result.split(' ')
-        return query_result
+    def _to_dict(self, input, query_path, as_ordered_dict=False, as_sub_dict=False):
+        """ Helper function that converts found data to 3 types of dictionaries depending on input type
+        """
+        buffer = {query_path[-1]: input}
 
-    def get(self, section=None, subsection=None, options=False, raw=False):
-        """
-        Args:
-            section (str): section to query
-            subsection (str): subsection to query
-            options (bool): whether we want to just list the options for a section
-            raw (bool): whether we want python formatted data or raw strings
-        """
-        if options:
-            return self.list_section_options(section)
-        return self.get_data(section, subsection, raw=raw)
+        if not as_sub_dict:
+            for path in query_path[0:-1][::-1]:
+                buffer = {path: buffer}
 
-    def query_valid_entry(self, section='', subsection=''):
-        """ Function to check if the config section/subsection data exists
-        """
-        data_query = None
-        if not subsection:
-            data_query = self.data.get(section, '')
-        else:
-            data_query = self.data.get(section, {}).get(subsection, '')
-        if not data_query:
-            raise IOError('Section: %s and Subsection: %s not found in current config file...' % (section, subsection))
-        return True
+        elif as_sub_dict:
+            if isinstance(input, dict):
+                buffer = input
 
-    def get_section(self, section=None, raw=False):
-        """
-        Returns (dict): dictionary of the entire contents of a specific section
-        """
-        return self.get(section, raw=raw)
+        return buffer if not as_ordered_dict else self._dict_to_ordered_dict(buffer)
 
-    def get_subsection(self, section=None, subsection=None, raw=False):
-        """ Return the given section/subsection pair as a list
-        Args:
-            section (str): section to query
-            subsection (str): subsection to query
-        Returns (dict): list of the subsection results
-        """
-        return self.get(section=section, subsection=subsection, raw=False)
-
-    def get_subsection_as_dict(self, section=None, subsection=None):
-        """ Return the given section/subsection pair as a dictionary
-        Args:
-            section (str): section to query
-            subsection (str): subsection to query
-        Returns (dict): dictionary of the subsection results
-        """
-        return {section: {subsection: self.get_subsection(section=section, subsection=subsection)}}
-
-    def get_subsection_as_str(self, section=None, subsection=None):
-        """ Return the given section/subsection pair as a string
-        Args:
-            section (str): section to query
-            subsection (str): subsection to query
-        Returns (str): string of the subsection results
-        """
-        return self.get(section=section, subsection=subsection, raw=True)
-
-    def list_sections(self):
+    def list_headers(self):
         """ Lists the sections possible to query
         Args (None)
         Returns [str]: list of section key names sorted by name so as not to mess with order.
@@ -156,18 +228,24 @@ class ConfigParse(object):
         keys.sort()
         return keys
 
-    def list_section_options(self, section):
+    def list_section_options(self, query_path):
         """ Lists a section's possible options to query
         Args:
             section (str): section for us to query
         Returns [str]: list of string represented options
         """
-        query_data = self.data[section]
+        query_data = self.get(query_path)
+
         if isinstance(query_data, dict):
-            return [k for k in self.data[section].keys()]
+            return list(query_data)
+
         elif isinstance(query_data, string_types):
             return query_data.split(' ')
-        return query_data
+
+        elif isinstance(query_data, list):
+            return query_data
+
+        raise IOError("The requested subsection was not a dict, str or list, sorry!")
 
     @staticmethod
     def _dict_to_ordered_dict(d):
@@ -182,6 +260,3 @@ class ConfigParse(object):
         except AttributeError:
             items = list(d.items())
         return OrderedDict(sorted(items, key=lambda x: x[0], reverse=True))
-
-    def __deepcopy__(self, memo):
-        return self

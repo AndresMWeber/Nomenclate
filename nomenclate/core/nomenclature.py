@@ -56,52 +56,65 @@ class Nomenclate(object):
     def __init__(self, **kwargs):
         """ Set default a
         """
-        self.format_order = None
-        self.subsets = None
-        self.format_string = None
-        self.format_options = None
-        self.suffix_LUT = None
-        self.format_capitals = None
-        self.side_opt = None
-        self.var_opt = None
-        self.location_opt = None
-        self.type_opt = None
-
         self.cfg = config.ConfigParse()
-        self.camel_case = True
+
+        self.format_order = None
+        self.format_string = None
+
+        self.suffix_LUT = None
+
         self.refresh()
         self.init_from_suffix_lut()
         self.reset(kwargs)
-    
+
+    #TODO: add verbosity to function name
     def refresh(self):
         """ Refresh the data from the look up table
         """
         # Setting initial options from config file
-        self.format_string = self.cfg.get_subsection_as_str('naming_format', 'format')
-        self.suffix_LUT = self.cfg.get_section('suffixes')
-        self.subsets = self.cfg.get_subsection('naming_subsets', 'subsets')
-        self.format_options = self.cfg.get_section('naming_format')
-        
-        # Self parsing
-        self.format_order = self.get_format_order(self.format_string)
-        if self.camel_case:
-            self.format_capitals = self.get_camel_case(self.format_string)
-        
-        # Setting options for option fields in the UI generated from the config file
-        self.side_opt = self.cfg.get_subsection('options', 'side')
-        self.var_opt = self.cfg.get_subsection('options', 'var')
-        self.location_opt = self.cfg.get_subsection('options', 'location')
-        
-        self.type_opt = [val for key, val in self.suffix_LUT.items()]
-        self.type_opt.sort()
-    
+        for setting, value in iteritems(self.cfg.get('overall_config', as_sub_dict=True)):
+            setattr(self, setting, value)
+
+        self.format_string = self.switch_naming_format(['node', 'default'])
+
+        self.naming_formats = self.cfg.get('naming_formats', as_sub_dict=True)
+        self.options_LUT = self.cfg.get('options', as_sub_dict=True)
+        self.suffix_LUT =  self.cfg.get('suffixes', as_sub_dict=True)
+
+    @staticmethod
+    def get_format_order(format_string):
+        """ Dissects the format string and gets the order of the tokens as it finds them l->r
+            Splits on camel case or periods/underscores
+            Modified version from this:
+                http://stackoverflow.com/questions/2277352/python-split-a-string-at-uppercase-letters
+        Returns [string]: list of the matching tokens
+        """
+        pattern = r'([A-Za-z][^A-Z_.]*)'
+        re_matches = re.findall(pattern, format_string)
+        return re_matches
+
+    def build_name_attrs(self):
+        """ Creates all necessary name attributes for the naming convention
+        """
+        self.purge_name_attrs()
+        for token in self.format_order:
+            if token not in self.__dict__:
+                setattr(self, token, NameAttr("", self))
+
+    def purge_name_attrs(self):
+        """ Removes name attrs not found in the format order
+        """
+        for attr, val in iteritems(self.get_token_attrs()):
+            if attr not in self.format_order:
+                delattr(self, attr)
+
     def init_from_suffix_lut(self):
         """ Initialize all the needed attributes for the format order to succeed
         """
         for format_key in self.format_order:
             if format_key not in self.__dict__:
                 setattr(self, format_key, NameAttr("", self))
-    
+
     def reset(self, input_dict={}):
         """ Re-Initialize all the needed attributes for the format order to succeed
         Args:
@@ -111,25 +124,25 @@ class Nomenclate(object):
         # Just in case we're working with a string, we assume that's a name
         if isinstance(input_dict, str) or isinstance(input_dict, unicode):
             input_dict = {'name': input_dict}
-        
+
         # Now replace all self.__dict__ attributes to a NameAttr with the given values
         for format_key in self.format_order:
             setattr(self, format_key, NameAttr(input_dict.get(format_key, ""), self))
-    
+
     def get(self, **kwargs):
         """Gets the string of the current name of the object
         Returns (string): the name of the object
         """
         # Need to use deep copy to do a true snapshot of current settings without manipulating them
         dict_buffer = self.get_dict()
-        
+
         # Set whatever the user has specified if it's a valid format token
         for kwarg, value in iteritems(kwargs):
             if self._is_format(kwarg):
                 dict_buffer[kwarg] = value
-            
+
         result = self.format_string
-        
+
         for key, attr in iteritems(dict_buffer):
             if key in result:
                 token_raw = attr
@@ -138,19 +151,19 @@ class Nomenclate(object):
                     # Check if the token is an actual suffix (from the UI)
                     if token_raw in [v for k, v in iteritems(self.suffix_LUT)]:
                         replacement = token_raw
-                    
+
                     # Or check through the suffix dictionary for a match
                     elif key == 'type':
                         replacement = self.suffix_LUT.get(token_raw, "")
 
                     if key in self.format_capitals and self.camel_case:
                         replacement = replacement.title()
-                    
+
                     # Now replace the token with the input
                     result = result.replace('{'+key+'}', replacement)
-        
+
         return self.cleanup_format( result )
-        
+
     def get_dict(self, **kwargs):
         """ Returns a dictionary of relevant attribute values to set a new nomenclate or build a new one
         Args:
@@ -162,19 +175,19 @@ class Nomenclate(object):
         for key, value in iteritems(self.__dict__):
             if self._is_format(key):
                 tmp_dict.append(key)
-                
+
         # Now add all dictionary keys that aren't empty to the output dictionary
         output={}
         for key in tmp_dict:
             output[key] = self.__dict__.get(key).get()
-        
+
         # Now add in any extras the user wanted to override
         for key, value in iteritems(kwargs):
             if key in self.format_string and isinstance(value, str):
                 output[key] = value
-        
+
         return output
-        
+
     def get_chain(self, end, start=None, **kwargs):
         """ Returns a list of names based on index values
         Args:
@@ -183,8 +196,8 @@ class Nomenclate(object):
         Returns (list): generated object names
         """
         var_orig = self.var.get()
-        var_start, n_type = self._get_str_or_int_abc_pos(self.var.get())
-        
+
+        var_start, n_type = self._get_char_or_int_abc_pos(self.var.get())
         # Just in case the start hasn't been overridden it's based on the current var_opt index
         if start==None:
             start = var_start
@@ -193,7 +206,7 @@ class Nomenclate(object):
             if n_type in ['char_hi', 'char_lo']:
                 capital = True if n_type == 'char_hi' else False
                 self.var.set(self.get_alpha(index, capital))
-                
+
             else:
                 self.var.set(str(index))
             if 'var' in kwargs:
@@ -201,35 +214,23 @@ class Nomenclate(object):
             names.append(self.get(**kwargs))
         self.var.set(var_orig)
         return names
-        
-    def get_camel_case(self, format_string):
-        """ Returns which tokens need first letter capitalization
-        Args:
-            format_string (string): format_string containing all tokenization
-        Returns [string]: list of tokens that need capitalization
-        """
-        token_sections = format_string.split('_')
-        capitalize_firsts = []
-        for token_section in token_sections:
-            # num_tokens = token_section.count('}')
-            tokens_ordered = self.get_format_order(token_section)
-            if len(tokens_ordered) > 1:
-                capitalize_firsts = capitalize_firsts + tokens_ordered[1:]
 
-        return capitalize_firsts
-    
+
+    def get_token_attrs(self):
+        return [token for token in self.__dict__ if isinstance(token, NameAttr)]
+
     def get_state(self, input_dict=None):
         """ Returns the current state of dictionary items with hashes to resolve conflicts
         """
         if input_dict is None:
             input_dict = self.__dict__
         if input_dict:
-            input_dict = [item for item in input_dict if isinstance(input_dict[item], NameAttr)]
+            input_dict = self.get_token_attrs()
             return {item: (input_dict[item].get(), item.__hash__()) for (item, value) in input_dict}
         return None
-    
+
     @staticmethod
-    def _get_str_or_int_abc_pos(query_string):
+    def _get_char_or_int_abc_pos(query_string):
         """ Given an input string of either int or char, returns what index in the alphabet and case it is
         Args:
             query_string (str): query string
@@ -246,24 +247,16 @@ class Nomenclate(object):
             else:
                 raise IOError('The input is a string longer than one character')
         return [0, 'char_hi']
-    
+
     def _is_format(self, name):
         """ For quick checking if a key is part of the format order
         Args:
             name (str): a name of a possible attribute for in a nomenclate string
         """
-        if name in self.get_format_order(self.format_string):
+        if name in self.format_order:
             return True
         return False
-    
-    @staticmethod
-    def get_format_order(format_string):
-        """ Dissects the format string and gets the order of the tokens as it finds them l->r
-        Returns [string]: list of the matching tokens
-        """
-        pattern = r'\{(\w*)\}'
-        re_matches = re.findall(pattern, format_string)
-        return re_matches
+
 
     @staticmethod
     def cleanup_format(formatted_string):
@@ -272,7 +265,6 @@ class Nomenclate(object):
             formatted_string (string): string that has had tokens replaced
         Returns (string): cleaned up name of object
         """
-        # Pattern = r'(?P<word>\{\w*\})|(?P<under>_+)'
         # Remove whitespace
         result = formatted_string.replace(' ', '')
         # Remove any tokens that still exist that were unformatted
@@ -286,28 +278,31 @@ class Nomenclate(object):
             return result.groups()[0]
         else:
             return result
-            
-    def switch_naming_format(self, format_target):
-        try:
-            # TODO: fix the config file subsection finder...we need to be able to get any level we want...
-            # NEED TO FIX THE ORIGINAL SHITTY CODING
-            self.format_string = self.cfg.get_subsection_as_str('naming_format', format_target)
-            return True
-        except IOError as e:
-            print(e)
-            if self._validate_format_string(format_target):
-                self.format_string = format_target
-                return True
-        return False
 
-    @staticmethod
-    def _validate_format_string(format_target):
-        regex = r'(?:(\{[a-z]+\})(?:[a-zA-Z])?)'
-        for section in format_target.split('_'):
-            if not re.findall(regex, section):
-                print (re.findall(regex, section), regex, section)
-                return False
-        return True
+    def switch_naming_format(self, format_target):
+        """
+        Args:
+            format_target (str): can be either a subsection in the formats area or in format of a naming string
+                                 e.g. - this_is_a_naming_string
+                                 the sections should be spaced around
+        Returns None: raises IOError if failure
+        """
+        valid = self._validate_format_string(format_target)
+        try:
+            format_target = format_target if isinstance(format_target, list) else [format_target]
+            self.format_string = format_target if valid else self.cfg.get(['naming_format'] + format_target)
+            self.format_order = self.format_string(self.format_string)
+            self.build_name_attrs()
+        #TODO: Custom error!!!!
+        except IOError:
+            raise IOError('Could not find naming format %s in config file nor was it a valid naming format' % format_target)
+
+    def _validate_format_string(self, format_target):
+        #TODO: raise validationerror!!!!!!!!! fuck this true false shit
+        format_order = self.get_format_order(format_target)
+        if format_target == '_'.join(format_order)
+            return True
+        return False
 
     @staticmethod
     def get_alpha(value, capital=False):
@@ -334,6 +329,24 @@ class Nomenclate(object):
         if capital:
             return ''.join(alphas).upper()
         return ''.join(alphas)
-    
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            equal = False
+            self_attrs = self.get_token_attrs()
+            other_attrs = other.get_token_attrs()
+            if len(self_attrs) > len(other_attrs):
+                return False
+
+            for attr in self_attrs:
+                for other_attr in other_attrs:
+                    if attr.val == other_attr.val:
+                        equal = True
+                        break
+                    else:
+                        equal = False
+            return equal
+        return False
+
     def __repr__(self):
         return self.get()

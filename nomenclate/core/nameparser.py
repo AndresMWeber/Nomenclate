@@ -35,8 +35,8 @@ reload(config)
 class NameParser(object):
     """ This parses names of assets.  It assumes the usual convention of strings separated by underscores.
     """
-    CONFIG_SIDES = config.ConfigParse().get_subsection(section='options', subsection='side')
-    CONFIG_DISCIPLINES = config.ConfigParse().get_subsection(section='options', subsection='disciplines')
+    CONFIG_SIDES = config.ConfigParse().get(['options', 'side'])
+    CONFIG_DISCIPLINES = config.ConfigParse().get(['options', 'disciplines'])
     PARSE_ABLE = ['basename', 'version', 'date', 'side', 'udim']
 
     REGEX_BASENAME = r'(?:^[-._]+)?([a-zA-Z0-9_\-|]+?)(?=[-._]{2,}|\.)'

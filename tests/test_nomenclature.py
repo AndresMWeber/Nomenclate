@@ -69,7 +69,7 @@ class TestNomenclate(unittest.TestCase):
                            'var': '', 'purpose': '', 'childtype': ''})
 
     def test_get_chain(self):
-        self.assertIsNone(self.nom.get_chain())
+        self.assertIsNone(self.nom.get_chain(0,5))
 
     def test_get_camel_case(self):
         self.assertEquals(self.nom.get_camel_case(self.test_format),
@@ -92,23 +92,23 @@ class TestNomenclate(unittest.TestCase):
         self.assertIsNone(self.nom.get_state())
 
     def test_get__get_str_or_int_abc_pos_integer(self):
-        self.assertEquals(self.nom._get_str_or_int_abc_pos(0),
+        self.assertEquals(self.nom._get_char_or_int_abc_pos(0),
                           [0, 'int'])
 
     def test_get__get_str_or_int_abc_pos_char_start(self):
-        self.assertEquals(self.nom._get_str_or_int_abc_pos('a'),
+        self.assertEquals(self.nom._get_char_or_int_abc_pos('a'),
                           [0, 'char_lo'])
 
     def test_get__get_str_or_int_abc_pos_char_end(self):
-        self.assertEquals(self.nom._get_str_or_int_abc_pos('z'),
+        self.assertEquals(self.nom._get_char_or_int_abc_pos('z'),
                           [25, 'char_lo'])
 
     def test_get__get_str_or_int_abc_pos_char_upper(self):
-        self.assertEquals(self.nom._get_str_or_int_abc_pos('B'),
+        self.assertEquals(self.nom._get_char_or_int_abc_pos('B'),
                           [1, 'char_hi'])
 
     def test_get__get_str_or_int_abc_pos_error(self):
-        self.assertRaises(IOError, self.nom._get_str_or_int_abc_pos, 'asdf')
+        self.assertRaises(IOError, self.nom._get_char_or_int_abc_pos, 'asdf')
 
     def test_get__is_format_valid(self):
         self.assertTrue(self.nom._is_format('side'))

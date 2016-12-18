@@ -5,7 +5,8 @@ import six
 
 import unittest
 import mock
-import configparser
+import collections
+from pprint import pprint
 from pyfakefs import fake_filesystem
 import nomenclate.core.configurator as config
 from collections import OrderedDict
@@ -15,84 +16,130 @@ reload(config)
 __author__ = "Andres Weber"
 __email__ = "andresmweber@gmail.com"
 
-@unittest.skip("skipping until finished testing nomenclate")
+test_data = ('overall_config:\n'
+             '  version_padding: 3\n'
+             'naming_formats:\n'
+             '  node:\n'
+             '    default: side_location_nameDecoratorVar_childtype_purpose_type\n'
+             '    format_archive: side_name_space_purpose_decorator_childtype_type\n'
+             '    format_lee: type_childtype_space_purpose_name_side\n'
+             '  texturing:\n'
+             '    shader: side_name_type\n'
+             'options:\n'
+             '  discipline:\n'
+             '    animation: AN ANI ANIM ANIMN\n'
+             '    lighting: LT LGT LGHT LIGHT\n'
+             '    rigging: RG RIG RIGG RIGNG\n'
+             '    matchmove: MM MMV MMOV MMOVE\n'
+             '    compositing: CM CMP COMP COMPG\n'
+             '    modeling: MD MOD MODL MODEL\n'
+             '  side:\n'
+             '    - left\n'
+             '    - right\n'
+             '    - center\n')
+
+#@unittest.skip("skipping until finished testing nomenclate")
 class TestNameparser(unittest.TestCase):
 
-    def setUp(self):
+    @mock.patch('nomenclate.core.configurator.os.path.isfile')
+    @mock.patch('nomenclate.core.configurator.open', mock.mock_open(read_data=test_data))
+    def setUp(self, mock_isfile):
+        self.maxDiff=1000
+        mock_isfile.return_value=True
         self.fixture = config.ConfigParse()
-
         # Creating a fake filesystem for testing
-        test_data = ('[naming_subsets]\nsubsets: modeling rigging texturing lighting utility\n[subset_formats]'
-                     '\nmodeling: format_topGroup_model format_modelling format_subset format_geometry format_curve format_deformer'
-                     '\n[suffix_pairs]\nformat_topGroup: group\n[suffixes]\nmesh : GEO\n[options]\nside: left right center'
-                     '\nvar: A a #\n[naming_format]\nformat: {side}_{location}_{name}{decorator}{var}_{childType}_{purpose}_{type}\n')
-        fakefs = fake_filesystem.FakeFilesystem()
-        self.fake_file_path = '/var/env/foobar.ini'
-        fakefs.CreateFile(self.fake_file_path, contents=test_data)
-        fake_filesystem.FakeFile(fakefs)
-        self.fixture.rebuild_config_cache(self.fake_file_path)
+        self.fakefs = fake_filesystem.FakeFilesystem()
 
-        self.fixtures =[self.fixture, self.fake_file_path]
+        self.fake_file_path = '/var/env/foobar.yml'
+        self.fake_file = self.fakefs.CreateFile(self.fake_file_path, contents=test_data)
+        fake_filesystem.FakeFile(self.fakefs)
+        self.fixture.rebuild_config_cache(self.fake_file_path)
+        self.fixtures =[self.fixture, self.fake_file_path, self.fake_file, self.fakefs]
+
+        # test values
+        self.format_title = 'naming_formats'
+        self.format_subcategory = 'node'
+        self.default_format = 'default'
+        self.format_test = [self.format_title, self.format_subcategory, self.default_format]
+        self.discipline_path = ['options', 'discipline']
+        self.discipline_subsets = ['animation', 'modeling', 'rigging', 'compositing', 'matchmove', 'lighting']
+        self.discipline_data = {'animation': 'AN ANI ANIM ANIMN',
+                                'compositing': 'CM CMP COMP COMPG',
+                                'lighting': 'LT LGT LGHT LIGHT',
+                                'matchmove': 'MM MMV MMOV MMOVE',
+                                'modeling': 'MD MOD MODL MODEL',
+                                'rigging': 'RG RIG RIGG RIGNG'}
 
     def tearDown(self):
         for fixture in self.fixtures:
             del fixture
 
-    @mock.patch('nomenclate.core.configurator.os.path')
-    def test_valid_file_no_file(self, mock_path):
-        mock_path.isfile.return_value = False
-        self.assertRaises(IOError, self.fixture.valid_file, '/mock/config.ini')
+    @mock.patch('nomenclate.core.configurator.os.path.isfile')
+    def test_valid_file_no_file(self, mock_isfile):
+        mock_isfile.return_value = False
+        self.assertRaises(IOError, self.fixture.validate_file, '/mock/config.yml')
 
-    @mock.patch('nomenclate.core.configurator.os.path')
-    @mock.patch.object(configparser.ConfigParser, 'read')
-    def test_get_data(self, mock_parser_read, mock_path):
-        self.fixture.rebuild_config_cache(self.fake_file_path)
-        mock_path.isfile.return_value = True
-        mock_parser_read.assert_called_with(self.fake_file_path)
-
-    def test_get(self):
-        self.assertEquals(self.fixture.get(section='naming_subsets', subsection='subsets', raw=True),
-                          'modeling rigging texturing lighting utility')
+    def test_get_as_string(self):
+        self.assertEquals(self.fixture.get([self.format_title, self.default_format], as_string=True),
+                          ' '.join(self.discipline_subsets))
 
     def test_get_options(self):
-        self.assertEquals(self.fixture.get(section='naming_subsets', options=True),
-                          ['subsets'])
+        self.assertTrue(self.checkEqual(self.fixture.get([self.format_title], options=True),
+                                        ['texturing', 'node']))
 
     def test_query_valid_entry(self):
-        self.assertEquals(self.fixture.query_valid_entry('naming_subsets', 'subsets'), True)
-        self.assertRaises(IOError, self.fixture.query_valid_entry, 'naming_subsets', 'submuerts',)
-        self.assertRaises(IOError, self.fixture.query_valid_entry, 'faming_subsets', 'subsets',)
-        self.assertRaises(IOError, self.fixture.query_valid_entry, 'faming_subsets', 'dubsteps',)
+        self.assertEquals(self.fixture.validate_query_path([self.format_test]),
+                          True)
+        self.assertRaises(IndexError, self.fixture.validate_query_path, [self.format_title, 'submuerts'])
+        self.assertRaises(IndexError, self.fixture.validate_query_path, ['faming_subsets', self.default_format])
+        self.assertRaises(IndexError, self.fixture.validate_query_path, ['faming_subsets', 'dubsteps'])
 
-    def test_get_section(self):
-        self.assertEquals(self.fixture.get_section(section='naming_subsets'),
-                          OrderedDict([('subsets', 'modeling rigging texturing lighting utility')]))
+    def test_get_section_ordered_dict(self):
+        self.assertEquals(self.fixture.get(self.discipline_path, as_dict=True, as_ordered_dict=True, as_string=True),
+                          OrderedDict([(self.discipline_path[0], {self.discipline_path[1]: self.discipline_subsets})]))
 
-    def test_get_section_raw(self):
-        # TODO: Not sure if raw is working right...
-        self.assertEquals(self.fixture.get_section(section='naming_subsets', raw=True),
-                          OrderedDict([('subsets', 'modeling rigging texturing lighting utility')]))
+    def test_get_section_ordered_dict_sub_dict(self):
+        self.assertEquals(self.fixture.get(self.discipline_path, as_dict=True, as_sub_dict=True, as_ordered_dict=True),
+                          OrderedDict([(self.default_format, ' '.join(self.discipline_subsets))]))
 
-    def test_get_subsection_as_dict(self):
-        self.assertEquals(self.fixture.get_subsection_as_dict(section='naming_subsets', subsection='subsets'),
-                          {'naming_subsets': {'subsets': ['modeling', 'rigging', 'texturing', 'lighting', 'utility']}})
+    def test_get_as_string(self):
+        self.assertTrue(self.checkEqual(self.fixture.get(self.discipline_path, as_string=True).split(),
+                                        self.discipline_subsets))
 
-    def test_get_subsection(self):
-        self.assertEquals(self.fixture.get_subsection(section='naming_subsets', subsection='subsets'),
-                          ['modeling', 'rigging', 'texturing', 'lighting', 'utility'])
+    def test_get_as_dict(self):
+        self.assertEquals(self.fixture.get(self.discipline_path, options=True, as_dict=True),
+                          {self.discipline_path[0]: {self.discipline_path[1]: self.discipline_subsets}})
 
-    def test_get_subsection_as_str(self):
-        self.assertEquals(self.fixture.get_subsection_as_str(section='naming_subsets', subsection='subsets'),
-                          'modeling rigging texturing lighting utility')
+    def test_get_as_dict_subdict(self):
+        self.assertEquals(self.fixture.get(self.discipline_path, as_dict=True, as_sub_dict=True),
+                          self.discipline_data)
+
+    def test_get(self):
+        self.assertTrue(self.checkEqual(self.fixture.get(self.discipline_path, options=True), self.discipline_subsets))
 
     def test_list_sections(self):
         six.assertCountEqual(self,
-                             self.fixture.list_sections(),
-                             ['naming_subsets', 'subset_formats', 'suffix_pairs', 'suffixes', 'options', 'naming_format'])
+                             self.fixture.list_headers(),
+                             [self.format_title, 'subset_formats', 'suffix_pairs', 'suffixes', 'options', 'naming_format'])
 
     def test_list_section_options(self):
-        self.assertEquals(self.fixture.list_section_options('naming_subsets'),
-                          ['subsets'])
+        self.assertEquals(self.fixture.list_section_options(self.format_title),
+                          [self.default_format])
 
     def test_deep_copy(self):
         self.assertEquals(1, 1)
+
+    @staticmethod
+    def checkEqual(L1, L2):
+        return len(L1) == len(L2) and sorted(L1) == sorted(L2)
+
+    def assertDictEqual(self, d1, d2, msg=None):  # assertEqual uses for dicts
+        for k, v1 in d1.iteritems():
+            self.assertIn(k, d2, msg)
+            v2 = d2[k]
+            if (isinstance(v1, collections.Iterable) and
+                    not isinstance(v1, basestring)):
+                self.checkEqual(v1, v2)
+            else:
+                self.assertEqual(v1, v2, msg)
+        return True

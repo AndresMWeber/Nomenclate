@@ -25,5 +25,5 @@ def get_scripts_dir():
 
 
 def get_config_filepath():
-    path = os.path.join(os.path.dirname(__file__), 'env.ini')
+    path = os.path.join(os.path.dirname(__file__), 'env.yml')
     return os.path.normpath(path.replace('\\\\','/'))
