@@ -181,7 +181,7 @@ class DictToOrderedDictEntryFormatter(BaseFormatter):
             items = list(input.iteritems())
         except AttributeError:
             items = list(input.items())
-        return OrderedDict(sorted(items, key=lambda x: x[0], reverse=True))
+        return OrderedDict(sorted(items, key=lambda x: x[0]))
 
 
 class ListToStringEntryFormatter(BaseFormatter):

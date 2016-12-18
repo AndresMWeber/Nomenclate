@@ -95,11 +95,15 @@ class TestNameparser(unittest.TestCase):
 
     def test_get_section_ordered_dict(self):
         self.assertEquals(self.fixture.get(self.discipline_path, return_type=OrderedDict),
-                          OrderedDict(sorted(iteritems(self.discipline_data), key=lambda x:x[1], reverse=True)))
+                          OrderedDict(sorted(iteritems(self.discipline_data), key=lambda x:x[0])))
 
-    def test_get_section_ordered_dict_sub_dict(self):
-        self.assertEquals(self.fixture.get(self.discipline_path, return_type=OrderedDict, preceding_depth=1),
-                          OrderedDict([(self.default_format, ' '.join(self.discipline_subsets))]))
+    def test_get_section_ordered_dict_full_path(self):
+        self.assertEquals(self.fixture.get(self.discipline_path, return_type=OrderedDict, preceding_depth=-1),
+                          {'options':{'discipline': OrderedDict(sorted(iteritems(self.discipline_data), key=lambda x:x[0]))}})
+
+    def test_get_section_ordered_dict_partial_path(self):
+        self.assertEquals(self.fixture.get(self.discipline_path, return_type=OrderedDict, preceding_depth=0),
+                          {'discipline': OrderedDict(sorted(iteritems(self.discipline_data), key=lambda x:x[0]))})
 
     def test_get_as_string(self):
         self.assertTrue(self.checkEqual(self.fixture.get(self.discipline_path, return_type=str).split(),
