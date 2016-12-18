@@ -53,7 +53,7 @@ class ConfigParse(object):
         self.data = OrderedDict(sorted(items, key=lambda x: x[0], reverse=True))
         self.path = path
 
-    def get(self, query_path, default=None, return_type=dict, preceding_depth=None):
+    def get(self, query_path, default=None, return_type=list, preceding_depth=None):
         """ Traverses the list of query paths to find the data requested
         Args:
             query_path [str]: list of query path branches
@@ -122,7 +122,7 @@ class FormatterRegistry(type):
 
     @classmethod
     def get_by_take_and_return_type(mcs, input_type, return_type):
-        return mcs.CONVERSION_TABLE.get(input_type).get(return_type)
+        return mcs.CONVERSION_TABLE[input_type][return_type]
 
 
 class BaseFormatter(object):
@@ -194,7 +194,7 @@ class ListToStringEntryFormatter(BaseFormatter):
 
 
 class ConfigEntryFormatter(object):
-    def format_query_result(self, query_result, query_path, return_type=dict, preceding_depth=None):
+    def format_query_result(self, query_result, query_path, return_type=list, preceding_depth=None):
         """
         Args:
             query_result (dict|str|list): yaml query result
@@ -205,22 +205,32 @@ class ConfigEntryFormatter(object):
         Returns (dict|OrderedDict|str|list): specified return type
         """
         if type(query_result) != return_type:
-            converted_result = self.get_handler(type(query_result), return_type).format_result(query_result)
+            converted_result = self.format_with_handler(query_result, return_type)
         else:
             converted_result = query_result
 
-        if preceding_depth is not None:
-            converted_result = self.add_preceding_dict(converted_result, query_path, preceding_depth)
+        converted_result =self.add_preceding_dict(converted_result, query_path, preceding_depth)
         return converted_result
 
-    def get_handler(self, input_type, return_type):
+    def get_handler(self, query_result, return_type):
         try:
-            return FormatterRegistry.get_by_take_and_return_type(input_type, return_type)
+            return FormatterRegistry.get_by_take_and_return_type(query_result, return_type)
+        except AttributeError:
+            raise AttributeError(
+                "Handler not found for return type %s and input type %s" % (return_type, type(query_result)))
         except:
             raise IndexError('Could not find function in conversion list',
-                             'for input type %s and return type %s' % (input_type, return_type))
+                             'for input type %s and return type %s' % (query_result, return_type))
+
+    def format_with_handler(self, query_result, return_type):
+        handler = self.get_handler(type(query_result), return_type)
+        print(handler)
+        return handler.format_result(query_result)
 
     def add_preceding_dict(self, config_entry, query_path, preceding_depth):
+        if preceding_depth is None:
+            return config_entry
+
         preceding_dict = {query_path[-1]: config_entry}
         path_length_minus_query_pos = len(query_path) - 1
         preceding_depth = path_length_minus_query_pos - preceding_depth if preceding_depth != -1 else 0

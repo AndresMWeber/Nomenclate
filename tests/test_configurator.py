@@ -114,7 +114,7 @@ class TestNameparser(unittest.TestCase):
                           {self.discipline_path[0]: {self.discipline_path[1]: self.discipline_subsets}})
 
     def test_get_as_dict_subdict(self):
-        self.assertEquals(self.fixture.get(self.discipline_path),
+        self.assertEquals(self.fixture.get(self.discipline_path, return_type=dict),
                           self.discipline_data)
 
     def test_get(self):
