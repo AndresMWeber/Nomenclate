@@ -53,7 +53,7 @@ class ConfigParse(object):
         self.data = OrderedDict(sorted(items, key=lambda x: x[0], reverse=True))
         self.path = path
 
-    def get(self, query_path, default=None, return_type=dict, preceding_depth=-1):
+    def get(self, query_path, default=None, return_type=dict, preceding_depth=None):
         """ Traverses the list of query paths to find the data requested
         Args:
             query_path [str]: list of query path branches
@@ -64,6 +64,8 @@ class ConfigParse(object):
                                 OrderedDict
             preceding_depth (int): always returns a dictionary encapsulating the data
                                     that traces back up the path for x depth
+                                    -1 for the full traversal back up the path
+                                    None is default for no traversal
         """
         self.validate_query_path(query_path)
         config_entry = self.get_path_entry_from_config(query_path)
@@ -108,22 +110,17 @@ class FormatterRegistry(type):
     def __new__(mcs, name, bases, dct):
         cls = type.__new__(mcs, name, bases, dct)
 
-        extensions = dct.get('converts', {})
+        extensions = dct.get('converts')
         takes = extensions.get('takes', None)
         returns = extensions.get('returns', None)
 
         if takes and returns:
-            mcs.CONVERSION_TABLE[takes] = {returns: cls}
+            mcs.CONVERSION_TABLE[takes] = dict(mcs.CONVERSION_TABLE.get(takes, {}), **{returns: cls})
 
         return cls
 
     @classmethod
     def get_by_take_and_return_type(mcs, input_type, return_type):
-        print(mcs.CONVERSION_TABLE)
-        print(input_type)
-        print(return_type)
-        print(mcs.CONVERSION_TABLE.get(input_type))
-        print(mcs.CONVERSION_TABLE.get(input_type).get(return_type))
         return mcs.CONVERSION_TABLE.get(input_type).get(return_type)
 
 
@@ -135,7 +132,8 @@ class BaseFormatter(object):
     def __init__(self, parent):
         self.parent=parent
 
-    def format_result(self, input):
+    @staticmethod
+    def format_result(input):
         raise NotImplementedError
 
 
@@ -143,23 +141,26 @@ class StringToListEntryFormatter(BaseFormatter):
     converts = {'takes': str,
                 'returns': list}
 
-    def format_result(self, input):
+    @staticmethod
+    def format_result(input):
          return input.split()
 
 
 class DictToStringEntryFormatter(BaseFormatter):
-    handles_type = {'takes': dict,
-                    'returns': str}
+    converts = {'takes': dict,
+                'returns': str}
 
-    def format_result(self, input):
+    @staticmethod
+    def format_result(input):
         return ' '.join(list(input))
 
 
 class DictToListEntryFormatter(BaseFormatter):
-    handles_type = {'takes': dict,
-                    'returns': list}
+    converts = {'takes': dict,
+                'returns': list}
 
-    def format_result(self, input):
+    @staticmethod
+    def format_result(input):
         """ Always sorted for order
         """
         keys = list(input)
@@ -168,10 +169,11 @@ class DictToListEntryFormatter(BaseFormatter):
 
 
 class DictToOrderedDictEntryFormatter(BaseFormatter):
-    handles_type = {'takes': dict,
-                    'returns': OrderedDict}
+    converts = {'takes': dict,
+                'returns': OrderedDict}
 
-    def format_result(self, input):
+    @staticmethod
+    def format_result(input):
         """From: http://stackoverflow.com/questions/13062300/convert-a-dict-to-sorted-dict-in-python
         """
         try:
@@ -182,10 +184,11 @@ class DictToOrderedDictEntryFormatter(BaseFormatter):
 
 
 class ListToStringEntryFormatter(BaseFormatter):
-    handles_type = {'takes': list,
-                    'returns': str}
+    converts = {'takes': list,
+                'returns': str}
 
-    def format_result(self, input):
+    @staticmethod
+    def format_result(input):
         return ' '.join(input)
 
 

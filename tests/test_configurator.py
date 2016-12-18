@@ -6,7 +6,6 @@ import six
 import unittest
 import mock
 import collections
-from pprint import pprint
 from pyfakefs import fake_filesystem
 import nomenclate.core.configurator as config
 from collections import OrderedDict
