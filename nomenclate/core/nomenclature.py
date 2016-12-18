@@ -23,6 +23,8 @@ class NameAttr(object):
 class Nomenclate(object):
     """This class deals with renaming of objects in an approved pattern
     """
+    NAMING_FORMAT_HEADER_PATH = ['naming_formats']
+    DEFAULT_FORMAT_PATH = NAMING_FORMAT_HEADER_PATH + ['node', 'default']
     def __init__(self, **kwargs):
         """ Set default a
         """
@@ -45,7 +47,7 @@ class Nomenclate(object):
         for setting, value in iteritems(self.cfg.get('overall_config', return_type=dict)):
             setattr(self, setting, value)
 
-        self.initialize_format_options(['node', 'default'])
+        self.initialize_format_options(self.DEFAULT_FORMAT_PATH)
         self.initialize_options_from_config_file()
         self.initialize_ui_options()
 
@@ -57,11 +59,14 @@ class Nomenclate(object):
                                  the sections should be spaced around
         Returns None: raises IOError if failure
         """
-        valid = self._validate_format_string(format_target)
         try:
             format_target = format_target if isinstance(format_target, list) else [format_target]
-            self.format_string = format_target if valid else self.cfg.get(['naming_format'] + format_target)
-            self.format_order = self.format_string(self.format_string)
+            try:
+                self._validate_format_string(format_target)
+                self.format_string = format_target
+            except:
+                self.format_string = self.cfg.get(self.DEFAULT_FORMAT_PATH, return_type=str)
+            self.format_order = self.get_format_order(self.format_string)
             self.build_name_attrs()
         #TODO: Custom error!!!!
         except IOError:
@@ -69,11 +74,11 @@ class Nomenclate(object):
 
     def initialize_options_from_config_file(self):
         self.naming_formats = self.cfg.get('naming_formats', return_type=dict)
-        self.options_LUT = self.cfg.get('options', return_type=dict)
+        self.config_LUT = self.cfg.get('overall_config', return_type=dict)
         self.suffix_LUT =  self.cfg.get('suffixes', return_type=dict)
 
 
-    def initalize_ui_options(self):
+    def initialize_ui_options(self):
         """
         Placeholder for all categories/sub-lists within options to be recorded here
         """
@@ -101,9 +106,9 @@ class Nomenclate(object):
     def purge_name_attrs(self):
         """ Removes name attrs not found in the format order
         """
-        for attr, val in iteritems(self.get_token_attrs()):
-            if attr not in self.format_order:
-                delattr(self, attr)
+        for token_attr in self.get_token_attrs():
+            if token_attr not in self.format_order:
+                delattr(self, token_attr)
 
     def init_from_suffix_lut(self):
         """ Initialize all the needed attributes for the format order to succeed
