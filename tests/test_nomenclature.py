@@ -79,23 +79,23 @@ class TestNomenclate(unittest.TestCase):
         self.assertIsNone(self.nom.get_state())
 
     def test_get__get_str_or_int_abc_pos_integer(self):
-        self.assertEquals(self.nom._get_char_or_int_abc_pos(0),
+        self.assertEquals(self.nom._get_alphanumeric_index(0),
                           [0, 'int'])
 
     def test_get__get_str_or_int_abc_pos_char_start(self):
-        self.assertEquals(self.nom._get_char_or_int_abc_pos('a'),
+        self.assertEquals(self.nom._get_alphanumeric_index('a'),
                           [0, 'char_lo'])
 
     def test_get__get_str_or_int_abc_pos_char_end(self):
-        self.assertEquals(self.nom._get_char_or_int_abc_pos('z'),
+        self.assertEquals(self.nom._get_alphanumeric_index('z'),
                           [25, 'char_lo'])
 
     def test_get__get_str_or_int_abc_pos_char_upper(self):
-        self.assertEquals(self.nom._get_char_or_int_abc_pos('B'),
+        self.assertEquals(self.nom._get_alphanumeric_index('B'),
                           [1, 'char_hi'])
 
     def test_get__get_str_or_int_abc_pos_error(self):
-        self.assertRaises(IOError, self.nom._get_char_or_int_abc_pos, 'asdf')
+        self.assertRaises(IOError, self.nom._get_alphanumeric_index, 'asdf')
 
     def test_get__is_format_valid(self):
         self.assertTrue(self.nom._is_format('side'))
@@ -108,33 +108,33 @@ class TestNomenclate(unittest.TestCase):
                           ['side', 'location', 'name', 'decorator', 'var', 'childtype', 'purpose', 'type'])
 
     def test_cleanup_format(self):
-        self.assertEquals(self.nom.cleanup_format('test_name _messed __ up LOC'),
+        self.assertEquals(self.nom.cleanup_formatted_string('test_name _messed __ up LOC'),
                           'test_name_messed_upLOC')
 
     def test_switch_naming_format(self):
-        self.assertTrue(self.nom.switch_naming_format(self.test_format_b))
+        self.assertTrue(self.nom.initialize_format_options(self.test_format_b))
 
-        self.assertTrue(self.nom.switch_naming_format(self.test_format))
+        self.assertTrue(self.nom.initialize_format_options(self.test_format))
 
     def test_switch_naming_format_from_config(self):
-        self.assertTrue(self.nom.switch_naming_format('format_b'))
+        self.assertTrue(self.nom.initialize_format_options('format_b'))
 
-        self.assertTrue(self.nom.switch_naming_format(self.test_format))
+        self.assertTrue(self.nom.initialize_format_options(self.test_format))
 
     def test_get_alpha_normal(self):
-        self.assertEquals(self.nom.get_alpha(0), 'a')
+        self.assertEquals(self.nom.get_variation_id(0), 'a')
 
     def test_get_alpha_negative(self):
-        self.assertEquals(self.nom.get_alpha(-4), '')
+        self.assertEquals(self.nom.get_variation_id(-4), '')
 
     def test_get_alpha_negative_one(self):
-        self.assertEquals(self.nom.get_alpha(-1), '')
+        self.assertEquals(self.nom.get_variation_id(-1), '')
 
     def test_get_alpha_double_upper(self):
-        self.assertEquals(self.nom.get_alpha(1046, capital=True), 'ANG')
+        self.assertEquals(self.nom.get_variation_id(1046, capital=True), 'ANG')
 
     def test_get_alpha_double_lower(self):
-        self.assertEquals(self.nom.get_alpha(1046, capital=False), 'ang')
+        self.assertEquals(self.nom.get_variation_id(1046, capital=False), 'ang')
 
     def test__repr__(self):
         self.assertEquals(self.nom.__repr__(), 'left_testObject_LOC')
