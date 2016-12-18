@@ -20,8 +20,6 @@ import nomenclate.core.toolbox as tb
 
 
 class ConfigParse(object):
-    SUPPORTED_CONFIGS = {'yml': 'yaml'}
-
     def __init__(self, path=None):
         """
         Args:
@@ -32,7 +30,7 @@ class ConfigParse(object):
             path = tb.get_config_filepath()
         self.path = path
         self.data = None
-        self.config_entry_handler = ConfigEntryHandler()
+        self.config_entry_handler = ConfigEntryFormatter()
         self.rebuild_config_cache(self.path)
 
     def rebuild_config_cache(self, path):
@@ -103,7 +101,27 @@ class ConfigParse(object):
                 raise IndexError('Trying to find entry: %s not found in current config file...' % ('|'.join(query_path)))
 
 
-class BaseDelegate(object):
+class FormatterRegistry(type):
+    CONVERSION_TABLE = {}
+    def __new__(mcs, name, bases, dct):
+        cls = type.__new__(mcs, name, bases, dct)
+
+        extensions = dct.get('converts', {})
+        takes = extensions.get('takes', None)
+        returns = extensions.get('returns', None)
+
+        if takes and returns:
+            mcs.CONVERSION_TABLE[takes] = {returns: cls}
+
+        return cls
+
+    @classmethod
+    def get_by_take_and_return_type(mcs, input_type, return_type):
+        return mcs.CONVERSION_TABLE.get(input_type).get(return_type)
+
+
+class BaseFormatter(object):
+    __metaclass__ = FormatterRegistry
     converts = {'takes':None,
                 'returns':None}
 
@@ -114,149 +132,87 @@ class BaseDelegate(object):
         raise NotImplementedError
 
 
-class StringToListEntryFormatter(BaseDelegate):
+class StringToListEntryFormatter(BaseFormatter):
     converts = {'takes': str,
                 'returns': list}
 
     def format_result(self, input):
-         pass
+         return input.split()
 
 
-class DictToStringEntryFormatter(BaseDelegate):
+class DictToStringEntryFormatter(BaseFormatter):
     handles_type = {'takes': dict,
-                    'returns': list}
+                    'returns': str}
 
     def format_result(self, input):
         return ' '.join(list(input))
 
 
-class DictToListEntryFormatter(BaseDelegate):
+class DictToListEntryFormatter(BaseFormatter):
     handles_type = {'takes': dict,
                     'returns': list}
 
     def format_result(self, input):
-         pass
+        """ Always sorted for order
+        """
+        keys = list(input)
+        keys.sort()
+        return keys
 
 
-class DictToOrderedDictEntryFormatter(BaseDelegate):
+class DictToOrderedDictEntryFormatter(BaseFormatter):
     handles_type = {'takes': dict,
                     'returns': OrderedDict}
 
     def format_result(self, input):
-         pass
+        """From: http://stackoverflow.com/questions/13062300/convert-a-dict-to-sorted-dict-in-python
+        """
+        try:
+            items = list(input.iteritems())
+        except AttributeError:
+            items = list(input.items())
+        return OrderedDict(sorted(items, key=lambda x: x[0], reverse=True))
 
 
-class ListToStringEntryFormatter(BaseDelegate):
+class ListToStringEntryFormatter(BaseFormatter):
     handles_type = {'takes': list,
                     'returns': str}
 
     def format_result(self, input):
         return ' '.join(input)
 
-class ListToDictEntryFormatter(BaseDelegate):
-    handles_type = {'takes': list,
-                    'returns': dict}
 
-    def format_result(self, input):
-         pass
-
-class ConfigEntryHandler(object):
-    def __init__(self):
-        self.entry_formatters = [
-            StringToListEntryFormatter(self),
-            DictToOrderedDictEntryFormatter(self),
-            ListToStringEntryFormatter(self),
-            ListToDictEntryFormatter(self)
-        ]
-
-    def format_query_result(self, value, query_path, return_type, preceding_depth):
+class ConfigEntryFormatter(object):
+    def format_query_result(self, query_result, query_path, return_type=dict, preceding_depth=-1):
         """
         Args:
-            value:
-            query_path:
-            return_type (str): return type of object user desires
+            query_result (dict|str|list): yaml query result
+            query_path [str]: list of strings representing query path
+            return_type (rtype): return type of object user desires
             preceding_depth (int): the depth to which we want to encapsulate back up config tree
                                     -1 : defaults to entire tree
         Returns (dict|OrderedDict|str|list): specified return type
         """
-        converted_result = self.get_handler(value, return_type).format_result(value)
-        self.to_dict_preceeding(converted_result, preceding_depth)
-
-    def get_handler(self, input, return_type):
-        for entry_formatter in self.entry_formatters:
-            if (entry_formatter.handles_type['takes'] == type(input) and
-                        entry_formatter.handles_type['takes'] == return_type):
-                return entry_formatter
-        raise TypeError('Entry type %s or requested type %s was not found in the handler list' % (type(input), return_type))
-
-    def add_preceeding_dict(self, config_entry):
-        pass
-
-
-
-    def _to_string(self, input):
-        """ Helper function that converts found data to strings depending on input type
-        """
-        if isinstance(input, list):
-        elif isinstance(input, dict):
-        elif isinstance(input, string_types):
-            return input
+        if type(query_result) != return_type:
+            converted_result = self.get_handler(type(query_result), return_type).format_result(query_result)
         else:
-            raise IndexError('The requested data (%s) was not a list or string.' % input)
+            converted_result = query_result
 
-    def _to_dict(self, input, query_path, as_ordered_dict=False, as_sub_dict=False):
-        """ Helper function that converts found data to 3 types of dictionaries depending on input type
-        """
-        buffer = {query_path[-1]: input}
+        self.add_preceding_dict(converted_result, preceding_depth)
 
-        if not as_sub_dict:
-            for path in query_path[0:-1][::-1]:
-                buffer = {path: buffer}
-
-        elif as_sub_dict:
-            if isinstance(input, dict):
-                buffer = input
-
-        return buffer if not as_ordered_dict else self._dict_to_ordered_dict(buffer)
-
-    def list_headers(self):
-        """ Lists the sections possible to query
-        Args (None)
-        Returns [str]: list of section key names sorted by name so as not to mess with order.
-        """
-        keys = list(self.data.keys())
-        keys.sort()
-        return keys
-
-    def list_section_options(self, query_path):
-        """ Lists a section's possible options to query
-        Args:
-            section (str): section for us to query
-        Returns [str]: list of string represented options
-        """
-        query_data = self.get(query_path)
-
-        if isinstance(query_data, dict):
-            return list(query_data)
-
-        elif isinstance(query_data, string_types):
-            return query_data.split(' ')
-
-        elif isinstance(query_data, list):
-            return query_data
-
-        raise IOError("The requested subsection was not a dict, str or list, sorry!")
-
-    @staticmethod
-    def _dict_to_ordered_dict(d):
-        """ Private function for converting to ordered dictionary
-            From: http://stackoverflow.com/questions/13062300/convert-a-dict-to-sorted-dict-in-python
-        Args:
-            d (dictionary): unsorted dictionary
-        Returns (OrderedDictionary): dictionary in order...
-        """
+    def get_handler(self, input_type, return_type):
         try:
-            items = list(d.iteritems())
-        except AttributeError:
-            items = list(d.items())
-        return OrderedDict(sorted(items, key=lambda x: x[0], reverse=True))
+            return FormatterRegistry.get_by_take_and_return_type(input_type, return_type)
+        except:
+            raise IndexError('Could not find function in conversion list',
+                             'for input type %s and return type %s' % (input_type, return_type))
+
+    def add_preceding_dict(self, config_entry, query_path, preceding_depth):
+        preceding_dict = {query_path[-1]: config_entry}
+        path_length_minus_query_pos = len(query_path) - 1
+        preceding_depth = path_length_minus_query_pos - preceding_depth if preceding_depth != -1 else 0
+
+        for index in reversed(range(preceding_depth, path_length_minus_query_pos)):
+            preceding_dict = {query_path[index]: preceding_dict}
+
+        return preceding_dict

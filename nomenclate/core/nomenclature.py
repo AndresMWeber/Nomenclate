@@ -300,7 +300,7 @@ class Nomenclate(object):
     def _validate_format_string(self, format_target):
         #TODO: raise validationerror!!!!!!!!! fuck this true false shit
         format_order = self.get_format_order(format_target)
-        if format_target == '_'.join(format_order)
+        if format_target == '_'.join(format_order):
             return True
         return False
 

@@ -126,9 +126,6 @@ class TestNameparser(unittest.TestCase):
         self.assertEquals(self.fixture.list_section_options(self.format_title),
                           [self.default_format])
 
-    def test_deep_copy(self):
-        self.assertEquals(1, 1)
-
     @staticmethod
     def checkEqual(L1, L2):
         return len(L1) == len(L2) and sorted(L1) == sorted(L2)
