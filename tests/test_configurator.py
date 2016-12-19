@@ -13,7 +13,6 @@ import nomenclate.core.configurator as config
 from collections import OrderedDict
 
 
-#@unittest.skip("skipping until finished testing nomenclate")
 class TestNameparser(unittest.TestCase):
 
     def setUp(self):

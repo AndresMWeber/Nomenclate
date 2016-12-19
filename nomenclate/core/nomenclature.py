@@ -2,7 +2,6 @@
 # Ensure Python 2/3 compatibility: http://python-future.org/compatible_idioms.html
 from __future__ import print_function
 from future.utils import iteritems
-from imp import reload
 import re
 import string
 import nomenclate.core.configurator as config

@@ -17,6 +17,7 @@ from collections import OrderedDict
 import nomenclate.core.toolbox as tb
 import nomenclate.core.exceptions as exceptions
 
+
 class ConfigParse(object):
     def __init__(self, config_filepath=None):
         """

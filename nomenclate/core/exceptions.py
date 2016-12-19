@@ -1,3 +1,5 @@
+# Mimicking these exception styles found here:
+# https://github.com/frictionlessdata/tabulator-py/blob/master/tabulator/exceptions.py
 
 # Module API
 
