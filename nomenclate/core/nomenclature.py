@@ -172,7 +172,7 @@ class Nomenclate(object):
         """
         # TODO: This should be a complete rewrite.  It's insanity.
         # Need to use deep copy to do a true snapshot of current settings without manipulating them
-        dict_buffer = self.get_dict()
+        dict_buffer = self.state
 
         # Set whatever the user has specified if it's a valid format token
         for key, value in iteritems(kwargs):
@@ -238,14 +238,14 @@ class Nomenclate(object):
         token_attrs = self.get_token_attrs()
 
         if token not in [token_attr.parent for token_attr in token_attrs]:
-            setattr(self, token, NameAttr(value=value, label=token))
+            setattr(self, token.lower(), NameAttr(value=value, label=token))
         else:
             for token_attr in token_attrs:
                 if token == token_attr.parent:
                     token_attr.set(value)
 
     def _get_token_attr(self, token):
-        token_attr = self.__dict__.get(token)
+        token_attr = self.__dict__.get(token.lower())
         if token_attr is None:
             raise exceptions.SourceError('This nomenclate instance has no %s attribute set.' % token)
         else:

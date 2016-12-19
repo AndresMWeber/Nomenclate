@@ -20,6 +20,7 @@ class TestNomenclate(unittest.TestCase):
         self.nom.side.set('left')
         self.nom.name.set('testObject')
         self.nom.type.set('locator')
+        self.nom.var.set('A')
         self.fixtures =[self.cfg, self.nom]
 
     def tearDown(self):
@@ -38,14 +39,16 @@ class TestNomenclate(unittest.TestCase):
 
     @unittest.skip("skipping until fixed")
     def test_get_after_change(self):
-        previous_state=self.nom.get_dict()
+        previous_state = self.nom.state
         self.nom.location.set('rear')
         self.assertEquals(self.nom.get(), 'left_rear_testObject_LOC')
-        self.nom.reset(previous_state)
+        self.nom.state = previous_state
 
     @unittest.skip("skipping until fixed")
     def test_get_dict_empty(self):
-        previous_state=self.nom.state
+        print(self.nom)
+        previous_state = self.nom.state
+        print(previous_state)
         self.nom.clear_name_attrs()
         self.assertEquals(self.nom.state,
                           {'location': '', 'type': '', 'name': '', 'side': '', 'var': '', 'purpose': '',
@@ -54,7 +57,7 @@ class TestNomenclate(unittest.TestCase):
 
     @unittest.skip("skipping until fixed")
     def test_get_dict_non_empty(self):
-        self.assertEquals(self.nom.get_dict(),
+        self.assertEquals(self.nom.state,
                           {'name': 'testObject', 'side': 'left', 'type': 'locator', 'decorator': '', 'location': '',
                            'var': '', 'purpose': '', 'childtype': ''})
 
@@ -62,30 +65,21 @@ class TestNomenclate(unittest.TestCase):
     def test_get_chain(self):
         self.assertIsNone(self.nom.get_chain(0,5))
 
-    @unittest.skip("skipping until fixed")
-    def test_get_camel_case(self):
-        self.assertEquals(self.nom.get_camel_case(self.test_format),
-                          ['decorator', 'var'])
-
     def test_get_state_empty(self):
+        previous_state = self.nom.state
         self.nom.state = {}
         self.assertEquals(self.nom.state, {})
+        self.nom.state = previous_state
 
     @unittest.skip("skipping until fixed")
     def test_get_state_valid(self):
-        self.assertIsNone(self.nom.get_state(),
-                          ['type:  #=', 'location:  #=',
-                           'childType:  #=', 'side:  #=',
-                           'decorator:  #=', 'var:  #=',
-                           'purpose:  #=', 'name:  #='])
-
-    @unittest.skip("skipping until fixed")
-    def test_get_state_incomplete(self):
-        self.assertIsNone(self.nom.get_state())
-
-    @unittest.skip("skipping until fixed")
-    def test_get_state_invalid(self):
-        self.assertIsNone(self.nom.get_state())
+        print(self.nom.get_token_attrs())
+        self.assertEquals(self.nom.state,
+                          {'type': '',
+                           'location': '',
+                           'childType': '',
+                           'decorator': '',
+                           'purpose': ''})
 
     def test_get__get_str_or_int_abc_pos_integer(self):
         self.assertEquals(self.nom._get_alphanumeric_index(0),
