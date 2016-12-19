@@ -4,13 +4,14 @@ from __future__ import print_function
 import unittest
 import nomenclate.core.nomenclature as nm
 import nomenclate.core.configurator as config
+import nomenclate.core.exceptions as exceptions
 
 
 class TestNomenclate(unittest.TestCase):
     def setUp(self):
         self.cfg = config.ConfigParse()
-        self.test_format = '{side}_{location}_{name}{decorator}J{var}_{childtype}_{purpose}_{type}'
-        self.test_format_b = '{location}_{name}{decorator}J{var}_{childtype}_{purpose}_{type}_{side}'
+        self.test_format = 'side_location_nameDecoratorVar_childtype_purpose_type'
+        self.test_format_b = 'location_nameDecoratorVar_childtype_purpose_type_side'
 
         self.nom = nm.Nomenclate()
 
@@ -26,10 +27,10 @@ class TestNomenclate(unittest.TestCase):
             del fixture
 
     def test_refresh(self):
-       self.assertIsNone(self.nom.refresh())
+       self.assertIsNone(self.nom.reset_from_config())
 
     def test_init_from_suffix_lut(self):
-        self.assertIsNone(self.nom.init_from_suffix_lut())
+        self.nom.initialize_options()
 
     @unittest.skip("skipping until fixed")
     def test_get(self):
@@ -44,12 +45,12 @@ class TestNomenclate(unittest.TestCase):
 
     @unittest.skip("skipping until fixed")
     def test_get_dict_empty(self):
-        previous_state=self.nom.get_dict()
-        self.nom.reset({})
-        self.assertEquals(self.nom.get_dict(),
+        previous_state=self.nom.state
+        self.nom.clear_name_attrs()
+        self.assertEquals(self.nom.state,
                           {'location': '', 'type': '', 'name': '', 'side': '', 'var': '', 'purpose': '',
                            'decorator': '', 'childtype': ''})
-        self.nom.reset(previous_state)
+        self.nom.state = previous_state
 
     @unittest.skip("skipping until fixed")
     def test_get_dict_non_empty(self):
@@ -67,7 +68,8 @@ class TestNomenclate(unittest.TestCase):
                           ['decorator', 'var'])
 
     def test_get_state_empty(self):
-        self.assertIsNone(self.nom.get_state(input_dict={}))
+        self.nom.state = {}
+        self.assertEquals(self.nom.state, {})
 
     @unittest.skip("skipping until fixed")
     def test_get_state_valid(self):
@@ -104,16 +106,15 @@ class TestNomenclate(unittest.TestCase):
     def test_get__get_str_or_int_abc_pos_error(self):
         self.assertRaises(IOError, self.nom._get_alphanumeric_index, 'asdf')
 
-    def test_get__is_format_valid(self):
-        self.assertTrue(self.nom._is_format('side'))
+    def test_get__validate_format_string_valid(self):
+        self.nom._validate_format_string('side_mide')
 
-    def test_get__is_format_invalid(self):
-        self.assertFalse(self.nom._is_format('notside'))
+    def test_get__validate_format_string__is_format_invalid(self):
+        self.assertRaises(exceptions.FormatError, self.nom._validate_format_string('notside'))
 
-    @unittest.skip("skipping until fixed")
     def test_get_format_order(self):
-        self.assertEquals(self.nom.get_format_order(self.test_format),
-                          ['side', 'location', 'name', 'decorator', 'var', 'childtype', 'purpose', 'type'])
+        self.assertEquals(self.nom.get_format_order_from_format_string(self.test_format),
+                          ['side', 'location', 'name', 'Decorator', 'Var', 'childtype', 'purpose', 'type'])
 
     def test_cleanup_format(self):
         self.assertEquals(self.nom.cleanup_formatted_string('test_name _messed __ up LOC'),

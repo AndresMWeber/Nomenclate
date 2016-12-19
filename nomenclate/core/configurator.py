@@ -15,7 +15,7 @@ import yaml
 import os
 from collections import OrderedDict
 import nomenclate.core.toolbox as tb
-
+import nomenclate.core.exceptions as exceptions
 
 class ConfigParse(object):
     def __init__(self, config_filepath=None):
@@ -99,7 +99,7 @@ class ConfigParse(object):
         for path in query_path:
             cur_data = cur_data.get(path)
             if cur_data is None:
-                raise IndexError(
+                raise exceptions.ResourceNotFoundError(
                     'Trying to find entry: %s not found in current config file...' % ('|'.join(query_path)))
 
 

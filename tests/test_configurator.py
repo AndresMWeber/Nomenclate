@@ -4,9 +4,7 @@ from imp import reload
 from future.utils import iteritems
 import six
 
-import mock
-from pyfakefs import fake_filesystem
-import nomenclate.core.configurator as config
+import nomenclate.core.exceptions as exceptions
 import unittest
 import mock
 import collections
@@ -52,9 +50,9 @@ class TestNameparser(unittest.TestCase):
 
     def test_query_valid_entry(self):
         self.cfg.validate_query_path(self.format_test)
-        self.assertRaises(IndexError, self.cfg.validate_query_path, [self.format_title, 'submuerts'])
-        self.assertRaises(IndexError, self.cfg.validate_query_path, ['faming_subsets', self.default_format])
-        self.assertRaises(IndexError, self.cfg.validate_query_path, ['faming_subsets', 'dubsteps'])
+        self.assertRaises(exceptions.ResourceNotFoundError, self.cfg.validate_query_path, [self.format_title, 'submuerts'])
+        self.assertRaises(exceptions.ResourceNotFoundError, self.cfg.validate_query_path, ['faming_subsets', self.default_format])
+        self.assertRaises(exceptions.ResourceNotFoundError, self.cfg.validate_query_path, ['faming_subsets', 'dubsteps'])
 
     def test_get_section_ordered_dict(self):
         self.assertEquals(self.cfg.get(self.discipline_path, return_type=OrderedDict),
