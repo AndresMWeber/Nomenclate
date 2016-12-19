@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 import os
 import inspect
+
 __author__ = "Andres Weber"
 __email__ = "andresmweber@gmail.com"
 """
     :module: toolbox
     :platform: N/A
-    :synopsis: This module has random os functions that are useful
+    :synopsis: This module has random os functions that are useful but it might be outdated now...
     :plans:
 """
 
@@ -26,4 +27,4 @@ def get_scripts_dir():
 
 def get_config_filepath():
     path = os.path.join(os.path.dirname(__file__), 'env.yml')
-    return os.path.normpath(path.replace('\\\\','/'))
+    return os.path.normpath(path.replace('\\\\', '/'))
