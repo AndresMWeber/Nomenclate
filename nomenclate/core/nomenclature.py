@@ -25,6 +25,7 @@ class Nomenclate(object):
     """
     NAMING_FORMAT_HEADER_PATH = ['naming_formats']
     DEFAULT_FORMAT_PATH = NAMING_FORMAT_HEADER_PATH + ['node', 'default']
+
     def __init__(self, **kwargs):
         """ Set default a
         """
@@ -54,9 +55,9 @@ class Nomenclate(object):
     def initialize_format_options(self, format_target):
         """
         Args:
-            format_target (str): can be either a subsection in the formats area or in format of a naming string
-                                 e.g. - this_is_a_naming_string
-                                 the sections should be spaced around
+            format_target (list): can be either a subsection in the formats area or in format of a naming string
+                                  e.g. - this_is_a_naming_string
+                                  the sections should be spaced around
         Returns None: raises IOError if failure
         """
         try:

@@ -1,5 +1,7 @@
 # Ensure Python 2/3 compatibility: http://python-future.org/compatible_idioms.html
 from __future__ import print_function
+from future.utils import iteritems
+
 """
 .. module:: configurator
     :platform: Win/Linux/Mac
@@ -15,51 +17,44 @@ from collections import OrderedDict
 import nomenclate.core.toolbox as tb
 
 
-
 class ConfigParse(object):
-    def __init__(self, path=None):
+    def __init__(self, config_filepath=None):
         """
         Args:
             section (str): section to query
             subsection (str):subsection to query
         """
-        if not path:
-            path = tb.get_config_filepath()
-        self.path = path
-        self.data = None
+        if not config_filepath:
+            config_filepath = tb.get_config_filepath()
+        self.path = config_filepath
+        self.config_file_contents = None
         self.config_entry_handler = ConfigEntryFormatter()
         self.rebuild_config_cache(self.path)
 
-    def rebuild_config_cache(self, path):
+    def rebuild_config_cache(self, config_filepath):
         """ Loads from file and caches all data from the config file in the form of an OrderedDict to self.data
         Args:
-            path (str): the full filepath to the config file
+            config_filepath (str): the full filepath to the config file
         Returns (bool): success status
         """
-        data = None
+        self.validate_config_file(config_filepath)
+        config_data = None
         try:
-            with open(path, 'r') as f:
-                data = yaml.load(f)
-            items = list(data.iteritems())
-
-        except IOError:
-            raise IOError('Could not find file %s in the local directories' % path)
+            with open(config_filepath, 'r') as f:
+                config_data = yaml.load(f)
+            items = list(iteritems(config_data))
 
         except AttributeError:
-            items = list(d.items())
+            items = list(config_data)
 
-        self.data = OrderedDict(sorted(items, key=lambda x: x[0], reverse=True))
-        self.path = path
+        self.config_file_contents = OrderedDict(sorted(items, key=lambda x: x[0], reverse=True))
+        self.path = config_filepath
 
     def get(self, query_path, default=None, return_type=list, preceding_depth=None):
         """ Traverses the list of query paths to find the data requested
         Args:
-            query_path [str]: list of query path branches
-            return_type (str): desired return type for the data:
-                                list
-                                str
-                                dict
-                                OrderedDict
+            query_path list(str)]: list of query path branches
+            return_type (Union[list, str, dict, OrderedDict]): desired return type for the data
             preceding_depth (int): always returns a dictionary encapsulating the data
                                     that traces back up the path for x depth
                                     -1 for the full traversal back up the path
@@ -68,53 +63,62 @@ class ConfigParse(object):
         query_path = query_path if isinstance(query_path, list) else [query_path]
         self.validate_query_path(query_path)
         config_entry = self.get_path_entry_from_config(query_path)
-        query_result = self.config_entry_handler.format_query_result(config_entry, query_path, return_type, preceding_depth)
+        query_result = self.config_entry_handler.format_query_result(config_entry,
+                                                                     query_path,
+                                                                     return_type,
+                                                                     preceding_depth)
         return query_result
 
     def get_path_entry_from_config(self, query_path):
         if not query_path:
-            return list(self.data)
-        cur_data = self.data
+            return list(self.config_file_contents)
+        cur_data = self.config_file_contents
         for child in query_path:
             cur_data = cur_data.get(child)
         return cur_data
 
     @classmethod
-    def validate_config_file(cls, config_file):
-        if not os.path.isfile(config_file):
-            raise IOError('File %s is not a valid yml, ini or cfg file or does not exist' % config_file)
+    def validate_config_file(cls, config_filepath):
+        if not os.path.isfile(config_filepath):
+            raise IOError('File %s is not a valid yml, ini or cfg file or does not exist' % config_filepath)
 
-        elif os.stat(config_file).st_size > 0:
-            raise IOError('File %s is empty' % config_file)
+        elif os.path.getsize(config_filepath) == 0:
+            raise IOError('File %s is empty' % config_filepath)
 
-        with open(config_file, 'r') as f:
+        with open(config_filepath, 'r') as f:
             if yaml.load(f) is None:
-                raise IOError('No YAML config was found in file %s' % config_file)
+                raise IOError('No YAML config was found in file %s' % config_filepath)
 
     def validate_query_path(self, query_path):
         """ Determines whether the query path given is found in the current dataset
         Args:
-            query_path [str]: list of query paths to traverse
+            query_path list(str): list of query paths to traverse
         Returns (bool): True or raise IndexError on non found query
         """
-        cur_data = self.data
+        cur_data = self.config_file_contents
         for path in query_path:
             cur_data = cur_data.get(path)
             if cur_data is None:
-                raise IndexError('Trying to find entry: %s not found in current config file...' % ('|'.join(query_path)))
+                raise IndexError(
+                    'Trying to find entry: %s not found in current config file...' % ('|'.join(query_path)))
 
 
 class FormatterRegistry(type):
     CONVERSION_TABLE = {}
+
     def __new__(mcs, name, bases, dct):
         cls = type.__new__(mcs, name, bases, dct)
 
         extensions = dct.get('converts')
-        takes = extensions.get('takes', None)
-        returns = extensions.get('returns', None)
+        accepted_input_type = extensions.get('accepted_input_type', None)
+        accepted_return_type = extensions.get('accepted_return_type', None)
 
-        if takes and returns:
-            mcs.CONVERSION_TABLE[takes] = dict(mcs.CONVERSION_TABLE.get(takes, {}), **{returns: cls})
+        if accepted_input_type and accepted_return_type:
+            take_exists = mcs.CONVERSION_TABLE.get(accepted_input_type)
+            if not take_exists:
+                mcs.CONVERSION_TABLE[accepted_input_type] = {}
+
+            mcs.CONVERSION_TABLE[accepted_input_type][accepted_return_type] = cls
 
         return cls
 
@@ -125,11 +129,11 @@ class FormatterRegistry(type):
 
 class BaseFormatter(object):
     __metaclass__ = FormatterRegistry
-    converts = {'takes':None,
-                'returns':None}
+    converts = {'accepted_input_type': None,
+                'accepted_return_type': None}
 
     def __init__(self, parent):
-        self.parent=parent
+        self.parent = parent
 
     @staticmethod
     def format_result(input):
@@ -137,17 +141,17 @@ class BaseFormatter(object):
 
 
 class StringToListEntryFormatter(BaseFormatter):
-    converts = {'takes': str,
-                'returns': list}
+    converts = {'accepted_input_type': str,
+                'accepted_return_type': list}
 
     @staticmethod
     def format_result(input):
-         return input.split()
+        return input.split()
 
 
 class DictToStringEntryFormatter(BaseFormatter):
-    converts = {'takes': dict,
-                'returns': str}
+    converts = {'accepted_input_type': dict,
+                'accepted_return_type': str}
 
     @staticmethod
     def format_result(input):
@@ -155,8 +159,8 @@ class DictToStringEntryFormatter(BaseFormatter):
 
 
 class DictToListEntryFormatter(BaseFormatter):
-    converts = {'takes': dict,
-                'returns': list}
+    converts = {'accepted_input_type': dict,
+                'accepted_return_type': list}
 
     @staticmethod
     def format_result(input):
@@ -168,23 +172,23 @@ class DictToListEntryFormatter(BaseFormatter):
 
 
 class DictToOrderedDictEntryFormatter(BaseFormatter):
-    converts = {'takes': dict,
-                'returns': OrderedDict}
+    converts = {'accepted_input_type': dict,
+                'accepted_return_type': OrderedDict}
 
     @staticmethod
     def format_result(input):
         """From: http://stackoverflow.com/questions/13062300/convert-a-dict-to-sorted-dict-in-python
         """
         try:
-            items = list(input.iteritems())
+            items = list(iteritems(input))
         except AttributeError:
             items = list(input.items())
         return OrderedDict(sorted(items, key=lambda x: x[0]))
 
 
 class ListToStringEntryFormatter(BaseFormatter):
-    converts = {'takes': list,
-                'returns': str}
+    converts = {'accepted_input_type': list,
+                'accepted_return_type': str}
 
     @staticmethod
     def format_result(input):
@@ -207,18 +211,18 @@ class ConfigEntryFormatter(object):
         else:
             converted_result = query_result
 
-        converted_result =self.add_preceding_dict(converted_result, query_path, preceding_depth)
+        converted_result = self.add_preceding_dict(converted_result, query_path, preceding_depth)
         return converted_result
 
-    def get_handler(self, query_result, return_type):
+    def get_handler(self, query_result_type, return_type):
         try:
-            return FormatterRegistry.get_by_take_and_return_type(query_result, return_type)
+            return FormatterRegistry.get_by_take_and_return_type(query_result_type, return_type)
         except AttributeError:
             raise AttributeError(
-                "Handler not found for return type %s and input type %s" % (return_type, type(query_result)))
+                "Handler not found for return type %s and input type %s" % (return_type, type(query_result_type)))
         except:
             raise IndexError('Could not find function in conversion list',
-                             'for input type %s and return type %s' % (query_result, return_type))
+                             'for input type %s and return type %s' % (query_result_type, return_type))
 
     def format_with_handler(self, query_result, return_type):
         handler = self.get_handler(type(query_result), return_type)

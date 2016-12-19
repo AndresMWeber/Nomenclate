@@ -135,10 +135,12 @@ class MockConfig():
     def __init__(self):
         self.build_test_config()
 
+    @mock.patch('nomenclate.core.configurator.os.path.getsize')
     @mock.patch('nomenclate.core.configurator.os.path.isfile')
     @mock.patch('nomenclate.core.configurator.open', mock.mock_open(read_data=test_data))
-    def build_test_config(self, mock_isfile):
+    def build_test_config(self, mock_isfile, mock_getsize):
         mock_isfile.return_value = True
+        mock_getsize.return_value = 700
         self.parser = config.ConfigParse()
         self.fakefs = fake_filesystem.FakeFilesystem()
 
