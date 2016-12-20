@@ -17,6 +17,7 @@ class TestNomenclate(unittest.TestCase):
 
         # Inject our fake config
         self.nom.cfg = self.cfg
+
         self.nom.side.set('left')
         self.nom.name.set('testObject')
         self.nom.type.set('locator')
@@ -46,9 +47,7 @@ class TestNomenclate(unittest.TestCase):
 
     @unittest.skip("skipping until fixed")
     def test_get_dict_empty(self):
-        print(self.nom)
         previous_state = self.nom.state
-        print(previous_state)
         self.nom.clear_name_attrs()
         self.assertEquals(self.nom.state,
                           {'location': '', 'type': '', 'name': '', 'side': '', 'var': '', 'purpose': '',
@@ -67,13 +66,12 @@ class TestNomenclate(unittest.TestCase):
 
     def test_get_state_empty(self):
         previous_state = self.nom.state
-        self.nom.state = {}
+        self.nom.token_dict.purge_name_attrs()
         self.assertEquals(self.nom.state, {})
         self.nom.state = previous_state
 
     @unittest.skip("skipping until fixed")
     def test_get_state_valid(self):
-        print(self.nom.get_token_attrs())
         self.assertEquals(self.nom.state,
                           {'type': '',
                            'location': '',
