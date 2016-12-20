@@ -8,6 +8,18 @@ import nomenclate.core.configurator as config
 import nomenclate.core.exceptions as exceptions
 
 
+class Signal(object):
+    def __init__(self):
+        self._handlers = []
+
+    def connect(self, handler):
+        self._handlers.append(handler)
+
+    def fire(self, *args):
+        for handler in self._handlers:
+            handler(*args)
+
+
 class TokenAttr(object):
     def __init__(self, label=None, token=None):
         self.label = label if label is not None else ""
@@ -21,9 +33,10 @@ class TokenAttr(object):
 
 
 class TokenAttrDict(dict):
-    def __init__(self, nomenclate_object):
+    def __init__(self, nomenclate_object, signal):
         super(dict, self).__init__()
         self.nom = nomenclate_object
+        self.signal = signal
 
     @property
     def state(self):
@@ -50,11 +63,15 @@ class TokenAttrDict(dict):
         """ Creates all necessary name attributes for the naming convention
         """
         self.purge_invalid_name_attrs()
+        changed = False
         for token in self.nom.format_order:
             try:
                 self.get_token_attr(token)
             except exceptions.SourceError:
                 self.set_token_attr(token, "")
+                changed + True
+        if changed:
+            self.signal.fire()
 
     def purge_invalid_name_attrs(self):
         """ Removes name attrs not found in the format order
@@ -68,6 +85,7 @@ class TokenAttrDict(dict):
     def purge_name_attrs(self):
         for token_attr in self.get_token_attrs():
             delattr(self, token_attr)
+        self.signal.fire()
 
     def clear_name_attrs(self):
         for token_attr in self.get_token_attrs():
@@ -75,9 +93,8 @@ class TokenAttrDict(dict):
 
     def set_token_attr(self, token, value):
         token_attrs = self.get_token_attrs()
-
         if token not in [token_attr.parent for token_attr in token_attrs]:
-            setattr(self, token.lower(), TokenAttr(label=value, token=token))
+            self._create_token_attr(token, value)
         else:
             for token_attr in token_attrs:
                 if token == token_attr.parent:
@@ -93,6 +110,10 @@ class TokenAttrDict(dict):
     def get_token_attrs(self):
         return [token for token in self if isinstance(token, TokenAttr)]
 
+    def _create_token_attr(self, token, value):
+        setattr(self, token.lower(), TokenAttr(label=value, token=token))
+        self.signal.fire()
+
     @staticmethod
     def _validate_name_in_format_order(name, format_order):
         """ For quick checking if a key token is part of the format order
@@ -100,6 +121,24 @@ class TokenAttrDict(dict):
         if name not in format_order:
             raise exceptions.FormatError('The name token %s is not found in the current format ordering' %
                                          format_order)
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            equal = False
+            self_attrs = self.get_token_attrs()
+            other_attrs = other.get_token_attrs()
+            if len(self_attrs) > len(other_attrs):
+                return False
+
+            for attr in self_attrs:
+                for other_attr in other_attrs:
+                    if attr.label == other_attr.label:
+                        equal = True
+                        break
+                    else:
+                        equal = False
+            return equal
+        return False
 
 
 class Nomenclate(object):
@@ -118,9 +157,12 @@ class Nomenclate(object):
     FORMAT_STRING_REGEX = r'([A-Za-z][^A-Z_.]*)'
 
     def __init__(self, **kwargs):
+        self.signal = Signal()
+        self.signal.connect(self.update_token_attributes())
+
         self.cfg = config.ConfigParse()
 
-        #self.index = 0
+        # self.index = 0
         self.format_order = None
         self.format_string = None
         self.suffix_table = None
@@ -195,9 +237,7 @@ class Nomenclate(object):
             kwargs (dict): any extra definitions you want to input into the resulting dictionary
         Returns (dict): dictionary of relevant values
         """
-
-        for key, value in iteritems(input_dict):
-            self.token_dict.set_token_attr(key, value)
+        self.token_dict.state = input_dict
 
     def get_format_order_from_format_string(self, format_string):
         """ Dissects the format string and gets the order of the tokens as it finds them l->r
@@ -258,7 +298,7 @@ class Nomenclate(object):
         Returns (list): generated object names
         """
         # TODO: rework this entire function, very dirty function.
-        var_attr = self._get_token_attr(self.VARIATION_PATH[-1])
+        var_attr = self.token_dict.get_token_attr(self.VARIATION_PATH[-1])
         var_orig = var_attr.get()
 
         var_start, n_type = self._get_alphanumeric_index(var_orig)
@@ -279,13 +319,23 @@ class Nomenclate(object):
         var_attr.set(var_orig)
         return names
 
+    def update_token_attributes(self):
+        instance_token_attributes = [attr for attr in self.__dict__ if isinstance(attr, TokenAttr)]
+
+        for token_attribute in self.token_dict.get_token_attrs():
+            setattr(self, token_attribute.label, token_attribute)
+            instance_token_attributes.remove(token_attribute)
+
+        for excess_token_attr in instance_token_attributes:
+            delattr(self, excess_token_attr)
+
+
     def _validate_format_string(self, format_target):
         """ Checks to see if the target format string follows the proper style
         """
         format_order = self.get_format_order_from_format_string(format_target)
         if format_target != '_'.join(format_order):
             raise exceptions.FormatError("You have specified an invalid format string %s." % format_target)
-
 
     @staticmethod
     def _get_alphanumeric_index(query_string):
@@ -355,34 +405,7 @@ class Nomenclate(object):
         return characters.upper() if capital else characters
 
     def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            equal = False
-            self_attrs = self.get_token_attrs()
-            other_attrs = other.get_token_attrs()
-            if len(self_attrs) > len(other_attrs):
-                return False
-
-            for attr in self_attrs:
-                for other_attr in other_attrs:
-                    if attr.val == other_attr.val:
-                        equal = True
-                        break
-                    else:
-                        equal = False
-            return equal
-        return False
+        return self.token_dict == other.token_dict
 
     def __repr__(self):
         return self.get()
-
-    def __getattribute__(self, token):
-        try:
-            return self.token_dict.get_token_attr(token)
-        except exceptions.SourceError:
-            return object.__getattribute__(self, token)
-
-    def __setattr__(self, token, value):
-        try:
-            return self.token_dict.set_token_attr(token, value)
-        except exceptions.SourceError:
-            super(dict, self.token_dict).__setattr__(token, value)
