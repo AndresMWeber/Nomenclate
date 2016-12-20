@@ -34,35 +34,25 @@ class TestNomenclate(unittest.TestCase):
     def test_init_from_suffix_lut(self):
         self.nom.initialize_options()
 
-    @unittest.skip("skipping until fixed")
-    def test_get(self):
-        self.assertEquals(self.nom.get(), 'left_testObject_LOC')
-
-    @unittest.skip("skipping until fixed")
-    def test_get_after_change(self):
-        previous_state = self.nom.state
-        self.nom.location.set('rear')
-        self.assertEquals(self.nom.get(), 'left_rear_testObject_LOC')
-        self.nom.state = previous_state
-
-    @unittest.skip("skipping until fixed")
     def test_get_dict_empty(self):
         previous_state = self.nom.state
-        self.nom.clear_name_attrs()
+        self.nom.token_dict.clear_name_attrs()
         self.assertEquals(self.nom.state,
                           {'location': '', 'type': '', 'name': '', 'side': '', 'var': '', 'purpose': '',
                            'decorator': '', 'childtype': ''})
         self.nom.state = previous_state
 
-    @unittest.skip("skipping until fixed")
     def test_get_dict_non_empty(self):
+        print(self.nom.state)
         self.assertEquals(self.nom.state,
-                          {'name': 'testObject', 'side': 'left', 'type': 'locator', 'decorator': '', 'location': '',
-                           'var': '', 'purpose': '', 'childtype': ''})
-
-    @unittest.skip("skipping until fixed")
-    def test_get_chain(self):
-        self.assertIsNone(self.nom.get_chain(0,5))
+                          {'name': 'testObject',
+                           'side': 'left',
+                           'type': 'locator',
+                           'decorator': '',
+                           'location': '',
+                           'var': 'A',
+                           'purpose': '',
+                           'childtype': ''})
 
     def test_get_state_empty(self):
         previous_state = self.nom.state
@@ -70,14 +60,16 @@ class TestNomenclate(unittest.TestCase):
         self.assertEquals(self.nom.state, {})
         self.nom.state = previous_state
 
-    @unittest.skip("skipping until fixed")
     def test_get_state_valid(self):
         self.assertEquals(self.nom.state,
-                          {'type': '',
-                           'location': '',
-                           'childType': '',
+                          {'childtype': '',
                            'decorator': '',
-                           'purpose': ''})
+                           'location': '',
+                           'name': 'testObject',
+                           'purpose': '',
+                           'side': 'left',
+                           'type': 'locator',
+                           'var': 'A'})
 
     def test_get__get_str_or_int_abc_pos_integer(self):
         self.assertEquals(self.nom._get_alphanumeric_index(0),
@@ -112,17 +104,20 @@ class TestNomenclate(unittest.TestCase):
         self.assertEquals(self.nom.cleanup_formatted_string('test_name _messed __ up LOC'),
                           'test_name_messed_upLOC')
 
-    @unittest.skip("skipping until fixed")
-    def test_switch_naming_format(self):
-        self.assertTrue(self.nom.initialize_format_options(self.test_format_b))
+    def test_switch_naming_format_from_str(self):
+        self.nom.initialize_format_options(self.test_format_b)
+        self.assertTrue(self.checkEqual(self.nom.format_order,
+                                        ['side', 'location', 'name', 'Decorator', 'Var', 'childtype', 'purpose', 'type']))
 
-        self.assertTrue(self.nom.initialize_format_options(self.test_format))
+        self.nom.initialize_format_options(self.test_format)
+        self.assertTrue(self.checkEqual(self.nom.format_order,
+                                        ['side', 'location', 'name', 'Decorator', 'Var', 'childtype', 'purpose', 'type']))
 
-    @unittest.skip("skipping until fixed")
     def test_switch_naming_format_from_config(self):
-        self.assertTrue(self.nom.initialize_format_options('format_b'))
-
-        self.assertTrue(self.nom.initialize_format_options(self.test_format))
+        self.nom.initialize_format_options(['naming_formats', 'node', 'format_lee'])
+        self.assertTrue(self.checkEqual(self.nom.format_order,
+                                        ['type', 'childtype', 'space', 'purpose', 'name', 'side']))
+        self.nom.initialize_format_options(self.test_format)
 
     def test_get_alpha_normal(self):
         self.assertEquals(self.nom.get_variation_id(0), 'a')
@@ -142,3 +137,22 @@ class TestNomenclate(unittest.TestCase):
     @unittest.skip("skipping until fixed")
     def test__repr__(self):
         self.assertEquals(self.nom.__repr__(), 'left_testObject_LOC')
+
+    @unittest.skip("skipping until fixed")
+    def test_get_chain(self):
+        self.assertIsNone(self.nom.get_chain(0,5))
+
+    @unittest.skip("skipping until fixed")
+    def test_get(self):
+        self.assertEquals(self.nom.get(), 'left_testObject_LOC')
+
+    @unittest.skip("skipping until fixed")
+    def test_get_after_change(self):
+        previous_state = self.nom.state
+        self.nom.location.set('rear')
+        self.assertEquals(self.nom.get(), 'left_rear_testObject_LOC')
+        self.nom.state = previous_state
+
+    @staticmethod
+    def checkEqual(L1, L2):
+        return len(L1) == len(L2) and sorted(L1) == sorted(L2)

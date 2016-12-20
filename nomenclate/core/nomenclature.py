@@ -91,7 +91,7 @@ class TokenAttrDict(dict):
         else:
             for token_attr in token_attrs:
                 if token == token_attr.token:
-                    setattr(self, token_attr, value)
+                    setattr(self, token_attr.token, value)
 
     def get_token_attr(self, token):
         token_attr = getattr(self, token.lower())
@@ -335,8 +335,20 @@ class Nomenclate(object):
         """ Checks to see if the target format string follows the proper style
         """
         format_order = self.get_format_order_from_format_string(format_target)
-        if format_target != '_'.join(format_order):
-            raise exceptions.FormatError("You have specified an invalid format string %s." % format_target)
+        separators = '\\._-?'
+
+        format_target = format_target.lower()
+
+        for format_str in format_order:
+            print('removing %s from %s' % (format_str, format_target))
+            format_target = format_target.replace(format_str.lower(), '')
+        print(format_target)
+        for char in format_target:
+            if char not in separators:
+                raise exceptions.FormatError("You have specified an invalid format string %s." % format_target)
+
+        # if format_target != '_'.join(format_order):
+        #     raise exceptions.FormatError("You have specified an invalid format string %s." % format_target)
 
     @staticmethod
     def _get_alphanumeric_index(query_string):
