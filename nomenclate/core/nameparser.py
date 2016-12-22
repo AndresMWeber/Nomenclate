@@ -244,8 +244,9 @@ class NameParser(object):
                                           match_index=0)
             if match:
                 try:
-                    match.update(
-                        {'datetime': datetime.datetime.strptime(match['match'], time_format.replace('%yy', '%y'))})
+                    match.update({
+                        'datetime': datetime.datetime.strptime(match['match'], time_format.replace('%yy', '%y'))
+                        })
                     return match
                 except ValueError:
                     pass
@@ -271,7 +272,7 @@ class NameParser(object):
             casing_permutations = list(set(cls._get_casing_permutations(abbr)))
             casing_permutations.sort(key=lambda v: (v.upper(), v[0].islower(), len(v)))
             permutations = [permutation for permutation in casing_permutations if
-                            cls._valid_camel(permutation) or len(permutation) <= 2]
+                            cls.is_valid_camel(permutation) or len(permutation) <= 2]
             if permutations:
                 patterns.append(permutations)
 
@@ -381,7 +382,7 @@ class NameParser(object):
                                                   match_index=0,
                                                   ignore=ignore)
             if search_result is not None:
-                if cls._valid_camel(search_result.get('match_full'), strcmp=search_result.get('match')):
+                if cls.is_valid_camel(search_result.get('match_full'), strcmp=search_result.get('match')):
                     return search_result
         return None
 
@@ -404,7 +405,7 @@ class NameParser(object):
             yield input_string[0]
 
     @classmethod
-    def _valid_camel(cls, input_string, strcmp=None, ignore=''):
+    def is_valid_camel(cls, input_string, strcmp=None, ignore=''):
         """ Checks to see if an input string is valid for use in camel casing
             This assumes that all lowercase strings are not valid camel case situations and no camel string
             can just be a capitalized word.  Took ideas from here:
@@ -416,6 +417,9 @@ class NameParser(object):
         Returns (bool): whether it is valid or not
         """
         # clear any non chars from the string
+        if not input_string:
+            return False
+
         input_string = ''.join([c for c in input_string if c.isalpha()])
         matches = cls._get_regex_search(input_string,
                                         cls.REGEX_CAMEL.format(SEP=cls.REGEX_SEPARATORS),

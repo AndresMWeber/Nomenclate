@@ -134,21 +134,8 @@ class TokenAttrDict(dict):
                                          format_order)
 
     def __eq__(self, other):
-        print ('comparing token dicts self then other\n\t%s\n\t%s' % (self, other))
         if isinstance(other, self.__class__):
-            equal = False
-            self_attrs = self.get_token_attrs()
-            other_attrs = other.get_token_attrs()
-            if len(self_attrs) > len(other_attrs):
-                return False
-
-            for attr in self_attrs:
-                for other_attr in other_attrs:
-                    print('comparing %s to %s == %s' % (attr, other_attr, attr == other_attr))
-                    equal = True if attr == other_attr else False
-                    if equal:
-                        break
-            return equal
+            return all(map(lambda x: x[0] == x[1], zip(self.get_token_attrs(), other.get_token_attrs())))
         return False
 
     def __getattr__(self, name):

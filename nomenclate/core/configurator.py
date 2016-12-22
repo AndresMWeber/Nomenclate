@@ -14,23 +14,34 @@ from future.utils import iteritems
 import yaml
 import os
 from collections import OrderedDict
-import nomenclate.core.toolbox as tb
 import nomenclate.core.exceptions as exceptions
 
 
 class ConfigParse(object):
-    def __init__(self, config_filepath=None):
+    def __init__(self, config_filepath='env.yml'):
         """
         Args:
             section (str): section to query
             subsection (str):subsection to query
         """
-        if not config_filepath:
-            config_filepath = tb.get_config_filepath()
-        self.path = config_filepath
+        self.config_filepath = self.get_default_config_file(config_filepath)
         self.config_file_contents = None
         self.config_entry_handler = ConfigEntryFormatter()
-        self.rebuild_config_cache(self.path)
+        self.rebuild_config_cache(self.config_filepath)
+
+    def get_default_config_file(self, config_filepath):
+        try:
+            self.validate_config_file(config_filepath)
+            return config_filepath
+        except (IOError, OSError):
+            pass
+
+        try:
+            cwd_filepath = os.path.normpath(os.path.join(os.getcwd(), config_filepath))
+            cur_file_filepath = os.path.normpath(os.path.join(os.path.dirname(__file__), config_filepath))
+            return cwd_filepath if os.path.isfile(cwd_filepath) else cur_file_filepath
+        except IOError:
+            raise exceptions.SourceError('No config file found in current working directory or nomenclate/core')
 
     def rebuild_config_cache(self, config_filepath):
         """ Loads from file and caches all data from the config file in the form of an OrderedDict to self.data
@@ -49,7 +60,7 @@ class ConfigParse(object):
             items = list(config_data)
 
         self.config_file_contents = OrderedDict(sorted(items, key=lambda x: x[0], reverse=True))
-        self.path = config_filepath
+        self.config_filepath = config_filepath
 
     def get(self, query_path, default=None, return_type=list, preceding_depth=None):
         """ Traverses the list of query paths to find the data requested
@@ -80,8 +91,8 @@ class ConfigParse(object):
 
     @classmethod
     def validate_config_file(cls, config_filepath):
-        if not os.path.isfile(config_filepath):
-            raise IOError('File %s is not a valid yml, ini or cfg file or does not exist' % config_filepath)
+        if not os.path.isfile(config_filepath) and os.path.isabs(config_filepath):
+            raise IOError('File path %s is not a valid yml, ini or cfg file or does not exist' % config_filepath)
 
         elif os.path.getsize(config_filepath) == 0:
             raise IOError('File %s is empty' % config_filepath)
