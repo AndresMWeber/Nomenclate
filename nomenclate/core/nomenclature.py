@@ -52,7 +52,7 @@ class TokenAttrDict(dict):
     def __init__(self, nomenclate_object, signal):
         super(dict, self).__init__()
         self.nom = nomenclate_object
-        self.signal = signal
+        self.update_nomenclate_token_attrs = signal
 
     @property
     def state(self):
@@ -96,7 +96,7 @@ class TokenAttrDict(dict):
     def purge_name_attrs(self):
         for token_attr in self.get_token_attrs():
             del self[token_attr.token]
-        self.signal.fire()
+        self.update_nomenclate_token_attrs.fire()
 
     def clear_name_attrs(self):
         for token_attr in self.get_token_attrs():
@@ -106,7 +106,7 @@ class TokenAttrDict(dict):
         token_attrs = self.get_token_attrs()
         if token not in [token_attr.token for token_attr in token_attrs]:
             self._create_token_attr(token, value)
-            self.signal.fire()
+            self.update_nomenclate_token_attrs.fire()
         else:
             for token_attr in token_attrs:
                 if token == token_attr.token:
@@ -164,8 +164,8 @@ class Nomenclate(object):
     FORMAT_STRING_REGEX = r'([A-Za-z][^A-Z_.]*)'
 
     def __init__(self, *args, **kwargs):
-        self.signal = Signal()
-        self.signal.connect(self.update_token_attributes)
+        self.signal_update_token_attrs = Signal()
+        self.signal_update_token_attrs.connect(self.update_token_attributes)
 
         self.cfg = config.ConfigParse()
 
@@ -174,7 +174,7 @@ class Nomenclate(object):
         self.format_string = None
         self.suffix_table = None
 
-        self.token_dict = TokenAttrDict(self, self.signal)
+        self.token_dict = TokenAttrDict(self, self.signal_update_token_attrs)
 
         # We will accept a dictionary or a Nomenclate object to init as an arg
         # and any field set for kwargs
