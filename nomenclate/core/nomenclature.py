@@ -22,14 +22,30 @@ class Signal(object):
 
 class TokenAttr(object):
     def __init__(self, label=None, token=None):
+        self.validate_entries(label, token)
         self.label = label if label is not None else ""
-        self.token = token.lower()
+        self.token = token.lower() if label is not None else ""
 
     def get(self):
         return self.label
 
     def set(self, label):
+        self.validate_entries(label)
         self.label = label
+
+    @staticmethod
+    def validate_entries(*entries):
+        for entry in entries:
+            if isinstance(entry, str) or entry is None:
+                continue
+            else:
+                raise exceptions.ValidationError('Invalid type %s, expected %s' % (type(entry), str))
+
+    def __eq__(self, other):
+        return self.token == other.token and self.label == other.label
+
+    def __repr__(self):
+        return '%s:%s' % (self.token, self.label)
 
 
 class TokenAttrDict(dict):
@@ -40,7 +56,6 @@ class TokenAttrDict(dict):
 
     @property
     def state(self):
-        print('looking for state', dict((name_attr.token, name_attr.label) for name_attr in self.get_token_attrs()))
         return dict((name_attr.token, name_attr.label) for name_attr in self.get_token_attrs())
 
     @state.setter
@@ -49,6 +64,10 @@ class TokenAttrDict(dict):
         Args:
             input_object Union[dict, self.__class__]: accepts a dictionary or self.__class__
         """
+        if not isinstance(input_object, dict):
+            raise exceptions.FormatError('state setting only accepts type %s, not given input %s %s' %
+                                         (dict, input_object, type(input_object)))
+
         if isinstance(input_object, self.nom.__class__):
             input_object = input_object.state
 
@@ -115,6 +134,7 @@ class TokenAttrDict(dict):
                                          format_order)
 
     def __eq__(self, other):
+        print ('comparing token dicts self then other\n\t%s\n\t%s' % (self, other))
         if isinstance(other, self.__class__):
             equal = False
             self_attrs = self.get_token_attrs()
@@ -124,11 +144,10 @@ class TokenAttrDict(dict):
 
             for attr in self_attrs:
                 for other_attr in other_attrs:
-                    if attr.label == other_attr.label:
-                        equal = True
+                    print('comparing %s to %s == %s' % (attr, other_attr, attr == other_attr))
+                    equal = True if attr == other_attr else False
+                    if equal:
                         break
-                    else:
-                        equal = False
             return equal
         return False
 
@@ -137,6 +156,9 @@ class TokenAttrDict(dict):
             return self[name]
         except KeyError:
             object.__getattribute__(self, name)
+
+    def __repr__(self):
+        return ' '.join(['%s:%s' % (token_attr.token, token_attr.label) for token_attr in self.get_token_attrs()])
 
 
 class Nomenclate(object):
@@ -154,7 +176,7 @@ class Nomenclate(object):
 
     FORMAT_STRING_REGEX = r'([A-Za-z][^A-Z_.]*)'
 
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         self.signal = Signal()
         self.signal.connect(self.update_token_attributes)
 
@@ -166,14 +188,18 @@ class Nomenclate(object):
         self.suffix_table = None
 
         self.token_dict = TokenAttrDict(self, self.signal)
-        self.token_dict.state = kwargs
+
+        # We will accept a dictionary or a Nomenclate object to init as an arg
+        # and any field set for kwargs
+        for arg in args:
+            self.merge_dict(arg)
+
+        self.merge_dict(kwargs)
 
         self.reset_from_config()
 
     @property
     def state(self):
-        print ('current token dict state = ', self.token_dict.state)
-        print (type(self.token_dict.state))
         return self.token_dict.state
 
     @state.setter
@@ -331,6 +357,9 @@ class Nomenclate(object):
         for excess_token_attr in instance_token_attributes:
             delattr(self, excess_token_attr.token)
 
+    def _compose_name(self):
+        pass
+
     def _validate_format_string(self, format_target):
         """ Checks to see if the target format string follows the proper style
         """
@@ -340,9 +369,7 @@ class Nomenclate(object):
         format_target = format_target.lower()
 
         for format_str in format_order:
-            print('removing %s from %s' % (format_str, format_target))
             format_target = format_target.replace(format_str.lower(), '')
-        print(format_target)
         for char in format_target:
             if char not in separators:
                 raise exceptions.FormatError("You have specified an invalid format string %s." % format_target)
