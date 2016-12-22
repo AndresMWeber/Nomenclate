@@ -64,16 +64,18 @@ class TokenAttrDict(dict):
         Args:
             input_object Union[dict, self.__class__]: accepts a dictionary or self.__class__
         """
-        if not isinstance(input_object, dict):
-            raise exceptions.FormatError('state setting only accepts type %s, not given input %s %s' %
-                                         (dict, input_object, type(input_object)))
 
         if isinstance(input_object, self.nom.__class__):
             input_object = input_object.state
 
+        elif not isinstance(input_object, dict):
+            raise exceptions.FormatError('state setting only accepts type %s, not given input %s %s' %
+                                         (dict, input_object, type(input_object)))
+
         input_object.update(kwargs)
 
         for input_attr_name, input_attr_value in iteritems(input_object):
+            print ('setting attr %s to value %s' % (input_attr_name, input_attr_value))
             self.set_token_attr(input_attr_name, input_attr_value)
 
     def build_name_attrs(self):
@@ -124,6 +126,10 @@ class TokenAttrDict(dict):
 
     def _create_token_attr(self, token, value):
         self[token.lower()] = TokenAttr(label=value, token=token)
+
+    def update_state(self, merge_dict):
+        print('merging in dict', merge_dict)
+        self.state = merge_dict
 
     @staticmethod
     def _validate_name_in_format_order(name, format_order):
@@ -195,7 +201,7 @@ class Nomenclate(object):
         Args:
             input_object Union[dict, self.__class__]: accepts a dictionary or self.__class__
         """
-        self.token_dict.state = input_object
+        self.token_dict.state.update(input_object)
 
     @property
     def tokens(self):

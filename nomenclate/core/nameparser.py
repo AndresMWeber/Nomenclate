@@ -163,7 +163,7 @@ class NameParser(object):
         if match is not None:
             if len(match) > 1:
                 for m in match:
-                    m.update({'version': int(m['match'].upper().replace('V', ''))})
+                    m.update_state({'version': int(m['match'].upper().replace('V', ''))})
                 compound_version = '.'.join([str(m['version']) for m in match])
                 compound_version = float(compound_version) if compound_version.count('.') == 1 else compound_version
                 return {'compound_matches': match,
@@ -173,7 +173,7 @@ class NameParser(object):
 
             elif len(match) == 1:
                 match = match[0]
-                match.update({'version': int(match['match'].upper().replace('V', ''))})
+                match.update_state({'version': int(match['match'].upper().replace('V', ''))})
                 return match
 
         return None
@@ -352,7 +352,7 @@ class NameParser(object):
 
         if matches:
             for match in matches:
-                match.update(metadata)
+                match.update_state(metadata)
             if match_index is not None:
                 return matches[match_index]
             return matches

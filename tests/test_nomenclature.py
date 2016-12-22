@@ -243,7 +243,8 @@ class TestNomenclateGetVariationId(TestNomenclateBase):
 
 class TestNomenclateEq(TestNomenclateBase):
     def test_equal(self):
-        other = nm.Nomenclate(self.nom.state)
+        print ('looking here')
+        other = nm.Nomenclate(self.nom)
         print(self.nom.state, 'oh yeah')
         print(other.state, 'yeah')
         self.assertTrue(other == self.nom)
