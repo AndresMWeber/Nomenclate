@@ -25,6 +25,7 @@ import re
 import datetime
 import itertools
 import nomenclate.core.configurator as config
+
 __author__ = "Andres Weber"
 __email__ = "andresmweber@gmail.com"
 __version__ = '0.3.0'
@@ -35,9 +36,9 @@ reload(config)
 class NameParser(object):
     """ This parses names of assets.  It assumes the usual convention of strings separated by underscores.
     """
-    CONFIG_SIDES = config.ConfigParse().get_subsection(section='options', subsection='side')
-    CONFIG_DISCIPLINES = config.ConfigParse().get_subsection(section='options', subsection='disciplines')
-    PARSE_ABLE = ['basename', 'version', 'date', 'side', 'udim']
+    CONFIG_SIDES = config.ConfigParse().get(['options', 'side'])
+    CONFIG_DISCIPLINES = config.ConfigParse().get(['options', 'discipline'])
+    PARSABLE = ['basename', 'version', 'date', 'side', 'udim']
 
     REGEX_BASENAME = r'(?:^[-._]+)?([a-zA-Z0-9_\-|]+?)(?=[-._]{2,}|\.)'
     REGEX_SEPARATORS = r'[ ,_!?:\.\-]'
@@ -59,7 +60,7 @@ class NameParser(object):
             name (str): string to be parsed
         Returns (dict): dictionary with relevant parsed information
         """
-        parse_dict = dict.fromkeys(cls.PARSE_ABLE, None)
+        parse_dict = dict.fromkeys(cls.PARSABLE, None)
         parse_dict['date'] = cls.get_date(name)
         parse_dict['version'] = cls.get_version(name)
         parse_dict['udim'] = cls.get_udim(name)
@@ -101,11 +102,13 @@ class NameParser(object):
         Returns (dict): match dictionary
         """
         for discipline in cls.CONFIG_DISCIPLINES:
-            re_abbr = '({RECURSE}(?=[0-9]|[A-Z]|{SEPARATORS}))'.format(RECURSE=cls._build_abbreviation_regex(discipline),
-                                                                       SEPARATORS=cls.REGEX_SEPARATORS)
+            re_abbr = '({RECURSE}(?=[0-9]|[A-Z]|{SEPARATORS}))'.format(
+                RECURSE=cls._build_abbreviation_regex(discipline),
+                SEPARATORS=cls.REGEX_SEPARATORS)
             matches = cls._get_regex_search(name, re_abbr, ignore=ignore)
             if matches:
-                matches = [m for m in matches if re.findall('([a-z]{%d,})' % min_length, m['match'], flags=re.IGNORECASE)]
+                matches = [m for m in matches if
+                           re.findall('([a-z]{%d,})' % min_length, m['match'], flags=re.IGNORECASE)]
                 if matches:
                     return matches[-1]
         return None
@@ -162,7 +165,7 @@ class NameParser(object):
                 for m in match:
                     m.update({'version': int(m['match'].upper().replace('V', ''))})
                 compound_version = '.'.join([str(m['version']) for m in match])
-                compound_version = float(compound_version) if compound_version.count('.')==1 else compound_version
+                compound_version = float(compound_version) if compound_version.count('.') == 1 else compound_version
                 return {'compound_matches': match,
                         'compound_version': compound_version,
                         'pattern': match[0]['pattern'],
@@ -225,7 +228,8 @@ class NameParser(object):
                         '%m-%d-%yy',
                         '%m%d%Y']
 
-        mapping = [('%yy', '(([01]\d{1}))'), ('%Y', '((19|20)\d{2})'), ('%y', '(\d{2})'), ('%d', '(\d{2})'), ('%m', '(\d{2})'),
+        mapping = [('%yy', '(([01]\d{1}))'), ('%Y', '((19|20)\d{2})'), ('%y', '(\d{2})'), ('%d', '(\d{2})'),
+                   ('%m', '(\d{2})'),
                    ('%H', '(\d{2})'), ('%M', '(\d{2})'), ('%S', '(\d{2})')]
         time_regexes = []
         for time_format in time_formats:
@@ -240,7 +244,9 @@ class NameParser(object):
                                           match_index=0)
             if match:
                 try:
-                    match.update({'datetime': datetime.datetime.strptime(match['match'], time_format.replace('%yy','%y'))})
+                    match.update({
+                        'datetime': datetime.datetime.strptime(match['match'], time_format.replace('%yy', '%y'))
+                        })
                     return match
                 except ValueError:
                     pass
@@ -265,7 +271,8 @@ class NameParser(object):
             # http://stackoverflow.com/questions/13954841/python-sort-upper-case-and-lower-case
             casing_permutations = list(set(cls._get_casing_permutations(abbr)))
             casing_permutations.sort(key=lambda v: (v.upper(), v[0].islower(), len(v)))
-            permutations = [permutation for permutation in casing_permutations if cls._valid_camel(permutation) or len(permutation) <= 2]
+            permutations = [permutation for permutation in casing_permutations if
+                            cls.is_valid_camel(permutation) or len(permutation) <= 2]
             if permutations:
                 patterns.append(permutations)
 
@@ -291,10 +298,10 @@ class NameParser(object):
 
                 for m in matches:
                     valid_slice = True
-                    if removal_indices is []:
-                        removal_indices.append((slice_a, slice_b))
                     slice_a, slice_b = m.get('position')
                     # Adjust slice positions from previous slices
+                    if removal_indices is []:
+                        removal_indices.append((slice_a, slice_b))
 
                     for r_slice_a, r_slice_b in removal_indices:
                         if slice_a == r_slice_a and slice_b == r_slice_b:
@@ -319,7 +326,7 @@ class NameParser(object):
             regex (str): input regex to be compiled and searched with
             match_index (int or None): whether to get a specific match, if None returns all matches as list
             metadata (dict): dictionary of extra metatags needed to identify information
-        Returns [dict]: list of dictionaries if multiple hits or a specific entry or None
+        Returns list(dict): list of dictionaries if multiple hits or a specific entry or None
         """
         generator = re.compile(regex, flags=flags).finditer(input_string)
         matches = []
@@ -359,7 +366,7 @@ class NameParser(object):
             search_string (str): string to find and insert into the search regexes
             metadata (dict): metadata to add to the result if we find a match
             ignore (str): ignore specific string for the search
-        Returns (dict or None): dictionary of search results or None
+        Returns Optional(dict): dictionary of search results
         """
         patterns = [cls.REGEX_ABBR_SEOS,
                     cls.REGEX_ABBR_ISLAND,
@@ -375,7 +382,7 @@ class NameParser(object):
                                                   match_index=0,
                                                   ignore=ignore)
             if search_result is not None:
-                if cls._valid_camel(search_result['match_full'], strcmp=search_result['match']):
+                if cls.is_valid_camel(search_result.get('match_full'), strcmp=search_result.get('match')):
                     return search_result
         return None
 
@@ -398,7 +405,7 @@ class NameParser(object):
             yield input_string[0]
 
     @classmethod
-    def _valid_camel(cls, input_string, strcmp=None, ignore=''):
+    def is_valid_camel(cls, input_string, strcmp=None, ignore=''):
         """ Checks to see if an input string is valid for use in camel casing
             This assumes that all lowercase strings are not valid camel case situations and no camel string
             can just be a capitalized word.  Took ideas from here:
@@ -410,6 +417,9 @@ class NameParser(object):
         Returns (bool): whether it is valid or not
         """
         # clear any non chars from the string
+        if not input_string:
+            return False
+
         input_string = ''.join([c for c in input_string if c.isalpha()])
         matches = cls._get_regex_search(input_string,
                                         cls.REGEX_CAMEL.format(SEP=cls.REGEX_SEPARATORS),
@@ -417,10 +427,10 @@ class NameParser(object):
                                         ignore=ignore)
         if matches or input_string == strcmp:
             if strcmp:
-                index = input_string.find(strcmp)-1
+                index = input_string.find(strcmp) - 1
                 is_camel = strcmp[0].isupper() and input_string[index].islower()
                 is_input = strcmp == input_string
-                is_start = index+1 == 0
+                is_start = index + 1 == 0
                 return is_camel or is_input or is_start
             return True
         elif len(input_string) == 1:

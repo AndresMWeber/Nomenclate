@@ -117,7 +117,7 @@ class TestNameparser(unittest.TestCase):
             for permutation in permutations:
                 for test_option in test_options:
                     # Removing unlikely permutations like LeF: they could be mistaken for camel casing on other words
-                    if self.fixture._valid_camel(permutation):
+                    if self.fixture.is_valid_camel(permutation):
                         side_results = self.fixture.get_side(test_option % permutation)
                         if side_results:
                             side_results = [side_results[val] for val in ['side', 'position_full', 'match']]
@@ -173,7 +173,7 @@ class TestNameparser(unittest.TestCase):
                      ('Camelcase', False), ('Case', False), ('camelCamelCase', True)]:
             test, val = test
             print (test, val)
-            self.assertEquals(self.fixture._valid_camel(test), val)
+            self.assertEquals(self.fixture.is_valid_camel(test), val)
 
     def test_get_casing_permutations(self):
         # testing all possible permutations of a simple example
