@@ -115,7 +115,7 @@ class TestNomenclateResetFromConfig(TestNomenclateBase):
        self.assertIsNone(self.nom.reset_from_config())
 
 
-class TestNomenclateIinitalizeConfigSettings(TestNomenclateBase):
+class TestNomenclateInitializeConfigSettings(TestNomenclateBase):
     pass
 
 
