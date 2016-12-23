@@ -127,6 +127,10 @@ class TokenAttrDict(dict):
     def _create_token_attr(self, token, value):
         self[token.lower()] = TokenAttr(label=value, token=token)
 
+    def get_unset_token_attrs(self):
+        return [token_attr for token_attr in self.get_token_attrs()
+                if token_attr.label == '']
+
     def update_state(self, merge_dict):
         print('merging in dict', merge_dict)
         self.state = merge_dict
@@ -258,6 +262,9 @@ class Nomenclate(object):
         """
         self.token_dict.state = input_dict
 
+    def swap_format(self, format_string):
+        self.initialize_format_options(format_string)
+
     def get_format_order_from_format_string(self, format_string):
         """ Dissects the format string and gets the order of the tokens as it finds them l->r
             Splits on camel case or periods/underscores
@@ -352,6 +359,9 @@ class Nomenclate(object):
 
     def _compose_name(self):
         pass
+
+    def get_unset_tokens(self):
+        return self.token_dict.get_unset_token_attrs()
 
     def _validate_format_string(self, format_target):
         """ Checks to see if the target format string follows the proper style
