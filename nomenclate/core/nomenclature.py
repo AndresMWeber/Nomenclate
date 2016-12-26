@@ -2,6 +2,7 @@
 # Ensure Python 2/3 compatibility: http://python-future.org/compatible_idioms.html
 from __future__ import print_function
 from future.utils import iteritems
+import collections
 import re
 import string
 import nomenclate.core.configurator as config
@@ -64,7 +65,6 @@ class TokenAttrDict(dict):
         Args:
             input_object Union[dict, self.__class__]: accepts a dictionary or self.__class__
         """
-
         if isinstance(input_object, self.nom.__class__):
             input_object = input_object.state
 
@@ -188,10 +188,8 @@ class Nomenclate(object):
 
         # We will accept a dictionary or a Nomenclate object to init as an arg
         # and any field set for kwargs
-        for arg in args:
-            self.merge_dict(arg)
-
-        self.merge_dict(kwargs)
+        input_object = self.convert_input(args, kwargs)
+        self.merge_dict(input_object)
 
         self.reset_from_config()
 
@@ -200,11 +198,12 @@ class Nomenclate(object):
         return self.token_dict.state
 
     @state.setter
-    def state(self, input_object, **kwargs):
+    def state(self, input_object):
         """
         Args:
             input_object Union[dict, self.__class__]: accepts a dictionary or self.__class__
         """
+        input_object = self.convert_input(input_object)
         self.token_dict.state.update(input_object)
 
     @property
@@ -345,6 +344,46 @@ class Nomenclate(object):
         var_attr.set(var_orig)
         return names
 
+    def convert_input(self, *args, **kwargs):
+        """ Automatically converts kwarg inputs if a convert method exists for that token.  Used
+            for custom format tokens that need converting like "date".
+        """
+        dicts = [arg for arg in args if isinstance(arg, dict)]
+        dicts.append(kwargs)
+        super_dict = collections.defaultdict(set)
+        for d in dicts:
+            for k, v in iteritems(d):
+
+                convert_method = 'convert_%s' % k
+                try:
+                    convert_method = getattr(self, convert_method)
+                    if callable(convert_method):
+                        v = convert_method(v)
+                except AttributeError:
+                    pass
+                super_dict[k].add(v)
+
+        super_dict = self.remove_and_use_configs(super_dict)
+        return super_dict
+
+    def remove_and_use_configs(self, input_dict):
+        """ Removes all key/v for keys that exist in the overall config.  Used to weed out config
+            keys from tokens in a given input.
+        """
+        return input_dict
+
+    def convert_date(self, date):
+
+        return date
+
+    def convert_var(self, var):
+        # TODO: need to think about this one.  Need some type of version denotation.  Always returns letter?
+        return var
+
+    def convert_version(self, version):
+        padding = self.cfg.get(['overall_config', 'version_padding'])
+        return '%0{0}d'.format(padding) % version
+
     def update_token_attributes(self):
         instance_token_attributes = [value for attr, value in iteritems(self.__dict__) if isinstance(value, TokenAttr)]
         current_token_attributes = self.token_dict.get_token_attrs()
@@ -357,11 +396,11 @@ class Nomenclate(object):
         for excess_token_attr in instance_token_attributes:
             delattr(self, excess_token_attr.token)
 
-    def _compose_name(self):
-        pass
-
     def get_unset_tokens(self):
         return self.token_dict.get_unset_token_attrs()
+
+    def _compose_name(self):
+        pass
 
     def _validate_format_string(self, format_target):
         """ Checks to see if the target format string follows the proper style
