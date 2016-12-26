@@ -363,10 +363,10 @@ class Nomenclate(object):
                     pass
                 super_dict[k].add(v)
 
-        super_dict = self.remove_and_use_configs(super_dict)
+        super_dict = self.sift_configs(super_dict)
         return super_dict
 
-    def remove_and_use_configs(self, input_dict):
+    def sift_configs(self, input_dict):
         """ Removes all key/v for keys that exist in the overall config.  Used to weed out config
             keys from tokens in a given input.
         """
