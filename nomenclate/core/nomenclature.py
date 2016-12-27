@@ -171,6 +171,7 @@ class Nomenclate(object):
     VARIATION_PATH = OPTIONS_PATH + ['var']
     SIDE_PATH = OPTIONS_PATH + ['side']
 
+    UNIQUE_TOKENS = ['date', 'var', 'version']
     FORMAT_STRING_REGEX = r'([A-Za-z][^A-Z_.]*)'
 
     def __init__(self, *args, **kwargs):
@@ -348,39 +349,61 @@ class Nomenclate(object):
         """ Automatically converts kwarg inputs if a convert method exists for that token.  Used
             for custom format tokens that need converting like "date".
         """
+        input_dict = self._combine_dicts(args, kwargs)
+        self.process_unique_tokens(input_dict)
+        self.sift_configs(input_dict)
+        return input_dict
+
+    def _combine_dicts(self, *args, **kwargs):
         dicts = [arg for arg in args if isinstance(arg, dict)]
         dicts.append(kwargs)
         super_dict = collections.defaultdict(set)
+
         for d in dicts:
             for k, v in iteritems(d):
-
-                convert_method = 'convert_%s' % k
-                try:
-                    convert_method = getattr(self, convert_method)
-                    if callable(convert_method):
-                        v = convert_method(v)
-                except AttributeError:
-                    pass
                 super_dict[k].add(v)
 
-        super_dict = self.sift_configs(super_dict)
         return super_dict
 
+    def process_unique_tokens(self, input_dict):
+        for k, v in iteritems(input_dict):
+            process_method = 'process_%s' % k
+            try:
+                process_method = getattr(self, process_method)
+                if callable(process_method):
+                    input_dict[k] = process_method(v)
+            except AttributeError:
+                pass
+
     def sift_configs(self, input_dict):
-        """ Removes all key/v for keys that exist in the overall config.  Used to weed out config
-            keys from tokens in a given input.
+        """ Removes all key/v for keys that exist in the overall config and activates them.
+            Used to weed out config keys from tokens in a given input.
         """
-        return input_dict
+        for k, v in iteritems(input_dict):
+            try:
+                self.cfg.get(self.CONFIG_PATH + [k])
+                setattr(self, k, v)
+                input_dict.pop(k, None)
 
-    def convert_date(self, date):
+            except exceptions.ResourceNotFoundError:
+                pass
 
-        return date
+    def filter_dict_keys(self, input_dict, filters=list()):
+        found_keys = []
+        for k, v in iteritems(input_dict):
+            for filter in filters:
+                if filter in k:
+                    found_keys.append(k)
+        return found_keys
 
-    def convert_var(self, var):
-        # TODO: need to think about this one.  Need some type of version denotation.  Always returns letter?
-        return var
+    def process_date(self, token, date):
+        for key in self.filter_dict_keys(token)
+        return {token: date}
 
-    def convert_version(self, version):
+    def process_var(self, token, var):
+        return self.get_variation_id(getattr(self, '%s_index' % token, 0), var.isupper())
+
+    def process_version(self, token, version):
         padding = self.cfg.get(['overall_config', 'version_padding'])
         return '%0{0}d'.format(padding) % version
 

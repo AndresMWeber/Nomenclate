@@ -71,6 +71,8 @@ class ConfigParse(object):
                                     that traces back up the path for x depth
                                     -1 for the full traversal back up the path
                                     None is default for no traversal
+        Raises:
+            exceptions.ResourceNotFoundError: if the query path is invalid
         """
         query_path = query_path if isinstance(query_path, list) else [query_path]
         self.validate_query_path(query_path)
