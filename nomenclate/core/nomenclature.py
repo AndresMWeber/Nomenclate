@@ -6,7 +6,7 @@ import collections
 import re
 import string
 import datetime
-import dateutil
+import dateutil.parser as p
 import nomenclate.core.configurator as config
 import nomenclate.core.exceptions as exceptions
 
