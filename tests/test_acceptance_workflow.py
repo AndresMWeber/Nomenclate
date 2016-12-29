@@ -37,6 +37,7 @@ class TestCreation(TestAcceptanceWorkflowBase):
         n = nom.Nomenclate({'name': 'test', 'type': 'locator', 'var': 'A', 'side': 'left'})
         self.assertEquals(n.get(), 'l_default_testA_LOC')
         n.swap_format(['naming_formats', 'node', 'format_archive'])
+
         self.assertEquals(n.get(), 'l_default_test_LOC')
         self.fixtures.append(n)
 

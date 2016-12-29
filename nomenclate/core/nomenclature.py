@@ -5,6 +5,8 @@ from future.utils import iteritems
 import collections
 import re
 import string
+import datetime
+import dateutil
 import nomenclate.core.configurator as config
 import nomenclate.core.exceptions as exceptions
 
@@ -350,32 +352,23 @@ class Nomenclate(object):
             for custom format tokens that need converting like "date".
         """
         input_dict = self._combine_dicts(args, kwargs)
+        self.sift_and_init_configs(input_dict)
         self.process_unique_tokens(input_dict)
-        self.sift_configs(input_dict)
         return input_dict
-
-    def _combine_dicts(self, *args, **kwargs):
-        dicts = [arg for arg in args if isinstance(arg, dict)]
-        dicts.append(kwargs)
-        super_dict = collections.defaultdict(set)
-
-        for d in dicts:
-            for k, v in iteritems(d):
-                super_dict[k].add(v)
-
-        return super_dict
 
     def process_unique_tokens(self, input_dict):
         for k, v in iteritems(input_dict):
             process_method = 'process_%s' % k
             try:
                 process_method = getattr(self, process_method)
-                if callable(process_method):
-                    input_dict[k] = process_method(v)
+                config_format = getattr(self, '%s_format', False)
+                token_index = getattr(self, '%s_index' % k, 0)
+                if callable(process_method) and config_format:
+                    input_dict[k] = process_method(v, format=config_format, index=token_index)
             except AttributeError:
                 pass
 
-    def sift_configs(self, input_dict):
+    def sift_and_init_configs(self, input_dict):
         """ Removes all key/v for keys that exist in the overall config and activates them.
             Used to weed out config keys from tokens in a given input.
         """
@@ -388,24 +381,21 @@ class Nomenclate(object):
             except exceptions.ResourceNotFoundError:
                 pass
 
-    def filter_dict_keys(self, input_dict, filters=list()):
-        found_keys = []
-        for k, v in iteritems(input_dict):
-            for filter in filters:
-                if filter in k:
-                    found_keys.append(k)
-        return found_keys
+    def process_date(self, date, **kwargs):
+        if date == 'now':
+            d = datetime.datetime.now()
+        else:
+            try:
+                d = p.parse(date)
+            except ValueError:
+                return ''
+        return d.strftime(kwargs.get('format', '%Y-%m-%d'))
 
-    def process_date(self, token, date):
-        for key in self.filter_dict_keys(token)
-        return {token: date}
+    def process_var(self, var, **kwargs):
+        return self.get_variation_id(kwargs.get('token_index', 0), var.isupper())
 
-    def process_var(self, token, var):
-        return self.get_variation_id(getattr(self, '%s_index' % token, 0), var.isupper())
-
-    def process_version(self, token, version):
-        padding = self.cfg.get(['overall_config', 'version_padding'])
-        return '%0{0}d'.format(padding) % version
+    def process_version(self, version, **kwargs):
+        return '%0{0}d'.format(self.version_padding) % version
 
     def update_token_attributes(self):
         instance_token_attributes = [value for attr, value in iteritems(self.__dict__) if isinstance(value, TokenAttr)]
@@ -421,6 +411,17 @@ class Nomenclate(object):
 
     def get_unset_tokens(self):
         return self.token_dict.get_unset_token_attrs()
+
+    def _combine_dicts(self, *args, **kwargs):
+        dicts = [arg for arg in args if isinstance(arg, dict)]
+        dicts.append(kwargs)
+        super_dict = collections.defaultdict(set)
+
+        for d in dicts:
+            for k, v in iteritems(d):
+                super_dict[k].add(v)
+
+        return super_dict
 
     def _compose_name(self):
         pass

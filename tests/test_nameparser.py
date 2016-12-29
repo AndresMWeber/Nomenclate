@@ -166,6 +166,7 @@ class TestNameparser(unittest.TestCase):
                 self.assertEqual(result,
                                  (datetime.datetime.strptime(input_time.strftime(test_format), test_format), test_format))
 
+
     def test_valid_camel(self):
         for test in [('aAaa', True), ('Aaaa', False), ('AAAaaaaa', True), ('AAAAaaaAAA', True),
                      ('AaA', True), ('Aa', False), ('AA', False), ('aa', False), ('camel', False),
