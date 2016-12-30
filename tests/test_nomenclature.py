@@ -226,19 +226,19 @@ class TestNomenclateCleanupFormattingString(TestNomenclateBase):
 
 class TestNomenclateGetVariationId(TestNomenclateBase):
     def test_get_variation_id_normal(self):
-        self.assertEquals(self.nom.get_variation_id(0), 'a')
+        self.assertEquals(self.nom._get_variation_id(0), 'a')
 
     def test_get_variation_id_negative(self):
-        self.assertEquals(self.nom.get_variation_id(-4), '')
+        self.assertEquals(self.nom._get_variation_id(-4), '')
 
     def test_get_variation_id_negative_one(self):
-        self.assertEquals(self.nom.get_variation_id(-1), '')
+        self.assertEquals(self.nom._get_variation_id(-1), '')
 
     def test_get_variation_id_double_upper(self):
-        self.assertEquals(self.nom.get_variation_id(1046, capital=True), 'ANG')
+        self.assertEquals(self.nom._get_variation_id(1046, capital=True), 'ANG')
 
     def test_get_variation_id_double_lower(self):
-        self.assertEquals(self.nom.get_variation_id(1046, capital=False), 'ang')
+        self.assertEquals(self.nom._get_variation_id(1046, capital=False), 'ang')
 
 
 class TestNomenclateEq(TestNomenclateBase):
