@@ -138,13 +138,13 @@ class TestNomenclateInitializeFormatOptions(TestNomenclateBase):
 
 class TestNomenclateInitializeOptions(TestNomenclateBase):
     def test_options_stored(self):
-        self.nom.naming_formats = None
-        self.nom.config_table = None
-        self.nom.suffix_table = None
+        self.nom.FORMATS_OPTIONS = None
+        self.nom.CONFIG_OPTIONS = None
+        self.nom.SUFFIX_OPTIONS = None
         self.nom.initialize_options()
-        self.assertIsNotNone(self.nom.naming_formats)
-        self.assertIsNotNone(self.nom.suffix_table)
-        self.assertIsNotNone(self.nom.config_table)
+        self.assertIsNotNone(self.nom.FORMATS_OPTIONS)
+        self.assertIsNotNone(self.nom.SUFFIX_OPTIONS)
+        self.assertIsNotNone(self.nom.CONFIG_OPTIONS)
 
 
 class TestNomenclateInitializeUiOptions(TestNomenclateBase):

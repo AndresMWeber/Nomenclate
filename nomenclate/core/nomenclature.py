@@ -11,18 +11,6 @@ import nomenclate.core.configurator as config
 import nomenclate.core.exceptions as exceptions
 
 
-class Signal(object):
-    def __init__(self):
-        self._handlers = []
-
-    def connect(self, handler):
-        self._handlers.append(handler)
-
-    def fire(self, *args):
-        for handler in self._handlers:
-            handler(*args)
-
-
 class TokenAttr(object):
     def __init__(self, label=None, token=None):
         self.validate_entries(label, token)
@@ -51,11 +39,10 @@ class TokenAttr(object):
         return '%s:%s' % (self.token, self.label)
 
 
-class TokenAttrDict(dict):
-    def __init__(self, nomenclate_object, signal):
+class TokenAttrDictHandler(dict):
+    def __init__(self, nomenclate_object):
         super(dict, self).__init__()
         self.nom = nomenclate_object
-        self.update_nomenclate_token_attrs = signal
 
     @property
     def state(self):
@@ -100,7 +87,7 @@ class TokenAttrDict(dict):
     def purge_name_attrs(self):
         for token_attr in self.get_token_attrs():
             del self[token_attr.token]
-        self.update_nomenclate_token_attrs.fire()
+        self.update_nomenclate_token_attrs()
 
     def clear_name_attrs(self):
         for token_attr in self.get_token_attrs():
@@ -110,7 +97,7 @@ class TokenAttrDict(dict):
         token_attrs = self.get_token_attrs()
         if token not in [token_attr.token for token_attr in token_attrs]:
             self._create_token_attr(token, value)
-            self.update_nomenclate_token_attrs.fire()
+            self.update_nomenclate_token_attributes()
         else:
             for token_attr in token_attrs:
                 if token == token_attr.token:
@@ -124,7 +111,12 @@ class TokenAttrDict(dict):
             return token_attr
 
     def get_token_attrs(self):
-        return [value for name, value in iteritems(self) if isinstance(value, TokenAttr)]
+        for name, value in iteritems(self):
+            if isinstance(value, TokenAttr):
+                yield value
+
+    def get_token_values_dict(self):
+        return dict([(attr.token, attr.label) for attr in self.get_token_attrs()])
 
     def _create_token_attr(self, token, value):
         self[token.lower()] = TokenAttr(label=value, token=token)
@@ -136,6 +128,17 @@ class TokenAttrDict(dict):
     def update_state(self, merge_dict):
         print('merging in dict', merge_dict)
         self.state = merge_dict
+
+    def update_nomenclate_token_attributes(self):
+        instance_token_attributes = [value for attr, value in iteritems(self.nom.__dict__) if isinstance(value, TokenAttr)]
+
+        for token_attribute in self.get_token_attrs():
+            setattr(self, token_attribute.token, token_attribute)
+            if token_attribute in instance_token_attributes:
+                instance_token_attributes.remove(token_attribute)
+
+        for excess_token_attr in instance_token_attributes:
+            delattr(self, excess_token_attr.token)
 
     @staticmethod
     def _validate_name_in_format_order(name, format_order):
@@ -160,209 +163,124 @@ class TokenAttrDict(dict):
         return ' '.join(['%s:%s' % (token_attr.token, token_attr.label) for token_attr in self.get_token_attrs()])
 
 
-class Nomenclate(object):
-    """This class deals with renaming of objects in an approved pattern
-    """
-    CONFIG_PATH = ['overall_config']
+class FormatString(object):
+    FORMAT_STRING_REGEX = r'([A-Za-z][^A-Z_.]*)'
 
-    SUFFIXES_FORMAT_PATH = ['suffixes']
-    NAMING_FORMAT_PATH = ['naming_formats']
-    DEFAULT_FORMAT_PATH = NAMING_FORMAT_PATH + ['node', 'default']
+    def __init__(self, format_string=""):
+        self.format_string = format_string
+        self.swap_format(format_string)
 
-    OPTIONS_PATH = ['options']
-    VARIATION_PATH = OPTIONS_PATH + ['var']
-    SIDE_PATH = OPTIONS_PATH + ['side']
+    def swap_format(self, format_target):
+        try:
+            self._validate_format_string(format_target)
+            self.format_string = format_target
+        except exceptions.FormatError:
+            pass
+        finally:
+            self.format_order = self.get_format_order(format_target)
 
-    UNIQUE_TOKENS = ['date', 'var', 'version']
-
-    def __init__(self, *args, **kwargs):
-        self.signal_update_token_attrs = Signal()
-        self.signal_update_token_attrs.connect(self.update_token_attributes)
-
-        self.cfg = config.ConfigParse()
-
-        self.format_string = FormatString()
-        self.suffix_table = None
-
-        self.token_dict = TokenAttrDict(self, self.signal_update_token_attrs)
-
-        # We will accept a dictionary or a Nomenclate object to init as an arg
-        # and any field set for kwargs
-        input_object = self.convert_input(args, kwargs)
-        self.merge_dict(input_object)
-
-        self.reset_from_config()
-
-    @property
-    def state(self):
-        return self.token_dict.state
-
-    @state.setter
-    def state(self, input_object):
-        """
-        Args:
-            input_object Union[dict, self.__class__]: accepts a dictionary or self.__class__
-        """
-        input_object = self.convert_input(input_object)
-        self.token_dict.state.update(input_object)
-
-    @property
-    def tokens(self):
-        return list(self.token_dict.state)
-
-    @property
-    def format_string(self):
-        return self.format_string.format_string
-
-    @property
-    def format_order(self):
-        return self.format_string.format_order
-
-    def reset_from_config(self):
-        self.initialize_config_settings()
-        self.initialize_format_options()
-        self.initialize_options()
-        self.initialize_ui_options()
-
-    def initialize_config_settings(self, input_dict=None):
-        input_dict = input_dict or self.cfg.get(self.CONFIG_PATH, return_type=dict)
-        for setting, value in iteritems(input_dict):
-            setattr(self, setting, value)
-
-    def initialize_format_options(self, format_target=None):
-        """ First attempts to use format_target as a config path or gets the default format
-            if it's invalid or is empty.
-        Args:
-            format_target Union[str, list]: can be either a query path to a format
-                                            or in format of a naming string the sections should be spaced around
-                                              e.g. - this_is_a_naming_string
-        Returns None: raises IOError if failure
+    def get_format_order(self, format_target):
+        """ Dissects the format string and gets the order of the tokens as it finds them l->r
+            Splits on camel case or periods/underscores
+            Modified version from this:
+                http://stackoverflow.com/questions/2277352/python-split-a-string-at-uppercase-letters
+        Returns [string]: list of the matching tokens
         """
         try:
-            format_path = format_target if isinstance(format_target, list) else [format_target]
-            format_target = self.cfg.get(format_path, return_type=str)
+            # TODO: probably needs lots of error checking, need to write a test suite.
+            pattern = re.compile(self.FORMAT_STRING_REGEX)
+            return pattern.findall(format_target)
+        except TypeError:
+            raise exceptions.FormatError('Format string %s is not a valid input type, must be <type str>' %
+                                         format_target)
 
-        except exceptions.ResourceNotFoundError:
-            format_target = format_target or self.cfg.get(self.DEFAULT_FORMAT_PATH, return_type=str)
-
-        finally:
-            self.format_string.swap(format_target)
-            self.token_dict.build_name_attrs()
-
-    def initialize_options(self):
-        self.naming_formats = self.cfg.get(self.NAMING_FORMAT_PATH, return_type=dict)
-        self.config_table = self.cfg.get(self.CONFIG_PATH, return_type=dict)
-        self.suffix_table = self.cfg.get(self.SUFFIXES_FORMAT_PATH, return_type=dict)
-
-    def initialize_ui_options(self):
+    def _validate_format_string(self, format_target):
+        """ Checks to see if the target format string follows the proper style
         """
-        Placeholder for all categories/sub-lists within options to be recorded here
-        """
-        pass
+        format_order = self.get_format_order(format_target)
+        separators = '\\._-?'
 
-    def get(self, **kwargs):
-        """Gets the string of the current name of the object
-        Returns (string): the name of the object
-        """
-        # TODO: This should be a complete rewrite.  It's insanity.
-        # Need to use deep copy to do a true snapshot of current settings without manipulating them
-        dict_buffer = self.state
+        format_target = format_target.lower()
 
-        # Set whatever the user has specified if it's a valid format token
-        for key, value in iteritems(kwargs):
-            if self.check_valid_format(key):
-                dict_buffer[key] = value
+        for format_str in format_order:
+            format_target = format_target.replace(format_str.lower(), '')
+        for char in format_target:
+            if char not in separators:
+                raise exceptions.FormatError("You have specified an invalid format string %s." % format_target)
 
-        result = self.format_string
+        # if format_target != '_'.join(format_order):
+        #     raise exceptions.FormatError("You have specified an invalid format string %s." % format_target)
 
-        for key, attr in iteritems(dict_buffer):
-            if key in result:
-                token_raw = attr
-                if token_raw:
-                    replacement = str(token_raw)
-                    # Check if the token is an actual suffix (from the UI)
-                    if token_raw in [v for k, v in iteritems(self.suffix_table)]:
-                        replacement = token_raw
+    def __repr__(self):
+        return str(self.format_string)
 
-                    # Or check through the suffix dictionary for a match
-                    elif key == 'type':
-                        replacement = self.suffix_table.get(token_raw, "")
 
-                    if key in self.format_capitals and self.camel_case:
-                        replacement = replacement.title()
+class InputRenderer(object):
+    @classmethod
+    def render_nomenclative(cls, nomenclate_object):
+        # TODO: THIS COMPLETELY DOESNT WORK YET
+        for token, value in iteritems(cls.render_unique_tokens(nomenclate_object.token_dict.get_token_values_dict())):
+            replacement = str(token_raw)
+            # Check if the token is an actual suffix (from the UI)
+            if token_raw in [v for k, v in iteritems(self.suffix_table)]:
+                replacement = token_raw
 
-                    # Now replace the token with the input
-                    result = result.replace('{' + key + '}', replacement)
+            # Or check through the suffix dictionary for a match
+            elif key == 'type':
+                replacement = self.suffix_table.get(token_raw, "")
 
-        return self.cleanup_formatted_string(result)
+            if key in self.format_capitals and self.camel_case:
+                replacement = replacement.title()
 
-    def get_chain(self, end, start=None, **kwargs):
-        """ Returns a list of names based on index values
+            # Now replace the token with the input
+            result = result.replace('{' + key + '}', replacement)
+
+    @staticmethod
+    def _replace_token_appearances(token, replace_value, incomplete_nomenclative):
+        re_matches = re.compile(r'(?P<token> %s)' % token, re.IGNORECASE).finditer(incomplete_nomenclative)
+
+        for re_match in re_matches:
+            incomplete_nomenclative = incomplete_nomenclative.replace(re_match.group('token'), replace_value)
+
+        return incomplete_nomenclative
+
+    @staticmethod
+    def cleanup_formatted_string(formatted_string):
+        """ Removes unused tokens/removes surrounding and double underscores
         Args:
-            end (int): integer for end of sequence
-            start (int): optional definition of start position
-        Returns (list): generated object names
+            formatted_string (string): string that has had tokens replaced
+        Returns (string): cleaned up name of object
         """
-        # TODO: rework this entire function, very dirty function.
-        var_attr = self.token_dict.get_token_attr(self.VARIATION_PATH[-1])
-        var_orig = var_attr.get()
+        # TODO: chunk this out to sub-processes for easier error checking, could be own class
+        # Remove whitespace
+        result = formatted_string.replace(' ', '')
+        # Remove any tokens that still exist that were unformatted
+        pattern = r'(\{\w*\})'
+        result = re.sub(pattern, '', result)
+        # Remove any multiple underscores
+        result = re.sub('_+', '_', result)
+        # Remove trailing or preceding underscores
+        result = re.match(r'^_*(.*?)_*$', result)
+        if result:
+            return result.groups()[0]
+        else:
+            return result
 
-        var_start, n_type = self._get_alphanumeric_index(var_orig)
-
-        if start is None:
-            start = var_start
-        names = []
-        for index in range(start, end + 1):
-            if n_type in ['char_hi', 'char_lo']:
-                capital = True if n_type == 'char_hi' else False
-                var_attr.set(self._get_variation_id(index, capital))
-
-            else:
-                var_attr.set(str(index))
-            if 'var' in kwargs:
-                kwargs.pop("var", None)
-            names.append(self.get(**kwargs))
-        var_attr.set(var_orig)
-        return names
-
-    def convert_input(self, *args, **kwargs):
-        """ Automatically converts kwarg inputs if a convert method exists for that token.  Used
-            for custom format tokens that need converting like "date".
-        """
-        input_dict = self._combine_dicts(args, kwargs)
-        self.sift_and_init_configs(input_dict)
-        self.render_unique_tokens(input_dict)
-        return input_dict
-
-    def sift_and_init_configs(self, input_dict):
-        """ Removes all key/v for keys that exist in the overall config and activates them.
-            Used to weed out config keys from tokens in a given input.
-        """
-        configs = {}
-
+    @classmethod
+    def render_unique_tokens(cls, nomenclate_object, input_dict):
         for k, v in iteritems(input_dict):
+            render_method = '_render_%s' % k
             try:
-                self.cfg.get(self.CONFIG_PATH + [k])
-                input_dict.pop(k, None)
-                configs[k] = v
-            except exceptions.ResourceNotFoundError:
-                pass
+                render_method = getattr(cls, render_method)
 
-        self.initialize_config_settings(input_dict=configs)
+                if callable(render_method):
+                    input_dict[k] = render_method(v, nomenclate_object)
 
-    def render_unique_tokens(self, input_dict):
-        for k, v in iteritems(input_dict):
-            render_method = 'render_%s' % k
-            try:
-                render_method = getattr(self, render_method)
-                config_format = getattr(self, '%s_format', False)
-                token_index = getattr(self, '%s_index' % k, 0)
-                if callable(render_method) and config_format:
-                    input_dict[k] = render_method(v, format=config_format, index=token_index)
             except AttributeError:
+                # TODO: maybe log this?
                 pass
 
-    def render_date(self, date, **kwargs):
+    def _render_date(self, date, nomenclate_object):
         if date == 'now':
             d = datetime.datetime.now()
         else:
@@ -370,49 +288,16 @@ class Nomenclate(object):
                 d = p.parse(date)
             except ValueError:
                 return ''
-        return d.strftime(kwargs.get('format', '%Y-%m-%d'))
 
-    def render_var(self, var, **kwargs):
-        return self._get_variation_id(kwargs.get('token_index', 0), var.isupper())
+        return d.strftime(get_keys_containing(nomenclate_object.__dict__, 'format', '%Y-%m-%d'))
 
-    def render_version(self, version, **kwargs):
-        return '%0{0}d'.format(self.version_padding) % version
+    def _render_var(self, var, nomenclate_object):
+        return self._get_variation_id(get_keys_containing(nomenclate_object.__dict__, 'index', 0), var.isupper())
 
-    def update_token_attributes(self):
-        instance_token_attributes = [value for attr, value in iteritems(self.__dict__) if isinstance(value, TokenAttr)]
-        current_token_attributes = self.token_dict.get_token_attrs()
+    def _render_version(self, version, nomenclate_object):
+        return '%0{0}d'.format(get_keys_containing(nomenclate_object.__dict__, 'padding', 4)) % version
 
-        for token_attribute in current_token_attributes:
-            setattr(self, token_attribute.token, token_attribute)
-            if token_attribute in instance_token_attributes:
-                instance_token_attributes.remove(token_attribute)
-
-        for excess_token_attr in instance_token_attributes:
-            delattr(self, excess_token_attr.token)
-
-    def get_unset_tokens(self):
-        return self.token_dict.get_unset_token_attrs()
-
-    def merge_dict(self, input_dict):
-        """ updates the current set of NameAttrs with new or overwritten values from a dictionary
-        Args:
-            kwargs (dict): any extra definitions you want to input into the resulting dictionary
-        Returns (dict): dictionary of relevant values
-        """
-        self.token_dict.state = input_dict
-
-    def _combine_dicts(self, *args, **kwargs):
-        dicts = [arg for arg in args if isinstance(arg, dict)]
-        dicts.append(kwargs)
-        super_dict = collections.defaultdict(set)
-
-        for d in dicts:
-            for k, v in iteritems(d):
-                super_dict[k].add(v)
-
-        return super_dict
-
-    def _compose_name(self):
+    def _render_type(self, type, nomenclate_object):
         pass
 
     @staticmethod
@@ -460,6 +345,174 @@ class Nomenclate(object):
                 raise IOError('The input is a string longer than one character')
         return [0, 'char_hi']
 
+
+class Nomenclate(object):
+    """This class deals with renaming of objects in an approved pattern
+    """
+    CONFIG_PATH = ['overall_config']
+
+    SUFFIXES_FORMAT_PATH = ['suffixes']
+    NAMING_FORMAT_PATH = ['naming_formats']
+    DEFAULT_FORMAT_PATH = NAMING_FORMAT_PATH + ['node', 'default']
+
+    OPTIONS_PATH = ['options']
+    VARIATION_PATH = OPTIONS_PATH + ['var']
+    SIDE_PATH = OPTIONS_PATH + ['side']
+
+    UNIQUE_TOKENS = ['date', 'var', 'version']
+
+    def __init__(self, *args, **kwargs):
+        self.cfg = config.ConfigParse()
+        self.token_dict = TokenAttrDictHandler(self)
+        self.format_string = FormatString()
+
+        self.SUFFIX_OPTIONS = dict()
+        self.FORMATS_OPTIONS = dict()
+        self.CONFIG_OPTIONS = dict()
+
+        self.merge_dict(*args, **kwargs)
+        self.reset_from_config()
+
+    @property
+    def tokens(self):
+        return list(self.token_dict.state)
+
+    @property
+    def format_order(self):
+        return self.format_string.format_order
+
+    @property
+    def state(self):
+        return self.token_dict.state
+
+    @state.setter
+    def state(self, input_object):
+        """
+        Args:
+            input_object Union[dict, self.__class__]: accepts a dictionary or self.__class__
+        """
+        input_object = self._convert_input(input_object)
+        self.token_dict.state.update(input_object)
+
+    def reset_from_config(self):
+        self.initialize_config_settings()
+        self.initialize_format_options()
+        self.initialize_options()
+        self.initialize_ui_options()
+
+    def initialize_config_settings(self, input_dict=None):
+        input_dict = input_dict or self.cfg.get(self.CONFIG_PATH, return_type=dict)
+        for setting, value in iteritems(input_dict):
+            setattr(self, setting, value)
+
+    def initialize_format_options(self, format_target=None):
+        """ First attempts to use format_target as a config path or gets the default format
+            if it's invalid or is empty.
+        Args:
+            format_target Union[str, list]: can be either a query path to a format
+                                            or in format of a naming string the sections should be spaced around
+                                              e.g. - this_is_a_naming_string
+        Returns None: raises IOError if failure
+        """
+        try:
+            format_path = format_target if isinstance(format_target, list) else [format_target]
+            format_target = self.cfg.get(format_path, return_type=str)
+
+        except exceptions.ResourceNotFoundError:
+            format_target = format_target or self.cfg.get(self.DEFAULT_FORMAT_PATH, return_type=str)
+
+        finally:
+            self.format_string.swap_format(format_target)
+            self.token_dict.build_name_attrs()
+
+    def initialize_options(self):
+        self.FORMATS_OPTIONS = self.cfg.get(self.NAMING_FORMAT_PATH, return_type=dict)
+        self.CONFIG_OPTIONS = self.cfg.get(self.CONFIG_PATH, return_type=dict)
+        self.SUFFIX_OPTIONS = self.cfg.get(self.SUFFIXES_FORMAT_PATH, return_type=dict)
+
+    def initialize_ui_options(self):
+        """
+        Placeholder for all categories/sub-lists within options to be recorded here
+        """
+        pass
+
+    def get(self, **kwargs):
+        """Gets the string of the current name of the object
+        Returns (string): the name of the object
+        """
+        self.merge_dict(**kwargs)
+        result = InputRenderer.render_nomenclative(self)
+        result = InputRenderer.cleanup_formatted_string(result)
+        return result
+
+    def get_chain(self, end, start=None, **kwargs):
+        """ Returns a list of names based on index values
+        Args:
+            end (int): integer for end of sequence
+            start (int): optional definition of start position
+        Returns (list): generated object names
+        """
+        # TODO: rework this entire function, very dirty function.
+        var_attr = self.token_dict.get_token_attr(self.VARIATION_PATH[-1])
+        var_orig = var_attr.get()
+
+        var_start, n_type = self._get_alphanumeric_index(var_orig)
+
+        if start is None:
+            start = var_start
+        names = []
+        for index in range(start, end + 1):
+            if n_type in ['char_hi', 'char_lo']:
+                capital = True if n_type == 'char_hi' else False
+                var_attr.set(self._get_variation_id(index, capital))
+
+            else:
+                var_attr.set(str(index))
+            if 'var' in kwargs:
+                kwargs.pop("var", None)
+            names.append(self.get(**kwargs))
+        var_attr.set(var_orig)
+        return names
+
+    def get_unset_tokens(self):
+        return self.token_dict.get_unset_token_attrs()
+
+    def merge_dict(self, input_dict, **kwargs):
+        """ updates the current set of NameAttrs with new or overwritten values from a dictionary
+        Args:
+            input_dict (dict): any extra definitions you want to input into the resulting dictionary
+        Returns (dict): dictionary of relevant values
+        """
+        self.token_dict.state = self._convert_input(input_dict, **kwargs)
+
+    def get_suffix(self, type, first=False):
+        matches = gen_dict_extract(type, self.SUFFIX_OPTIONS)
+        return matches if not first else list(matches)[0]
+
+    def _convert_input(self, *args, **kwargs):
+        """ Automatically converts kwarg inputs if a convert method exists for that token.  Used
+            for custom format tokens that need converting like "date".
+        """
+        input_dict = combine_dicts(*args, **kwargs)
+        self._sift_and_init_configs(input_dict)
+        return input_dict
+
+    def _sift_and_init_configs(self, input_dict):
+        """ Removes all key/v for keys that exist in the overall config and activates them.
+            Used to weed out config keys from tokens in a given input.
+        """
+        configs = {}
+
+        for k, v in iteritems(input_dict):
+            try:
+                self.cfg.get(self.CONFIG_PATH + [k])
+                input_dict.pop(k, None)
+                configs[k] = v
+            except exceptions.ResourceNotFoundError:
+                pass
+
+        self.initialize_config_settings(input_dict=configs)
+
     def __eq__(self, other):
         return self.token_dict == other.token_dict
 
@@ -467,78 +520,44 @@ class Nomenclate(object):
         return self.get()
 
 
-class FormatString(object):
-    FORMAT_STRING_REGEX = r'([A-Za-z][^A-Z_.]*)'
+def combine_dicts(self, *args, **kwargs):
+    dicts = [arg for arg in args if isinstance(arg, dict)]
+    dicts.append(kwargs)
+    super_dict = collections.defaultdict(set)
 
-    def __init__(self, format_string):
-        self.format_string = None
-        self.swap_format(format_string)
+    for d in dicts:
+        for k, v in iteritems(d):
+            super_dict[k].add(v)
 
-    def swap_format(self, format_target):
-        try:
-            self._validate_format_string(format_target)
-            self.format_string = format_target
-        except exceptions.FormatError:
-            pass
-        finally:
-            self.format_order = self.get_format_order()
-
-    def get_format_order(self, format_target):
-        """ Dissects the format string and gets the order of the tokens as it finds them l->r
-            Splits on camel case or periods/underscores
-            Modified version from this:
-                http://stackoverflow.com/questions/2277352/python-split-a-string-at-uppercase-letters
-        Returns [string]: list of the matching tokens
-        """
-        try:
-            # TODO: probably needs lots of error checking, need to write a test suite.
-            pattern = re.compile(self.FORMAT_STRING_REGEX)
-            return pattern.findall(format_target)
-        except TypeError:
-            raise exceptions.FormatError('Format string %s is not a valid input type, must be <type str>' %
-                                         format_target)
-
-    def _validate_format_string(self, format_target):
-        """ Checks to see if the target format string follows the proper style
-        """
-        format_order = self.get_format_order(format_target)
-        separators = '\\._-?'
-
-        format_target = format_target.lower()
-
-        for format_str in format_order:
-            format_target = format_target.replace(format_str.lower(), '')
-        for char in format_target:
-            if char not in separators:
-                raise exceptions.FormatError("You have specified an invalid format string %s." % format_target)
-
-        # if format_target != '_'.join(format_order):
-        #     raise exceptions.FormatError("You have specified an invalid format string %s." % format_target)
+    return super_dict
 
 
-class NameGenerator(object):
-    @classmethod
-    def get(cls, token_string, token_attr_dict):
-        return ""
+def gen_dict_extract(key, var):
+    """
+    Yanked from here:
+        http://stackoverflow.com/questions/9807634/find-all-occurences-of-a-key-in-nested-python-dictionaries-and-lists
+    """
+    if isinstance(var, collections.Iterable):
+        for k, v in iteritems(var):
+            if k == key:
+                yield v
+            if isinstance(v, dict):
+                for result in gen_dict_extract(key, v):
+                    yield result
+            elif isinstance(v, list):
+                for d in v:
+                    for result in gen_dict_extract(key, d):
+                        yield result
 
-    @staticmethod
-    def cleanup_formatted_string(formatted_string):
-        """ Removes unused tokens/removes surrounding and double underscores
-        Args:
-            formatted_string (string): string that has had tokens replaced
-        Returns (string): cleaned up name of object
-        """
-        # TODO: chunk this out to sub-processes for easier error checking, could be own class
-        # Remove whitespace
-        result = formatted_string.replace(' ', '')
-        # Remove any tokens that still exist that were unformatted
-        pattern = r'(\{\w*\})'
-        result = re.sub(pattern, '', result)
-        # Remove any multiple underscores
-        result = re.sub('_+', '_', result)
-        # Remove trailing or preceding underscores
-        result = re.match(r'^_*(.*?)_*$', result)
-        if result:
-            return result.groups()[0]
-        else:
-            return result
+
+def get_keys_containing(input_dict, search_string, default=None, first_found=True):
+        output = {}
+        for k, v in iteritems(input_dict):
+            if search_string in k and not callable(k):
+                output[k] = v
+        output = output or default
+
+        if first_found:
+            return next(iter(output))
+
+        return output

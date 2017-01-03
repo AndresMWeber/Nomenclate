@@ -76,14 +76,14 @@ class ConfigParse(object):
         """
         query_path = query_path if isinstance(query_path, list) else [query_path]
         self.validate_query_path(query_path)
-        config_entry = self.get_path_entry_from_config(query_path)
+        config_entry = self._get_path_entry_from_config(query_path)
         query_result = self.config_entry_handler.format_query_result(config_entry,
                                                                      query_path,
                                                                      return_type,
                                                                      preceding_depth)
         return query_result
 
-    def get_path_entry_from_config(self, query_path):
+    def _get_path_entry_from_config(self, query_path):
         if not query_path:
             return list(self.config_file_contents)
         cur_data = self.config_file_contents
