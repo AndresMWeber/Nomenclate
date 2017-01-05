@@ -63,6 +63,7 @@ class TokenAttrDictHandler(dict):
 
         input_object.update(kwargs)
 
+        print ('updating state with input dict', input_object)
         for input_attr_name, input_attr_value in iteritems(input_object):
             self.set_token_attr(input_attr_name, input_attr_value)
 
@@ -93,14 +94,15 @@ class TokenAttrDictHandler(dict):
             token_attr.set('')
 
     def set_token_attr(self, token, value):
-        token_attrs = self.get_token_attrs()
+        token_attrs = list(self.get_token_attrs())
         if token not in [token_attr.token for token_attr in token_attrs]:
             self._create_token_attr(token, value)
             self.update_nomenclate_token_attributes()
         else:
             for token_attr in token_attrs:
                 if token == token_attr.token:
-                    setattr(self, token_attr.token, value)
+                    token_attr.label = value
+                    break
 
     def get_token_attr(self, token):
         token_attr = getattr(self, token.lower())
@@ -217,15 +219,16 @@ class InputRenderer(object):
     @classmethod
     def render_nomenclative(cls, nomenclate_object):
         token_values = nomenclate_object.token_dict.get_token_values_dict()
+        print ('token_values', token_values)
         cls.render_unique_tokens(nomenclate_object, token_values)
-
+        print ('token values rendered', token_values)
         rendered_nomenclative = nomenclate_object.format_string.format_string
-
+        print ('formatting start', rendered_nomenclative)
         for token, value in iteritems(token_values):
             rendered_nomenclative = cls._replace_token_appearances(token, value, rendered_nomenclative)
-
+            print ('rendering ', token, value, rendered_nomenclative)
         rendered_nomenclative = cls.cleanup_formatted_string(rendered_nomenclative)
-
+        print ('cleaned', rendered_nomenclative)
         return rendered_nomenclative
 
     @staticmethod
@@ -370,8 +373,11 @@ class Nomenclate(object):
         self.FORMATS_OPTIONS = dict()
         self.CONFIG_OPTIONS = dict()
 
-        self.merge_dict(args, **kwargs)
         self.reset_from_config()
+
+        print ('args, kwargs init', args, kwargs)
+        self.merge_dict(*args, **kwargs)
+        print('init state', self.state)
 
     @property
     def tokens(self):
@@ -392,7 +398,7 @@ class Nomenclate(object):
             input_object Union[dict, self.__class__]: accepts a dictionary or self.__class__
         """
         input_object = self._convert_input(input_object)
-        self.token_dict.state.update(input_object)
+        self.token_dict.state = input_object
 
     def reset_from_config(self):
         self.initialize_config_settings()
@@ -440,7 +446,8 @@ class Nomenclate(object):
         """Gets the string of the current name of the object
         Returns (string): the name of the object
         """
-        self.merge_dict(kwargs)
+        print('\n\n\ngetting!!!!!')
+        self.merge_dict(**kwargs)
         result = InputRenderer.render_nomenclative(self)
         result = InputRenderer.cleanup_formatted_string(result)
         return result
@@ -477,13 +484,11 @@ class Nomenclate(object):
     def get_unset_tokens(self):
         return self.token_dict.get_unset_token_attrs()
 
-    def merge_dict(self, input_dict, **kwargs):
-        """ updates the current set of NameAttrs with new or overwritten values from a dictionary
-        Args:
-            input_dict (dict): any extra definitions you want to input into the resulting dictionary
-        Returns (dict): dictionary of relevant values
-        """
-        self.token_dict.state = self._convert_input(input_dict, **kwargs)
+    def merge_dict(self, *args, **kwargs):
+        print('entered merge_dict')
+        print('state before merge', self.state)
+        self.state = combine_dicts(*args, **kwargs)
+        print('state after merge', self.state)
 
     def get_suffix(self, type, first=False):
         matches = gen_dict_extract(type, self.SUFFIX_OPTIONS)
@@ -491,17 +496,19 @@ class Nomenclate(object):
         return matches if not first else list(matches)[0]
 
     def _convert_input(self, *args, **kwargs):
-        """ Automatically converts kwarg inputs if a convert method exists for that token.  Used
-            for custom format tokens that need converting like "date".
-        """
+        print('entered convert_input')
         input_dict = combine_dicts(*args, **kwargs)
+        print('convert input after  combine', input_dict)
         self._sift_and_init_configs(input_dict)
+        print('convert input end', input_dict)
         return input_dict
 
     def _sift_and_init_configs(self, input_dict):
         """ Removes all key/v for keys that exist in the overall config and activates them.
             Used to weed out config keys from tokens in a given input.
         """
+        print('entered sift_and_init_configs')
+        print ('sift start', input_dict)
         configs = {}
 
         for k, v in iteritems(input_dict):
@@ -511,7 +518,7 @@ class Nomenclate(object):
                 configs[k] = v
             except exceptions.ResourceNotFoundError:
                 pass
-
+        print ('sift end', input_dict)
         self.initialize_config_settings(input_dict=configs)
 
     def __eq__(self, other):
@@ -521,7 +528,10 @@ class Nomenclate(object):
         return self.get()
 
 
-def combine_dicts(self, *args, **kwargs):
+def combine_dicts(*args, **kwargs):
+    print ('combine dicts', args, kwargs)
+    for arg in args:
+        print('arg', arg)
     dicts = [arg for arg in args if isinstance(arg, dict)]
     dicts.append(kwargs)
     super_dict = collections.defaultdict(dict)
@@ -531,7 +541,8 @@ def combine_dicts(self, *args, **kwargs):
             if k and v:
                 super_dict[k] = v
 
-    return super_dict
+    print('combined dicts', dict(super_dict))
+    return dict(super_dict)
 
 
 def gen_dict_extract(key, var):

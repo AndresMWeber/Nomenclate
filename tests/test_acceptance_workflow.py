@@ -89,7 +89,7 @@ class TestCreation(TestAcceptanceWorkflowBase):
         self.assertEquals(n_secondary.get(), 'l_rr_blahA_LOC')
         self.fixtures.extend([n_secondary, n_initial])
 
-    def test_initialize_from_args(self):
+    def test_initialize_from_nomenclate_and_kwargs(self):
         n_initial = nom.Nomenclate({'name': 'test', 'type': 'locator', 'var': 'A', 'side': 'left', })
         n_secondary = nom.Nomenclate(n_initial, name='blah', location='rear')
         self.assertEquals(n_secondary.get(), 'l_rr_blahA_LOC')
@@ -101,7 +101,7 @@ class TestCreation(TestAcceptanceWorkflowBase):
         n.name = 'default'
         self.assertEquals(n.get(), 'default_testA_LOC_l')
 
-    def test_initialize_get_with_kwargs(self):
+    def test_initialize_with_nomenclate_and_get_kwargs(self):
         n_initial = nom.Nomenclate({'name': 'test', 'type': 'locator', 'var': 'A', 'side': 'left'})
         n_secondary = nom.Nomenclate(n_initial)
         self.assertEquals(n_secondary.get(name='blah', location='rear'), 'l_rr_blahA_LOC')
