@@ -218,26 +218,21 @@ class FormatString(object):
 class InputRenderer(object):
     @classmethod
     def render_nomenclative(cls, nomenclate_object):
-        # TODO: THIS COMPLETELY DOESNT WORK YET
-        for token, value in iteritems(cls.render_unique_tokens(nomenclate_object.token_dict.get_token_values_dict())):
-            replacement = str(token_raw)
-            # Check if the token is an actual suffix (from the UI)
-            if token_raw in [v for k, v in iteritems(self.suffix_table)]:
-                replacement = token_raw
+        token_values = nomenclate_object.token_dict.get_token_values_dict()
+        cls.render_unique_tokens(nomenclate_object, token_values)
 
-            # Or check through the suffix dictionary for a match
-            elif key == 'type':
-                replacement = self.suffix_table.get(token_raw, "")
+        rendered_nomenclative = nomenclate_object.format_string.format_string
 
-            if key in self.format_capitals and self.camel_case:
-                replacement = replacement.title()
+        for token, value in iteritems(token_values):
+            rendered_nomenclative = cls._replace_token_appearances(token, value, rendered_nomenclative)
 
-            # Now replace the token with the input
-            result = result.replace('{' + key + '}', replacement)
+        rendered_nomenclative = cls.cleanup_formatted_string(rendered_nomenclative)
+
+        return rendered_nomenclative
 
     @staticmethod
     def _replace_token_appearances(token, replace_value, incomplete_nomenclative):
-        re_matches = re.compile(r'(?P<token> %s)' % token, re.IGNORECASE).finditer(incomplete_nomenclative)
+        re_matches = re.finditer(r'(?P<token> %s)' % token, incomplete_nomenclative, re.IGNORECASE)
 
         for re_match in re_matches:
             incomplete_nomenclative = incomplete_nomenclative.replace(re_match.group('token'), replace_value)
@@ -370,7 +365,7 @@ class Nomenclate(object):
         self.FORMATS_OPTIONS = dict()
         self.CONFIG_OPTIONS = dict()
 
-        self.merge_dict(*args, **kwargs)
+        self.merge_dict(args, **kwargs)
         self.reset_from_config()
 
     @property
@@ -405,7 +400,7 @@ class Nomenclate(object):
         for setting, value in iteritems(input_dict):
             setattr(self, setting, value)
 
-    def initialize_format_options(self, format_target=None):
+    def initialize_format_options(self, format_target=''):
         """ First attempts to use format_target as a config path or gets the default format
             if it's invalid or is empty.
         Args:
