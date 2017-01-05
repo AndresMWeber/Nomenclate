@@ -64,7 +64,6 @@ class TokenAttrDictHandler(dict):
         input_object.update(kwargs)
 
         for input_attr_name, input_attr_value in iteritems(input_object):
-            print ('setting attr %s to value %s' % (input_attr_name, input_attr_value))
             self.set_token_attr(input_attr_name, input_attr_value)
 
     def build_name_attrs(self):
@@ -126,7 +125,6 @@ class TokenAttrDictHandler(dict):
                 if token_attr.label == '']
 
     def update_state(self, merge_dict):
-        print('merging in dict', merge_dict)
         self.state = merge_dict
 
     def update_nomenclate_token_attributes(self):
@@ -526,11 +524,12 @@ class Nomenclate(object):
 def combine_dicts(self, *args, **kwargs):
     dicts = [arg for arg in args if isinstance(arg, dict)]
     dicts.append(kwargs)
-    super_dict = collections.defaultdict(set)
+    super_dict = collections.defaultdict(dict)
 
     for d in dicts:
         for k, v in iteritems(d):
-            super_dict[k].add(v)
+            if k and v:
+                super_dict[k] = v
 
     return super_dict
 
