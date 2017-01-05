@@ -71,8 +71,11 @@ class TestCreation(TestAcceptanceWorkflowBase):
         self.fixtures.append(n)
 
     def test_initialize_from_nomenclate_object(self):
+        print('setting first one')
         n_initial = nom.Nomenclate({'name': 'test', 'type': 'locator', 'var': 'A', 'side': 'left', })
+        print('setting second one')
         n_secondary = nom.Nomenclate(n_initial)
+        print('checking second one now')
         self.assertEquals(n_secondary.get(), 'l_testA_LOC')
         self.fixtures.extend([n_secondary, n_initial])
 

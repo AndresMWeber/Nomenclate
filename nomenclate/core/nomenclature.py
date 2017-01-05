@@ -224,18 +224,24 @@ class InputRenderer(object):
         print ('token values rendered', token_values)
         rendered_nomenclative = nomenclate_object.format_string.format_string
         print ('formatting start', rendered_nomenclative)
+
         for token, value in iteritems(token_values):
-            rendered_nomenclative = cls._replace_token_appearances(token, value, rendered_nomenclative)
             print ('rendering ', token, value, rendered_nomenclative)
+            rendered_nomenclative = cls._replace_token_appearances(token, value, rendered_nomenclative)
+
+
         rendered_nomenclative = cls.cleanup_formatted_string(rendered_nomenclative)
         print ('cleaned', rendered_nomenclative)
         return rendered_nomenclative
 
     @staticmethod
     def _replace_token_appearances(token, replace_value, incomplete_nomenclative):
-        re_matches = re.finditer(r'(?P<token>%s)' % token, incomplete_nomenclative, re.IGNORECASE)
+        re_token = r'(?P<token>((?<![a-z]){TOKEN})|((?<=[a-z]){TOKEN_CAPITALIZED}))'
+        re_token = re_token.format(TOKEN=token,
+                                   TOKEN_CAPITALIZED=token[0].upper()+token[1:])
+        re_matches = re.finditer(re_token, incomplete_nomenclative, 0)
 
-        print ('\ttoken find is ', r'(?P<token>%s)' % token, incomplete_nomenclative)
+        print ('\ttoken find is ', re_token, token, incomplete_nomenclative)
         for re_match in re_matches:
             print('\t\t', re_match.group('token'), replace_value, replace_value=='')
             incomplete_nomenclative = incomplete_nomenclative.replace(re_match.group('token'), replace_value)
@@ -266,12 +272,16 @@ class InputRenderer(object):
 
     @classmethod
     def render_unique_tokens(cls, nomenclate_object, input_dict):
+        print('rendering unique tokens!')
         for k, v in iteritems(input_dict):
+
             render_method = '_render_%s' % k
+            print('checking for custom token method ', render_method)
             try:
                 render_method = getattr(cls, render_method)
 
                 if callable(render_method):
+                    print('render method found and callable, using to convert!')
                     input_dict[k] = render_method(v, nomenclate_object)
 
             except AttributeError:
@@ -306,6 +316,7 @@ class InputRenderer(object):
 
     @staticmethod
     def _render_type(type, nomenclate_object):
+        print ('rendering type...')
         return nomenclate_object.get_suffix(type, first=True)
 
     @staticmethod
