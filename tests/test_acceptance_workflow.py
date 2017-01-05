@@ -97,7 +97,7 @@ class TestCreation(TestAcceptanceWorkflowBase):
 
     def test_initialize_and_switch_format_then_set_properties(self):
         n = nom.Nomenclate({'name': 'test', 'type': 'locator', 'var': 'A', 'side': 'left'})
-        n.swap_format('new_nameDecoratorVar_childtype_purpose_type_side')
+        n.initialize_format_options('new_nameDecoratorVar_childtype_purpose_type_side')
         n.name = 'default'
         self.assertEquals(n.get(), 'default_testA_LOC_l')
 
@@ -115,14 +115,14 @@ class TestAcceptanceMaya(TestAcceptanceWorkflowBase):
 class TestAcceptanceNamingFiletypes(TestAcceptanceWorkflowBase):
     def test_saving_maya_file(self):
         n = nom.Nomenclate(name='SH010', var='A', ext='mb', initials='aw', discipline='animation', version=5)
-        n.swap_format('working_file')
+        n.initialize_format_options('working_file')
         self.assertEquals(n.format_string, 'name_discipline_lodDecoratorVar_(v)version_initials.ext')
         self.assertEquals(n.get(), 'SH010_ANIM_A_v05_aw.mb')
         self.fixtures.append(n)
 
     def test_saving_movie_file(self):
         n = nom.Nomenclate()
-        n.swap_format('techops_file')
+        n.initialize_format_options('techops_file')
         n.merge_dict({'shot': 'LSC_sh01',
                       'version1': 8,
                       'name': 'Nesquick',

@@ -220,6 +220,7 @@ class TestNomenclateGetAlphanumericIndex(TestNomenclateBase):
 
 class TestNomenclateCleanupFormattingString(TestNomenclateBase):
     def test_cleanup_format(self):
+        print(self.nom.__dict__)
         self.assertEquals(self.nom.cleanup_formatted_string('test_name _messed __ up LOC'),
                           'test_name_messed_upLOC')
 

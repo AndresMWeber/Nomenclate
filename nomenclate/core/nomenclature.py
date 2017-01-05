@@ -78,7 +78,7 @@ class TokenAttrDictHandler(dict):
     def purge_invalid_name_attrs(self):
         """ Removes name attrs not found in the format order
         """
-        for token_attr in self.get_token_attrs():
+        for token_attr in list(self.get_token_attrs()):
             try:
                 self._validate_name_in_format_order(token_attr.label, self.nom.format_order)
             except exceptions.FormatError:
@@ -275,7 +275,8 @@ class InputRenderer(object):
                 # TODO: maybe log this?
                 pass
 
-    def _render_date(self, date, nomenclate_object):
+    @staticmethod
+    def _render_date(date, nomenclate_object):
         if date == 'now':
             d = datetime.datetime.now()
         else:
@@ -286,14 +287,20 @@ class InputRenderer(object):
 
         return d.strftime(get_keys_containing(nomenclate_object.__dict__, 'format', '%Y-%m-%d'))
 
-    def _render_var(self, var, nomenclate_object):
-        return self._get_variation_id(get_keys_containing(nomenclate_object.__dict__, 'index', 0), var.isupper())
+    @staticmethod
+    def _render_var(var, nomenclate_object):
+        return InputRenderer._get_variation_id(get_keys_containing(nomenclate_object.__dict__,
+                                                                   'index',
+                                                                   0),
+                                               var.isupper())
 
-    def _render_version(self, version, nomenclate_object):
+    @staticmethod
+    def _render_version(version, nomenclate_object):
         return '%0{0}d'.format(get_keys_containing(nomenclate_object.__dict__, 'padding', 4)) % version
 
-    def _render_type(self, type, nomenclate_object):
-        pass
+    @staticmethod
+    def _render_type(type, nomenclate_object):
+        return nomenclate_object.get_suffix(type, first=True)
 
     @staticmethod
     def _get_variation_id(integer, capital=False):
@@ -435,7 +442,7 @@ class Nomenclate(object):
         """Gets the string of the current name of the object
         Returns (string): the name of the object
         """
-        self.merge_dict(**kwargs)
+        self.merge_dict(kwargs)
         result = InputRenderer.render_nomenclative(self)
         result = InputRenderer.cleanup_formatted_string(result)
         return result
@@ -482,6 +489,7 @@ class Nomenclate(object):
 
     def get_suffix(self, type, first=False):
         matches = gen_dict_extract(type, self.SUFFIX_OPTIONS)
+        matches = matches or type
         return matches if not first else list(matches)[0]
 
     def _convert_input(self, *args, **kwargs):
@@ -550,9 +558,14 @@ def get_keys_containing(input_dict, search_string, default=None, first_found=Tru
         for k, v in iteritems(input_dict):
             if search_string in k and not callable(k):
                 output[k] = v
-        output = output or default
 
         if first_found:
-            return next(iter(output))
+            try:
+                output = next(iter(output))
+            except StopIteration:
+                pass
+
+        output = output or default
+
 
         return output
