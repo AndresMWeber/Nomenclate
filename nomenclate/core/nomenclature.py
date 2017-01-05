@@ -233,9 +233,11 @@ class InputRenderer(object):
 
     @staticmethod
     def _replace_token_appearances(token, replace_value, incomplete_nomenclative):
-        re_matches = re.finditer(r'(?P<token> %s)' % token, incomplete_nomenclative, re.IGNORECASE)
+        re_matches = re.finditer(r'(?P<token>%s)' % token, incomplete_nomenclative, re.IGNORECASE)
 
+        print ('\ttoken find is ', r'(?P<token>%s)' % token, incomplete_nomenclative)
         for re_match in re_matches:
+            print('\t\t', re_match.group('token'), replace_value, replace_value=='')
             incomplete_nomenclative = incomplete_nomenclative.replace(re_match.group('token'), replace_value)
 
         return incomplete_nomenclative
@@ -290,10 +292,13 @@ class InputRenderer(object):
 
     @staticmethod
     def _render_var(var, nomenclate_object):
-        return InputRenderer._get_variation_id(get_keys_containing(nomenclate_object.__dict__,
-                                                                   'index',
-                                                                   0),
-                                               var.isupper())
+        if var:
+            return InputRenderer._get_variation_id(get_keys_containing(nomenclate_object.__dict__,
+                                                                       'index',
+                                                                       0),
+                                                   var.isupper())
+        else:
+            return var
 
     @staticmethod
     def _render_version(version, nomenclate_object):
