@@ -24,6 +24,7 @@ from pprint import pprint
 import re
 import datetime
 import itertools
+from future.utils import iteritems
 import nomenclate.core.configurator as config
 
 __author__ = "Andres Weber"
@@ -288,7 +289,7 @@ class NameParser(object):
         """
         # Now remove all found entries to make basename regex have an easier time
         removal_indices = []
-        for section, match in list(parse_dict.items()):
+        for section, match in iteritems(parse_dict):
             try:
                 matches = []
                 if isinstance(match, dict) and 'compound_matches' in match:

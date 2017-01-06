@@ -215,6 +215,65 @@ class FormatString(object):
         return str(self.format_string)
 
 
+class Nomenclative(str):
+    def __init__(self, input_str):
+        super(str, Nomenclative).__init__(input_str)
+        self.matches = []
+
+    def process_matches(self):
+        for match in self.matches:
+            print(self[match.start:match.end])
+            if match.match == self[match.start:match.end]:
+                print('matched!!!')
+            self.adjust_other_matches(match)
+
+    def adjust_other_matches(self, adjuster_match):
+        for match in [match for match in self.matches if match != adjuster_match]:
+            match.adjust(adjuster_match)
+
+    def add_match(self, regex_match, substitution):
+        try:
+            match = TokenMatch(regex_match, substitution)
+            self.validate_match(match)
+            self.matches.append(match)
+        except IndexError:
+            pass
+
+    def validate_match(self, match_candidate):
+        for match in self.matches:
+            if match.overlaps(match_candidate):
+                raise IndexError('Match with range %d-%d overlaps with an existing match with range %d-%d' %
+                                 (match_candidate.start, match_candidate.end, match.start, match.end))
+
+
+class TokenMatch(object):
+    def __init__(self, regex_match, substitution, group_name='token'):
+        self.match = regex_match.group(group_name)
+        self.start = regex_match.start(group_name)
+        self.end = regex_match.end(group_name)
+        self.sub = substitution
+        self.span = self.end - self.start
+
+    def adjust(self, other):
+        if other not in self:
+            if self.start > other.end:
+                self._adjust_order(other.span)
+
+            elif self.end < other.start:
+                self._adjust_order(other.span * -1)
+
+    def _adjust_order(self, adjust_value):
+        self.start -= adjust_value
+        self.end -= adjust_value
+
+    def __contains__(self, other):
+        return other.start <= self.start <= other.end or other.start <= self.end <= other.end
+
+    def __eq__(self, other):
+        return (self.start == other.start and self.end == other.end and
+                self.match == other.match and self.sub == other.sub)
+
+
 class InputRenderer(object):
     @classmethod
     def render_nomenclative(cls, nomenclate_object):
@@ -225,28 +284,31 @@ class InputRenderer(object):
         rendered_nomenclative = nomenclate_object.format_string.format_string
         print ('formatting start', rendered_nomenclative)
 
-        for token, value in iteritems(token_values):
-            print ('rendering ', token, value, rendered_nomenclative)
-            rendered_nomenclative = cls._replace_token_appearances(token, value, rendered_nomenclative)
+        cls._find_token_appearances(token_values, rendered_nomenclative)
 
+        for token, match_value in iteritems(token_values):
+            match, value = match_value
+            # TODO: figure out how to remove from the string without fucking up indices like nameparser did.
 
         rendered_nomenclative = cls.cleanup_formatted_string(rendered_nomenclative)
-        print ('cleaned', rendered_nomenclative)
         return rendered_nomenclative
 
     @staticmethod
-    def _replace_token_appearances(token, replace_value, incomplete_nomenclative):
-        re_token = r'(?P<token>((?<![a-z]){TOKEN})|((?<=[a-z]){TOKEN_CAPITALIZED}))'
-        re_token = re_token.format(TOKEN=token,
-                                   TOKEN_CAPITALIZED=token[0].upper()+token[1:])
-        re_matches = re.finditer(re_token, incomplete_nomenclative, 0)
+    def _find_token_appearances(token_values, incomplete_nomenclative):
+        for token, value in iteritems(token_values):
+            re_token = r'(?P<token>((?<![a-z]){TOKEN})|((?<=[a-z]){TOKEN_CAPITALIZED}))'
+            re_token = re_token.format(TOKEN=token,
+                                       TOKEN_CAPITALIZED=token[0].upper()+token[1:])
+            re_matches = re.finditer(re_token, incomplete_nomenclative, 0)
 
-        print ('\ttoken find is ', re_token, token, incomplete_nomenclative)
-        for re_match in re_matches:
-            print('\t\t', re_match.group('token'), replace_value, replace_value=='')
-            incomplete_nomenclative = incomplete_nomenclative.replace(re_match.group('token'), replace_value)
+            for re_match in re_matches:
+                token_values[token] = (re_match, value)
 
-        return incomplete_nomenclative
+    @staticmethod
+    def _render_replacements(replacements_dict, incomplete_nomenclative):
+        for token, match_value in iteritems(replacements_dict):
+            match, value = match_value
+            incomplete_nomenclative = incomplete_nomenclative.replace(match, value)
 
     @staticmethod
     def cleanup_formatted_string(formatted_string):
