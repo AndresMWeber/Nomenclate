@@ -67,7 +67,6 @@ setup(
         'python-dateutil',
         'PyYAML',
         'six'
-        #'requests'==2.11.1,
     ],
 
     # tox is responsible for setting up the test runner and its dependencies

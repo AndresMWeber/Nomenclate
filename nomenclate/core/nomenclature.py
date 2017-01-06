@@ -218,32 +218,32 @@ class FormatString(object):
 class Nomenclative(str):
     def __init__(self, input_str):
         super(str, Nomenclative).__init__(input_str)
-        self.matches = []
+        self.token_matches = []
 
     def process_matches(self):
-        for match in self.matches:
-            print(self[match.start:match.end])
-            if match.match == self[match.start:match.end]:
+        for token_match in self.token_matches:
+            print(self[token_match.start:token_match.end])
+            if token_match.match == self[token_match.start:token_match.end]:
                 print('matched!!!')
-            self.adjust_other_matches(match)
+                self.adjust_other_matches(token_match)
 
     def adjust_other_matches(self, adjuster_match):
-        for match in [match for match in self.matches if match != adjuster_match]:
-            match.adjust(adjuster_match)
+        for token_match in [token_match for token_match in self.token_matches if token_match != adjuster_match]:
+            token_match.adjust(adjuster_match)
 
     def add_match(self, regex_match, substitution):
+        token_match = TokenMatch(regex_match, substitution)
         try:
-            match = TokenMatch(regex_match, substitution)
-            self.validate_match(match)
-            self.matches.append(match)
+            self.validate_match(token_match)
+            self.token_matches.append(token_match)
         except IndexError:
-            pass
+            print('Not adding match %s as it conflicts with a preexisting match' % token_match)
 
-    def validate_match(self, match_candidate):
-        for match in self.matches:
-            if match.overlaps(match_candidate):
+    def validate_match(self, token_match_candidate):
+        for token_match in self.token_matches:
+            if token_match in token_match_candidate:
                 raise IndexError('Match with range %d-%d overlaps with an existing match with range %d-%d' %
-                                 (match_candidate.start, match_candidate.end, match.start, match.end))
+                                 (token_match_candidate.start, token_match_candidate.end, token_match.start, token_match.end))
 
 
 class TokenMatch(object):
@@ -267,12 +267,15 @@ class TokenMatch(object):
         self.end -= adjust_value
 
     def __contains__(self, other):
-        return other.start <= self.start <= other.end or other.start <= self.end <= other.end
+        return (other.start <= self.start <= other.end or other.start <= self.end <= other.end or
+                self.start <= other.start <= self.end or self.start <= other.end <= self.end)
 
     def __eq__(self, other):
         return (self.start == other.start and self.end == other.end and
                 self.match == other.match and self.sub == other.sub)
 
+    def __repr__(self):
+        return '%s (%d)- [%d:%d] - replacement = %s' % (self.match, self.span, self.start, self.end, self.sub)
 
 class InputRenderer(object):
     @classmethod
