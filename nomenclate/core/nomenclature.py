@@ -61,19 +61,14 @@ class TokenAttrDictHandler(dict):
             raise exceptions.FormatError('state setting only accepts type %s, not given input %s %s' %
                                          (dict, input_object, type(input_object)))
 
-        input_object.update(kwargs)
-
-        print ('updating state with input dict', input_object)
-        for input_attr_name, input_attr_value in iteritems(input_object):
-            self.set_token_attr(input_attr_name, input_attr_value)
+        print ('updating state with input dicts', input_object, kwargs)
+        self.set_token_attrs(combine_dicts(input_object, kwargs))
 
     def build_name_attrs(self):
         """ Creates all necessary name attributes for the naming convention
         """
         self.purge_invalid_name_attrs()
-
-        for token in self.nom.format_order:
-            self.set_token_attr(token, "")
+        self.set_token_attrs({token: "" for token in self.nom.format_order})
 
     def purge_invalid_name_attrs(self):
         """ Removes name attrs not found in the format order
@@ -93,16 +88,25 @@ class TokenAttrDictHandler(dict):
         for token_attr in self.get_token_attrs():
             token_attr.set('')
 
+    def set_token_attrs(self, input_dict):
+        for input_attr_name, input_attr_value in iteritems(input_dict):
+            self.set_token_attr(input_attr_name, input_attr_value)
+        self.update_nomenclate_token_attributes()
+
     def set_token_attr(self, token, value):
         token_attrs = list(self.get_token_attrs())
         if token not in [token_attr.token for token_attr in token_attrs]:
             self._create_token_attr(token, value)
-            self.update_nomenclate_token_attributes()
         else:
             for token_attr in token_attrs:
                 if token == token_attr.token:
                     token_attr.label = value
                     break
+
+    def get_token_attrs(self):
+        for name, value in iteritems(self):
+            if isinstance(value, TokenAttr):
+                yield value
 
     def get_token_attr(self, token):
         token_attr = getattr(self, token.lower())
@@ -110,11 +114,6 @@ class TokenAttrDictHandler(dict):
             raise exceptions.SourceError('This nomenclate instance has no %s attribute set.' % token)
         else:
             return token_attr
-
-    def get_token_attrs(self):
-        for name, value in iteritems(self):
-            if isinstance(value, TokenAttr):
-                yield value
 
     def get_token_values_dict(self):
         return dict([(attr.token, attr.label) for attr in self.get_token_attrs()])
@@ -130,15 +129,16 @@ class TokenAttrDictHandler(dict):
         self.state = merge_dict
 
     def update_nomenclate_token_attributes(self):
-        instance_token_attributes = [value for attr, value in iteritems(self.nom.__dict__) if isinstance(value, TokenAttr)]
-
         for token_attribute in self.get_token_attrs():
-            setattr(self, token_attribute.token, token_attribute)
-            if token_attribute in instance_token_attributes:
-                instance_token_attributes.remove(token_attribute)
+            setattr(self.nom, token_attribute.token, token_attribute)
 
-        for excess_token_attr in instance_token_attributes:
-            delattr(self, excess_token_attr.token)
+    def clear_nomenclate_excess_token_attributes(self):
+        for token_attr_key, token_attr_object in self.get_nomenclate_token_attributes():
+            if token_attr_key not in self.nom.format_order:
+                delattr(self.nom, token_attr_key)
+
+    def get_nomenclate_token_attributes(self):
+        return [(attr, value) for attr, value in iteritems(self.nom.__dict__) if isinstance(value, TokenAttr)]
 
     @staticmethod
     def _validate_name_in_format_order(name, format_order):
@@ -163,73 +163,29 @@ class TokenAttrDictHandler(dict):
         return ' '.join(['%s:%s' % (token_attr.token, token_attr.label) for token_attr in self.get_token_attrs()])
 
 
-class FormatString(object):
-    FORMAT_STRING_REGEX = r'([A-Za-z][^A-Z_.]*)'
-
-    def __init__(self, format_string=""):
-        self.format_string = format_string
-        self.swap_format(format_string)
-
-    def swap_format(self, format_target):
-        try:
-            self._validate_format_string(format_target)
-            self.format_string = format_target
-        except exceptions.FormatError:
-            pass
-        finally:
-            self.format_order = self.get_format_order(format_target)
-
-    def get_format_order(self, format_target):
-        """ Dissects the format string and gets the order of the tokens as it finds them l->r
-            Splits on camel case or periods/underscores
-            Modified version from this:
-                http://stackoverflow.com/questions/2277352/python-split-a-string-at-uppercase-letters
-        Returns [string]: list of the matching tokens
-        """
-        try:
-            # TODO: probably needs lots of error checking, need to write a test suite.
-            pattern = re.compile(self.FORMAT_STRING_REGEX)
-            return pattern.findall(format_target)
-        except TypeError:
-            raise exceptions.FormatError('Format string %s is not a valid input type, must be <type str>' %
-                                         format_target)
-
-    def _validate_format_string(self, format_target):
-        """ Checks to see if the target format string follows the proper style
-        """
-        format_order = self.get_format_order(format_target)
-        separators = '\\._-?'
-
-        format_target = format_target.lower()
-
-        for format_str in format_order:
-            format_target = format_target.replace(format_str.lower(), '')
-        for char in format_target:
-            if char not in separators:
-                raise exceptions.FormatError("You have specified an invalid format string %s." % format_target)
-
-        # if format_target != '_'.join(format_order):
-        #     raise exceptions.FormatError("You have specified an invalid format string %s." % format_target)
-
-    def __repr__(self):
-        return str(self.format_string)
-
-
-class Nomenclative(str):
+class Nomenclative(object):
     def __init__(self, input_str):
-        super(str, Nomenclative).__init__(input_str)
+        self.str = input_str
         self.token_matches = []
 
     def process_matches(self):
+        build_str = self.str
         for token_match in self.token_matches:
-            print(self[token_match.start:token_match.end])
-            if token_match.match == self[token_match.start:token_match.end]:
+            print(build_str[token_match.start:token_match.end])
+            if token_match.match == build_str[token_match.start:token_match.end]:
+                print(build_str)
+                build_str = build_str[:token_match.start] + token_match.sub + build_str[token_match.end:]
                 print('matched!!!')
+                print(build_str)
                 self.adjust_other_matches(token_match)
+        return build_str
 
     def adjust_other_matches(self, adjuster_match):
         for token_match in [token_match for token_match in self.token_matches if token_match != adjuster_match]:
-            token_match.adjust(adjuster_match)
+            try:
+                token_match.adjust_position(adjuster_match)
+            except IndexError:
+                pass
 
     def add_match(self, regex_match, substitution):
         token_match = TokenMatch(regex_match, substitution)
@@ -241,9 +197,15 @@ class Nomenclative(str):
 
     def validate_match(self, token_match_candidate):
         for token_match in self.token_matches:
-            if token_match in token_match_candidate:
+            if token_match.overlaps(token_match_candidate):
                 raise IndexError('Match with range %d-%d overlaps with an existing match with range %d-%d' %
                                  (token_match_candidate.start, token_match_candidate.end, token_match.start, token_match.end))
+
+    def __repr__(self):
+        return self.str
+
+    def __str__(self):
+        return self.str
 
 
 class TokenMatch(object):
@@ -254,50 +216,75 @@ class TokenMatch(object):
         self.sub = substitution
         self.span = self.end - self.start
 
-    def adjust(self, other):
-        if other not in self:
-            if self.start > other.end:
-                self._adjust_order(other.span)
-
-            elif self.end < other.start:
-                self._adjust_order(other.span * -1)
+    def adjust_position(self, other, adjust_by_sub_delta=True):
+        if isinstance(other, self.__class__):
+            if not other.overlaps(self) and self > other:
+                adjustment = other.span - len(other.sub) if adjust_by_sub_delta else other.span
+                self._adjust_order(adjustment)
+            else:
+                raise IndexError('Current TokenMatch overlaps with input TokenMatch\n\t%s\n\t%s' % (repr(self), repr(other)))
+        else:
+            raise IOError('Only TokenMatch objects are valid inputs to adjust_position')
 
     def _adjust_order(self, adjust_value):
         self.start -= adjust_value
         self.end -= adjust_value
 
+    def overlaps(self, other):
+        return self in other or other in self
+
     def __contains__(self, other):
-        return (other.start <= self.start <= other.end or other.start <= self.end <= other.end or
-                self.start <= other.start <= self.end or self.start <= other.end <= self.end)
+        try:
+            return (self.start < other.start < self.end or self.start < other.end < self.end)
+        except:
+            raise NotImplementedError(
+                '{C} objects do not handle in syntax for non class objects'.format(C=self.__class__.__name__))
 
     def __eq__(self, other):
-        return (self.start == other.start and self.end == other.end and
-                self.match == other.match and self.sub == other.sub)
+        try:
+            return (self.start == other.start and self.end == other.end and
+                    self.match == other.match and self.sub == other.sub)
+        except:
+            raise NotImplementedError(
+                '{C} objects do not handle == syntax for non class objects'.format(C=self.__class__.__name__))
+
+    def __lt__(self, other):
+        if isinstance(other, self.__class__):
+            return self.end <= other.start
+        else:
+            raise NotImplementedError
+
+    def __gt__(self, other):
+        if isinstance(other, self.__class__):
+            return self.start >= other.end
+        else:
+            raise NotImplementedError
 
     def __repr__(self):
         return '%s (%d)- [%d:%d] - replacement = %s' % (self.match, self.span, self.start, self.end, self.sub)
 
+
 class InputRenderer(object):
     @classmethod
     def render_nomenclative(cls, nomenclate_object):
+        nomenclative = Nomenclative(nomenclate_object.format_string)
         token_values = nomenclate_object.token_dict.get_token_values_dict()
-        print ('token_values', token_values)
+        # print ('token_values', token_values)
         cls.render_unique_tokens(nomenclate_object, token_values)
-        print ('token values rendered', token_values)
-        rendered_nomenclative = nomenclate_object.format_string.format_string
-        print ('formatting start', rendered_nomenclative)
+        # print ('token values rendered', token_values)
+        rendered_nomenclative = nomenclate_object.format_string_object.format_string
+        # print ('formatting start', rendered_nomenclative)
 
-        cls._find_token_appearances(token_values, rendered_nomenclative)
+        cls._prepend_token_match_objects(token_values, rendered_nomenclative)
 
         for token, match_value in iteritems(token_values):
-            match, value = match_value
-            # TODO: figure out how to remove from the string without fucking up indices like nameparser did.
+            nomenclative.add_match(*match_value)
 
-        rendered_nomenclative = cls.cleanup_formatted_string(rendered_nomenclative)
+        rendered_nomenclative = cls.cleanup_formatted_string(nomenclative.process_matches())
         return rendered_nomenclative
 
-    @staticmethod
-    def _find_token_appearances(token_values, incomplete_nomenclative):
+    @classmethod
+    def _prepend_token_match_objects(cls, token_values, incomplete_nomenclative):
         for token, value in iteritems(token_values):
             re_token = r'(?P<token>((?<![a-z]){TOKEN})|((?<=[a-z]){TOKEN_CAPITALIZED}))'
             re_token = re_token.format(TOKEN=token,
@@ -306,6 +293,18 @@ class InputRenderer(object):
 
             for re_match in re_matches:
                 token_values[token] = (re_match, value)
+
+        cls._clear_non_matches(token_values)
+
+    @staticmethod
+    def _clear_non_matches(token_values):
+        to_delete = []
+        for token, value in iteritems(token_values):
+            if isinstance(value, str) or not isinstance(value, tuple):
+                to_delete.append(token)
+
+        for delete in to_delete:
+            token_values.pop(delete)
 
     @staticmethod
     def _render_replacements(replacements_dict, incomplete_nomenclative):
@@ -430,6 +429,58 @@ class InputRenderer(object):
         return [0, 'char_hi']
 
 
+class FormatString(object):
+    FORMAT_STRING_REGEX = r'([A-Za-z][^A-Z_.]*)'
+
+    def __init__(self, format_string=""):
+        self.format_string = format_string
+        self.swap_format(format_string)
+
+    def swap_format(self, format_target):
+        try:
+            self._validate_format_string(format_target)
+            self.format_string = format_target
+        except exceptions.FormatError:
+            pass
+        finally:
+            self.format_order = self.get_format_order(format_target)
+
+    def get_format_order(self, format_target):
+        """ Dissects the format string and gets the order of the tokens as it finds them l->r
+            Splits on camel case or periods/underscores
+            Modified version from this:
+                http://stackoverflow.com/questions/2277352/python-split-a-string-at-uppercase-letters
+        Returns [string]: list of the matching tokens
+        """
+        try:
+            # TODO: probably needs lots of error checking, need to write a test suite.
+            pattern = re.compile(self.FORMAT_STRING_REGEX)
+            return pattern.findall(format_target)
+        except TypeError:
+            raise exceptions.FormatError('Format string %s is not a valid input type, must be <type str>' %
+                                         format_target)
+
+    def _validate_format_string(self, format_target):
+        """ Checks to see if the target format string follows the proper style
+        """
+        format_order = self.get_format_order(format_target)
+        separators = '\\._-?'
+
+        format_target = format_target.lower()
+
+        for format_str in format_order:
+            format_target = format_target.replace(format_str.lower(), '')
+        for char in format_target:
+            if char not in separators:
+                raise exceptions.FormatError("You have specified an invalid format string %s." % format_target)
+
+        # if format_target != '_'.join(format_order):
+        #     raise exceptions.FormatError("You have specified an invalid format string %s." % format_target)
+
+    def __str__(self):
+        return str(self.format_string)
+
+
 class Nomenclate(object):
     """This class deals with renaming of objects in an approved pattern
     """
@@ -448,7 +499,7 @@ class Nomenclate(object):
     def __init__(self, *args, **kwargs):
         self.cfg = config.ConfigParse()
         self.token_dict = TokenAttrDictHandler(self)
-        self.format_string = FormatString()
+        self.format_string_object = FormatString()
 
         self.SUFFIX_OPTIONS = dict()
         self.FORMATS_OPTIONS = dict()
@@ -466,7 +517,7 @@ class Nomenclate(object):
 
     @property
     def format_order(self):
-        return self.format_string.format_order
+        return self.format_string_object.format_order
 
     @property
     def state(self):
@@ -480,6 +531,14 @@ class Nomenclate(object):
         """
         input_object = self._convert_input(input_object)
         self.token_dict.state = input_object
+
+    @property
+    def format_string(self):
+        return str(self.format_string_object)
+
+    @format_string.setter
+    def format_string(self, format_target):
+        self.format_string_object.swap_format(format_target)
 
     def reset_from_config(self):
         self.initialize_config_settings()
@@ -509,7 +568,7 @@ class Nomenclate(object):
             format_target = format_target or self.cfg.get(self.DEFAULT_FORMAT_PATH, return_type=str)
 
         finally:
-            self.format_string.swap_format(format_target)
+            self.format_string_object.swap_format(format_target)
             self.token_dict.build_name_attrs()
 
     def initialize_options(self):
