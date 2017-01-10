@@ -323,11 +323,9 @@ class TestNomenclateGetFormatOrderFromFormatString(TestNomenclateBase):
 
 
 class TestNomenclateGet(TestNomenclateBase):
-    @unittest.skip("skipping until fixed")
     def test_get(self):
         self.assertEquals(self.nom.get(), 'left_testObject_LOC')
 
-    @unittest.skip("skipping until fixed")
     def test_get_after_change(self):
         previous_state = self.nom.state
         self.nom.location.set('rear')
@@ -336,7 +334,6 @@ class TestNomenclateGet(TestNomenclateBase):
 
 
 class TestNomenclateGetChain(TestNomenclateBase):
-    @unittest.skip("skipping until fixed")
     def test_get_chain(self):
         self.assertIsNone(self.nom.get_chain(0,5))
 
@@ -347,59 +344,6 @@ class TestNomenclateUpdateTokenAttributes(TestNomenclateBase):
 
 class TestNomenclateComposeName(TestNomenclateBase):
     pass
-
-
-class TestNomenclateValidateFormatString(TestNomenclateBase):
-    def test_get__validate_format_string_valid(self):
-        self.nom._validate_format_string('side_mide')
-
-    def test_get__validate_format_string__is_format_invalid(self):
-        self.assertRaises(exceptions.FormatError, self.nom._validate_format_string('notside'))
-
-
-class TestInputRendererGetAlphanumericIndex(TestNomenclateBase):
-    def test_get__get_alphanumeric_index_integer(self):
-        self.assertEquals(nm.InputRenderer._get_alphanumeric_index(0),
-                          [0, 'int'])
-
-    def test_get__get_alphanumeric_index_char_start(self):
-        self.assertEquals(nm.InputRenderer._get_alphanumeric_index('a'),
-                          [0, 'char_lo'])
-
-    def test_get__get_alphanumeric_index_char_end(self):
-        self.assertEquals(nm.InputRenderer._get_alphanumeric_index('z'),
-                          [25, 'char_lo'])
-
-    def test_get__get_alphanumeric_index_char_upper(self):
-        self.assertEquals(nm.InputRenderer._get_alphanumeric_index('B'),
-                          [1, 'char_hi'])
-
-    def test_get__get_alphanumeric_index_error(self):
-        self.assertRaises(IOError, nm.InputRenderer._get_alphanumeric_index, 'asdf')
-
-
-class TestInputRendererCleanupFormattingString(TestNomenclateBase):
-    def test_cleanup_format(self):
-        print(self.nom.__dict__)
-        self.assertEquals(nm.InputRenderer.cleanup_formatted_string('test_name _messed __ up LOC'),
-                          'test_name_messed_upLOC')
-
-
-class TestNomenclateGetVariationId(TestNomenclateBase):
-    def test_get_variation_id_normal(self):
-        self.assertEquals(self.nom._get_variation_id(0), 'a')
-
-    def test_get_variation_id_negative(self):
-        self.assertEquals(self.nom._get_variation_id(-4), '')
-
-    def test_get_variation_id_negative_one(self):
-        self.assertEquals(self.nom._get_variation_id(-1), '')
-
-    def test_get_variation_id_double_upper(self):
-        self.assertEquals(self.nom._get_variation_id(1046, capital=True), 'ANG')
-
-    def test_get_variation_id_double_lower(self):
-        self.assertEquals(self.nom._get_variation_id(1046, capital=False), 'ang')
 
 
 class TestNomenclateEq(TestNomenclateBase):
@@ -428,6 +372,79 @@ class TestNomenclateEq(TestNomenclateBase):
 
 
 class TestNomenclateRepr(TestNomenclateBase):
-    @unittest.skip("skipping until fixed")
     def test__repr__(self):
-        self.assertEquals(self.nom.__repr__(), 'left_testObject_LOC')
+        self.assertEquals(self.nom.__repr__(), 'left_testObjectA_locator')
+
+
+class TestInputRendererBase(TestNomenclateBase):
+    def setUp(self):
+        super(TestInputRendererBase, self).setUp()
+        self.ir = nm.InputRenderer
+        self.fixtures.append(self.ir)
+
+
+class TestInputRendererGetAlphanumericIndex(TestInputRendererBase):
+    def test_get__get_alphanumeric_index_integer(self):
+        self.assertEquals(self.ir._get_alphanumeric_index(0),
+                          [0, 'int'])
+
+    def test_get__get_alphanumeric_index_char_start(self):
+        self.assertEquals(self.ir._get_alphanumeric_index('a'),
+                          [0, 'char_lo'])
+
+    def test_get__get_alphanumeric_index_char_end(self):
+        self.assertEquals(self.ir._get_alphanumeric_index('z'),
+                          [25, 'char_lo'])
+
+    def test_get__get_alphanumeric_index_char_upper(self):
+        self.assertEquals(self.ir._get_alphanumeric_index('B'),
+                          [1, 'char_hi'])
+
+    def test_get__get_alphanumeric_index_error(self):
+        self.assertRaises(IOError, self.ir._get_alphanumeric_index, 'asdf')
+
+
+class TestInputRendererCleanupFormattingString(TestInputRendererBase):
+    def test_cleanup_format(self):
+        self.assertEquals(self.ir.cleanup_formatted_string('test_name _messed __ up LOC'),
+                          'test_name_messed_upLOC')
+
+
+class TestInputRendererGetVariationId(TestInputRendererBase):
+    def test_get_variation_id_normal(self):
+        self.assertEquals(self.ir._get_variation_id(0), 'a')
+
+    def test_get_variation_id_negative(self):
+        self.assertEquals(self.ir._get_variation_id(-4), '')
+
+    def test_get_variation_id_negative_one(self):
+        self.assertEquals(self.ir._get_variation_id(-1), '')
+
+    def test_get_variation_id_double_upper(self):
+        self.assertEquals(self.ir._get_variation_id(1046, capital=True), 'ANG')
+
+    def test_get_variation_id_double_lower(self):
+        self.assertEquals(self.ir._get_variation_id(1046, capital=False), 'ang')
+
+
+class TestInputRendererRenderUniqueTokens(TestInputRendererBase):
+    def test_all_replaced(self):
+        test_values = {'var': 'A', 'type': 'locator', 'side': 'left', 'version': 5}
+        self.ir.render_unique_tokens(self.nom, test_values)
+        self.assertEquals(test_values,
+                          {'var': 'A', 'type': 'locator', 'side': 'left', 'version': '005'})
+
+
+class TestFormatStringBase(TestBase):
+    def setUp(self):
+        super(TestFormatStringBase, self).setUp()
+        self.fs = nm.FormatString()
+        self.fixtures.append(self.fs)
+
+
+class TestFormatStringValidateFormatString(TestFormatStringBase):
+    def test_get__validate_format_string_valid(self):
+        self.fs._validate_format_string('side_mide')
+
+    def test_get__validate_format_string__is_format_invalid(self):
+        self.assertRaises(exceptions.FormatError, self.fs._validate_format_string('notside'))

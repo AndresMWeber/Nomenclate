@@ -80,9 +80,9 @@ class TokenAttrDictHandler(dict):
                 del self[token_attr.token]
 
     def purge_name_attrs(self):
-        for token_attr in self.get_token_attrs():
+        for token_attr in list(self.get_token_attrs()):
             del self[token_attr.token]
-        self.update_nomenclate_token_attrs()
+        self.update_nomenclate_token_attributes()
 
     def clear_name_attrs(self):
         for token_attr in self.get_token_attrs():
