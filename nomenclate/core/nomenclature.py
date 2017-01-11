@@ -261,7 +261,14 @@ class TokenMatch(object):
         return '%s (%d)- [%d:%d] - replacement = %s' % (self.match, self.span, self.start, self.end, self.sub)
 
 
-class InputRenderer(object):
+class InputRenderer(type):
+    RENDER_FUNCTIONS = {}
+
+    def __new__(mcs, name, bases, dct):
+        cls = type.__new__(mcs, name, bases, dct)
+        mcs.RENDER_FUNCTIONS[dct.get('token')] = cls
+        return cls
+
     @classmethod
     def render_nomenclative(cls, nomenclate_object):
         nomenclative = Nomenclative(nomenclate_object.format_string)
@@ -331,17 +338,45 @@ class InputRenderer(object):
     @classmethod
     def render_unique_tokens(cls, nomenclate_object, input_dict):
         for k, v in iteritems(input_dict):
-            render_method = '_render_%s' % k
-            try:
-                render_method = getattr(cls, render_method)
-                if callable(render_method):
-                    input_dict[k] = render_method(v, nomenclate_object)
-            except AttributeError:
-                # TODO: maybe log this?
-                pass
+            render_method = cls.RENDER_FUNCTIONS.get(k, None)
+            if 'render' in dir(render_method):
+                input_dict[k] = render_method.render(v, nomenclate_object)
 
     @staticmethod
-    def _render_date(date, nomenclate_object):
+    def _get_alphanumeric_index(query_string):
+        """ Given an input string of either int or char, returns what index in the alphabet and case it is
+        Args:
+            query_string (str): query string
+        Returns [int, str]: list of the index and type
+        """
+        #TODO: could probably rework this. it works, but it's ugly as hell.
+        try:
+            return [int(query_string), 'int']
+        except ValueError:
+            if len(query_string) == 1:
+                if query_string.isupper():
+                    return [string.uppercase.index(query_string), 'char_hi']
+                elif query_string.islower():
+                    return [string.lowercase.index(query_string), 'char_lo']
+            else:
+                raise IOError('The input is a string longer than one character')
+        return [0, 'char_hi']
+
+
+class RenderBase(object):
+    __metaclass__ = InputRenderer
+    token = None
+
+    @staticmethod
+    def render(arg, nomenclate_object):
+        raise NotImplementedError
+
+
+class RenderDate(RenderBase):
+    token = 'date'
+
+    @staticmethod
+    def render(date, nomenclate_object):
         if date == 'now':
             d = datetime.datetime.now()
         else:
@@ -352,23 +387,18 @@ class InputRenderer(object):
 
         return d.strftime(get_keys_containing(nomenclate_object.__dict__, 'format', '%Y-%m-%d'))
 
-    @staticmethod
-    def _render_var(var, nomenclate_object):
+
+class RenderVar(RenderBase):
+    __metaclass__ = InputRenderer
+    token = 'var'
+
+    @classmethod
+    def render(cls, var, nomenclate_object):
         if var:
-            return InputRenderer._get_variation_id(get_keys_containing(nomenclate_object.__dict__,
-                                                                       'index',
-                                                                       0),
+            return cls._get_variation_id(get_keys_containing(nomenclate_object.__dict__, 'index', 0),
                                                    var.isupper())
         else:
             return var
-
-    @staticmethod
-    def _render_version(version, nomenclate_object):
-        return '%0{0}d'.format(get_keys_containing(nomenclate_object.__dict__, 'padding', 4)) % version
-
-    @staticmethod
-    def _render_type(type, nomenclate_object):
-        return nomenclate_object.get_suffix(type, first=True)
 
     @staticmethod
     def _get_variation_id(integer, capital=False):
@@ -395,25 +425,36 @@ class InputRenderer(object):
         characters = ''.join(alphas)
         return characters.upper() if capital else characters
 
+
+class RenderVersion(RenderBase):
+    __metaclass__ = InputRenderer
+    token = 'version'
+
     @staticmethod
-    def _get_alphanumeric_index(query_string):
-        """ Given an input string of either int or char, returns what index in the alphabet and case it is
-        Args:
-            query_string (str): query string
-        Returns [int, str]: list of the index and type
-        """
-        #TODO: could probably rework this. it works, but it's ugly as hell.
-        try:
-            return [int(query_string), 'int']
-        except ValueError:
-            if len(query_string) == 1:
-                if query_string.isupper():
-                    return [string.uppercase.index(query_string), 'char_hi']
-                elif query_string.islower():
-                    return [string.lowercase.index(query_string), 'char_lo']
-            else:
-                raise IOError('The input is a string longer than one character')
-        return [0, 'char_hi']
+    def render(version, nomenclate_object):
+        return '%0{0}d'.format(get_keys_containing(nomenclate_object.__dict__, 'padding', 4)) % version
+
+
+class RenderType(RenderBase):
+    __metaclass__ = InputRenderer
+    token = 'type'
+
+    @staticmethod
+    def render(type, nomenclate_object):
+        options = nomenclate_object.get_config_setting(nomenclate_object.SUFFIXES_FORMAT_PATH + [type])
+        print(options)
+        return options
+
+
+class RenderSide(RenderBase):
+    __metaclass__ = InputRenderer
+    token = 'side'
+
+    @staticmethod
+    def render(type, nomenclate_object):
+        options = nomenclate_object.get_config_setting(nomenclate_object.OPTIONS_PATH + [side])
+        print(list(options))
+        return options
 
 
 class FormatString(object):
@@ -473,22 +514,17 @@ class Nomenclate(object):
     """
     CONFIG_PATH = ['overall_config']
 
-    SUFFIXES_FORMAT_PATH = ['suffixes']
     NAMING_FORMAT_PATH = ['naming_formats']
     DEFAULT_FORMAT_PATH = NAMING_FORMAT_PATH + ['node', 'default']
 
+    SUFFIXES_PATH = ['suffixes']
     OPTIONS_PATH = ['options']
-    VARIATION_PATH = OPTIONS_PATH + ['var']
     SIDE_PATH = OPTIONS_PATH + ['side']
-
-    UNIQUE_TOKENS = ['date', 'var', 'version']
 
     def __init__(self, *args, **kwargs):
         self.cfg = config.ConfigParse()
         self.format_string_object = FormatString()
 
-        self.SUFFIX_OPTIONS = dict()
-        self.FORMATS_OPTIONS = dict()
         self.CONFIG_OPTIONS = dict()
 
         self.reset_from_config()
@@ -555,9 +591,7 @@ class Nomenclate(object):
             self.swap_format(format_target)
 
     def initialize_options(self):
-        self.FORMATS_OPTIONS = self.cfg.get(self.NAMING_FORMAT_PATH, return_type=dict)
         self.CONFIG_OPTIONS = self.cfg.get(self.CONFIG_PATH, return_type=dict)
-        self.SUFFIX_OPTIONS = self.cfg.get(self.SUFFIXES_FORMAT_PATH, return_type=dict)
 
     def initialize_ui_options(self):
         """
@@ -585,6 +619,7 @@ class Nomenclate(object):
         Returns (list): generated object names
         """
         # TODO: rework this entire function, very dirty function.
+        """
         var_attr = self.token_dict.get_token_attr(self.VARIATION_PATH[-1])
         var_orig = var_attr.get()
 
@@ -605,6 +640,8 @@ class Nomenclate(object):
             names.append(self.get(**kwargs))
         var_attr.set(var_orig)
         return names
+        """
+        raise NotImplementedError
 
     def get_unset_tokens(self):
         return self.token_dict.get_unset_token_attrs()
@@ -612,10 +649,8 @@ class Nomenclate(object):
     def merge_dict(self, *args, **kwargs):
         self.state = combine_dicts(*args, **kwargs)
 
-    def get_suffix(self, type, first=False):
-        matches = gen_dict_key_matches(type, self.SUFFIX_OPTIONS)
-        matches = matches or type
-        return matches if not first else list(matches)[0]
+    def get_config_setting(self, search_path, return_type=list):
+        return self.cfg.get(search_path, return_type)
 
     def _convert_input(self, *args, **kwargs):
         input_dict = combine_dicts(*args, **kwargs)
@@ -702,6 +737,5 @@ def get_keys_containing(input_dict, search_string, default=None, first_found=Tru
                 pass
 
         output = output or default
-
 
         return output

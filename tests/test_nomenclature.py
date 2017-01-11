@@ -369,7 +369,7 @@ class TestNomenclateEq(TestNomenclateBase):
 
 class TestNomenclateRepr(TestNomenclateBase):
     def test__repr__(self):
-        self.assertEquals(self.nom.__repr__(), 'left_testObjectA_locator')
+        self.assertEquals(self.nom.__repr__(), 'l_testObjectA_LOC')
 
 
 class TestInputRendererBase(TestNomenclateBase):
@@ -428,7 +428,7 @@ class TestInputRendererRenderUniqueTokens(TestInputRendererBase):
         test_values = {'var': 'A', 'type': 'locator', 'side': 'left', 'version': 5}
         self.ir.render_unique_tokens(self.nom, test_values)
         self.assertEquals(test_values,
-                          {'var': 'A', 'type': 'locator', 'side': 'left', 'version': '005'})
+                          {'var': 'A', 'type': 'LOC', 'side': 'l', 'version': '005'})
 
     def test_some_replaced(self):
         test_values = {'var': 'A', 'type': 'locator', 'side': 'left', 'version': 5}
