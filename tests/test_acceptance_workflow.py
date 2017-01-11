@@ -35,7 +35,7 @@ class TestCreation(TestAcceptanceWorkflowBase):
 
     def test_initialize_with_dict_incomplete_and_swap_format_from_path(self):
         n = nom.Nomenclate({'name': 'test', 'type': 'locator', 'var': 'A', 'side': 'left'})
-        self.assertEquals(n.get(), 'l_default_testA_LOC')
+        self.assertEquals(n.get(), 'l_testA_LOC')
         n.swap_format(['naming_formats', 'node', 'format_archive'])
 
         self.assertEquals(n.get(), 'l_default_test_LOC')

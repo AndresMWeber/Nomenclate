@@ -3,6 +3,7 @@ from __future__ import print_function
 from future.utils import iteritems
 import unittest
 import re
+from pprint import pprint
 import nomenclate.core.nomenclature as nm
 import nomenclate.core.configurator as config
 import nomenclate.core.exceptions as exceptions
@@ -11,7 +12,7 @@ import nomenclate.core.exceptions as exceptions
 class TestBase(unittest.TestCase):
     def setUp(self):
         self.fixtures = []
-        print ('running testBase setup!')
+        print('running testBase setup!')
 
     def tearDown(self):
         for fixture in self.fixtures:
@@ -110,8 +111,8 @@ class TokenMatchBase(TestBase):
         self.token_match_end = nm.TokenMatch(test_re_matches.next(), 'fr', group_name='token')
 
         self.fixtures.extend([self.token_match_start,
-                             self.token_match_mid,
-                             self.token_match_end])
+                              self.token_match_mid,
+                              self.token_match_end])
 
 
 class TokenMatchInit(TokenMatchBase):
@@ -236,7 +237,7 @@ class TestNomenclateBase(TestBase):
         self.nom.name.set('testObject')
         self.nom.type.set('locator')
         self.nom.var.set('A')
-        self.fixtures =[self.cfg, self.nom, self.test_format_b, self.test_format]
+        self.fixtures = [self.cfg, self.nom, self.test_format_b, self.test_format]
 
 
 class TestNomenclateTokens(TestNomenclateBase):
@@ -272,7 +273,7 @@ class TestNomenclateState(TestNomenclateBase):
 
 class TestNomenclateResetFromConfig(TestNomenclateBase):
     def test_refresh(self):
-       self.assertIsNone(self.nom.reset_from_config())
+        self.assertIsNone(self.nom.reset_from_config())
 
 
 class TestNomenclateInitializeConfigSettings(TestNomenclateBase):
@@ -283,11 +284,13 @@ class TestNomenclateInitializeFormatOptions(TestNomenclateBase):
     def test_switch_naming_format_from_str(self):
         self.nom.initialize_format_options(self.test_format_b)
         self.assertTrue(self.checkEqual(self.nom.format_order,
-                                        ['side', 'location', 'name', 'Decorator', 'Var', 'childtype', 'purpose', 'type']))
+                                        ['side', 'location', 'name', 'Decorator', 'Var', 'childtype', 'purpose',
+                                         'type']))
 
         self.nom.initialize_format_options(self.test_format)
         self.assertTrue(self.checkEqual(self.nom.format_order,
-                                        ['side', 'location', 'name', 'Decorator', 'Var', 'childtype', 'purpose', 'type']))
+                                        ['side', 'location', 'name', 'Decorator', 'Var', 'childtype', 'purpose',
+                                         'type']))
 
     def test_switch_naming_format_from_config(self):
         self.nom.initialize_format_options(['naming_formats', 'node', 'format_lee'])
@@ -318,24 +321,24 @@ class TestNomenclateMergeDict(TestNomenclateBase):
 
 class TestNomenclateGetFormatOrderFromFormatString(TestNomenclateBase):
     def test_get_format_order(self):
-        self.assertEquals(self.nom.get_format_order_from_format_string(self.test_format),
+        self.assertEquals(self.nom.format_string_object.get_format_order(self.test_format),
                           ['side', 'location', 'name', 'Decorator', 'Var', 'childtype', 'purpose', 'type'])
 
 
 class TestNomenclateGet(TestNomenclateBase):
     def test_get(self):
-        self.assertEquals(self.nom.get(), 'left_testObject_LOC')
+        self.assertEquals(self.nom.get(), 'left_testObjectA_LOC')
 
     def test_get_after_change(self):
         previous_state = self.nom.state
         self.nom.location.set('rear')
-        self.assertEquals(self.nom.get(), 'left_rear_testObject_LOC')
+        self.assertEquals(self.nom.get(), 'left_rear_testObjectA_LOC')
         self.nom.state = previous_state
 
 
 class TestNomenclateGetChain(TestNomenclateBase):
     def test_get_chain(self):
-        self.assertIsNone(self.nom.get_chain(0,5))
+        self.assertIsNone(self.nom.get_chain(0, 5))
 
 
 class TestNomenclateUpdateTokenAttributes(TestNomenclateBase):
@@ -348,17 +351,12 @@ class TestNomenclateComposeName(TestNomenclateBase):
 
 class TestNomenclateEq(TestNomenclateBase):
     def test_equal(self):
-        print ('looking here')
         other = nm.Nomenclate(self.nom)
-        print(self.nom.state, 'oh yeah')
-        print(other.state, 'yeah')
         self.assertTrue(other == self.nom)
 
     def test_inequal_one_diff(self):
         other = nm.Nomenclate(self.nom.state)
         other.name = 'ronald'
-        print(self.nom.state, 'oh yeah')
-        print(other.state, 'yeah')
         self.assertFalse(other == self.nom)
 
     def test_inequal_multi_diff(self):
@@ -366,8 +364,6 @@ class TestNomenclateEq(TestNomenclateBase):
         other.name = 'ronald'
         other.var = 'C'
         other.type = 'joint'
-        print(self.nom.state, 'oh yeah')
-        print(other.state, 'yeah')
         self.assertFalse(other == self.nom)
 
 
@@ -434,6 +430,24 @@ class TestInputRendererRenderUniqueTokens(TestInputRendererBase):
         self.assertEquals(test_values,
                           {'var': 'A', 'type': 'locator', 'side': 'left', 'version': '005'})
 
+    def test_some_replaced(self):
+        test_values = {'var': 'A', 'type': 'locator', 'side': 'left', 'version': 5}
+        self.ir.render_unique_tokens(self.nom, test_values)
+        self.assertEquals(test_values,
+                          {'var': 'A', 'type': 'locator', 'side': 'left', 'version': '005'})
+
+    def test_empty(self):
+        test_values = {}
+        self.ir.render_unique_tokens(self.nom, test_values)
+        self.assertEquals(test_values,
+                          {})
+
+    def test_none_replaced(self):
+        test_values = {'name': 'test', 'blah': 'marg', 'not_me': 'haha', 'la': 5}
+        test_values_unchanged = test_values.copy()
+        self.ir.render_unique_tokens(self.nom, test_values)
+        self.assertEquals(test_values, test_values_unchanged)
+
 
 class TestFormatStringBase(TestBase):
     def setUp(self):
@@ -448,3 +462,59 @@ class TestFormatStringValidateFormatString(TestFormatStringBase):
 
     def test_get__validate_format_string__is_format_invalid(self):
         self.assertRaises(exceptions.FormatError, self.fs._validate_format_string('notside'))
+
+
+class TestCombineDicts(TestBase):
+    def test_with_dict_with_nomenclate_object(self):
+        self.assertDictEqual(nm.combine_dicts({1: 1, 2: 2, 3: 3}, nm.Nomenclate(name='test', discipline='lots')),
+                             {1: 1, 2: 2, 3: 3, 'name': 'test', 'discipline': 'lots'})
+
+    def test_only_dicts(self):
+        self.assertDictEqual(nm.combine_dicts({1: 1, 2: 2, 3: 3}, {4: 4, 5: 5, 6: 6}),
+                             {1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6})
+
+    def test_no_dicts_or_kwargs(self):
+        self.assertDictEqual(nm.combine_dicts('five', 5, None, [], 'haha'),
+                             {})
+
+    def test_kwargs(self):
+        self.assertDictEqual(nm.combine_dicts(parse='test', plush=5),
+                             {'parse': 'test', 'plush': 5})
+
+    def test_dicts_and_kwargs(self):
+        self.assertDictEqual(nm.combine_dicts({1: 1, 2: 2, 3: 3}, {4: 4, 5: 5, 6: 6}, parse='test', plush=5),
+                             {'parse': 'test', 'plush': 5, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6})
+
+    def test_dicts_and_kwargs_with_dict_overlaps(self):
+        self.assertDictEqual(nm.combine_dicts({1: 1, 2: 2, 3: 3}, {2: 4, 4: 5, 5: 3}, parse='test', plush=5),
+                             {'parse': 'test', 'plush': 5, 1: 1, 2: 4, 3: 3, 4: 5, 5: 3})
+
+    def test_dicts_and_kwargs_and_ignorables(self):
+        self.assertDictEqual(nm.combine_dicts({1: 1, 2: 2, 3: 3}, 5, 'the', None, parse='test', plush=5),
+                             {'parse': 'test', 'plush': 5, 1: 1, 2: 2, 3: 3})
+
+
+class TestGenDictExtract(TestBase):
+    def test_with_nested(self):
+        self.checkEqual(list(nm.gen_dict_key_matches('name', {1: 1, 2: 2, 3: 3, 'test': {'name': 'mesh',
+                                                                                         'test': {'name': 'bah'}},
+                                                              'name': 'test', 'discipline': 'lots'})),
+                        ['mesh', 'bah', 'test'])
+
+    def test_not_nested(self):
+        self.assertListEqual(list(nm.gen_dict_key_matches('name',
+                                                          {1: 1, 2: 2, 3: 3, 'name': 'mesh', 'discipline': 'lots'})),
+                             ['mesh'])
+
+    def test_list(self):
+        self.checkEqual(list(nm.gen_dict_key_matches('name',
+                                                     {1: 1, 2: 2, 3: 3, 'test': {'name': 'mesh',
+                                                                                 'test': {'name': 'bah'},
+                                                                                 'suffixes': {'name':
+                                                                                                  {'bah': 'fah'}}},
+                                                      'list': [{'name': 'nested_list'}, 5]})),
+                        ['mesh', 'bah', {'bah': 'fah'}, 'nested_list'])
+
+    def test_empty(self):
+        self.assertListEqual(list(nm.gen_dict_key_matches('name', {})),
+                             [])
