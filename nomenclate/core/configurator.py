@@ -79,8 +79,8 @@ class ConfigParse(object):
         config_entry = self._get_path_entry_from_config(query_path)
         query_result = self.config_entry_handler.format_query_result(config_entry,
                                                                      query_path,
-                                                                     return_type,
-                                                                     preceding_depth)
+                                                                     return_type=return_type,
+                                                                     preceding_depth=preceding_depth)
         return query_result
 
     def _get_path_entry_from_config(self, query_path):

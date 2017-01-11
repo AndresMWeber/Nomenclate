@@ -301,12 +301,8 @@ class TestNomenclateInitializeFormatOptions(TestNomenclateBase):
 
 class TestNomenclateInitializeOptions(TestNomenclateBase):
     def test_options_stored(self):
-        self.nom.FORMATS_OPTIONS = None
         self.nom.CONFIG_OPTIONS = None
-        self.nom.SUFFIX_OPTIONS = None
         self.nom.initialize_options()
-        self.assertIsNotNone(self.nom.FORMATS_OPTIONS)
-        self.assertIsNotNone(self.nom.SUFFIX_OPTIONS)
         self.assertIsNotNone(self.nom.CONFIG_OPTIONS)
 
 
@@ -408,19 +404,19 @@ class TestInputRendererCleanupFormattingString(TestInputRendererBase):
 
 class TestInputRendererGetVariationId(TestInputRendererBase):
     def test_get_variation_id_normal(self):
-        self.assertEquals(self.ir._get_variation_id(0), 'a')
+        self.assertEquals(nm.RenderVar._get_variation_id(0), 'a')
 
     def test_get_variation_id_negative(self):
-        self.assertEquals(self.ir._get_variation_id(-4), '')
+        self.assertEquals(nm.RenderVar._get_variation_id(-4), '')
 
     def test_get_variation_id_negative_one(self):
-        self.assertEquals(self.ir._get_variation_id(-1), '')
+        self.assertEquals(nm.RenderVar._get_variation_id(-1), '')
 
     def test_get_variation_id_double_upper(self):
-        self.assertEquals(self.ir._get_variation_id(1046, capital=True), 'ANG')
+        self.assertEquals(nm.RenderVar._get_variation_id(1046, capital=True), 'ANG')
 
     def test_get_variation_id_double_lower(self):
-        self.assertEquals(self.ir._get_variation_id(1046, capital=False), 'ang')
+        self.assertEquals(nm.RenderVar._get_variation_id(1046, capital=False), 'ang')
 
 
 class TestInputRendererRenderUniqueTokens(TestInputRendererBase):

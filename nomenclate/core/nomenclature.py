@@ -172,7 +172,7 @@ class Nomenclative(object):
         build_str = self.str
         for token_match in self.token_matches:
             if token_match.match == build_str[token_match.start:token_match.end]:
-                print(token_match.sub, build_str)
+                print(token_match.match, list(token_match.sub), token_match.sub, build_str)
                 build_str = build_str[:token_match.start] + token_match.sub + build_str[token_match.end:]
                 self.adjust_other_matches(token_match)
         return build_str
@@ -266,8 +266,20 @@ class InputRenderer(type):
 
     def __new__(mcs, name, bases, dct):
         cls = type.__new__(mcs, name, bases, dct)
-        mcs.RENDER_FUNCTIONS[dct.get('token')] = cls
+        token = dct.get('token', None)
+        if token:
+            mcs.RENDER_FUNCTIONS[token] = cls
         return cls
+
+    @classmethod
+    def render_unique_tokens(cls, nomenclate_object, input_dict):
+        for k, v in iteritems(input_dict):
+            renderer = None
+            for token, render_method in iteritems(cls.RENDER_FUNCTIONS):
+                if token in k:
+                    renderer = render_method
+            if 'render' in dir(renderer):
+                input_dict[k] = renderer.render(v, nomenclate_object, **nomenclate_object.get_token_settings(token))
 
     @classmethod
     def render_nomenclative(cls, nomenclate_object):
@@ -335,13 +347,6 @@ class InputRenderer(type):
         else:
             return result
 
-    @classmethod
-    def render_unique_tokens(cls, nomenclate_object, input_dict):
-        for k, v in iteritems(input_dict):
-            render_method = cls.RENDER_FUNCTIONS.get(k, None)
-            if 'render' in dir(render_method):
-                input_dict[k] = render_method.render(v, nomenclate_object)
-
     @staticmethod
     def _get_alphanumeric_index(query_string):
         """ Given an input string of either int or char, returns what index in the alphabet and case it is
@@ -367,16 +372,16 @@ class RenderBase(object):
     __metaclass__ = InputRenderer
     token = None
 
-    @staticmethod
-    def render(arg, nomenclate_object):
+    @classmethod
+    def render(cls, arg, nomenclate_object, **kwargs):
         raise NotImplementedError
 
 
 class RenderDate(RenderBase):
     token = 'date'
 
-    @staticmethod
-    def render(date, nomenclate_object):
+    @classmethod
+    def render(cls, date, nomenclate_object, **kwargs):
         if date == 'now':
             d = datetime.datetime.now()
         else:
@@ -393,10 +398,10 @@ class RenderVar(RenderBase):
     token = 'var'
 
     @classmethod
-    def render(cls, var, nomenclate_object):
+    def render(cls, var, nomenclate_object, **kwargs):
         if var:
-            return cls._get_variation_id(get_keys_containing(nomenclate_object.__dict__, 'index', 0),
-                                                   var.isupper())
+            var_index = kwargs.get('%s_index' % cls.token, 0)
+            return cls._get_variation_id(var_index, var.isupper())
         else:
             return var
 
@@ -430,19 +435,22 @@ class RenderVersion(RenderBase):
     __metaclass__ = InputRenderer
     token = 'version'
 
-    @staticmethod
-    def render(version, nomenclate_object):
-        return '%0{0}d'.format(get_keys_containing(nomenclate_object.__dict__, 'padding', 4)) % version
+    @classmethod
+    def render(cls, version, nomenclate_object, **kwargs):
+        padding = kwargs.get('%s_padding' % cls.token, 4)
+        return '%0{0}d'.format(padding) % version
 
 
 class RenderType(RenderBase):
     __metaclass__ = InputRenderer
     token = 'type'
 
-    @staticmethod
-    def render(type, nomenclate_object):
-        options = nomenclate_object.get_config_setting(nomenclate_object.SUFFIXES_FORMAT_PATH + [type])
-        print(options)
+    @classmethod
+    def render(cls, type, nomenclate_object, **kwargs):
+        length = kwargs.get('%s_length' % cls.token, None)
+        suffixes = nomenclate_object.get_config_setting(nomenclate_object.SUFFIXES_PATH, return_type=dict)
+        options = gen_dict_key_matches(type, suffixes)
+        print('type: ', length, list(options))
         return options
 
 
@@ -450,11 +458,16 @@ class RenderSide(RenderBase):
     __metaclass__ = InputRenderer
     token = 'side'
 
-    @staticmethod
-    def render(type, nomenclate_object):
-        options = nomenclate_object.get_config_setting(nomenclate_object.OPTIONS_PATH + [side])
-        print(list(options))
-        return options
+    @classmethod
+    def render(cls, side, nomenclate_object, **kwargs):
+        length = kwargs.get('%s_length' % cls.token, None)
+        side_options = nomenclate_object.get_config_setting(nomenclate_object.OPTIONS_PATH + ['side', side])
+        print('side: ', list(side_options))
+        for side_option in side_options:
+            if len(side_option) == length:
+                return side_option
+
+        return next(iter(side_options))
 
 
 class FormatString(object):
@@ -650,7 +663,8 @@ class Nomenclate(object):
         self.state = combine_dicts(*args, **kwargs)
 
     def get_config_setting(self, search_path, return_type=list):
-        return self.cfg.get(search_path, return_type)
+        print ('getting config setting ', search_path, ' as return type ', return_type)
+        return self.cfg.get(search_path, return_type=return_type)
 
     def _convert_input(self, *args, **kwargs):
         input_dict = combine_dicts(*args, **kwargs)
@@ -672,6 +686,13 @@ class Nomenclate(object):
                 pass
 
         self.initialize_config_settings(input_dict=configs)
+
+    def get_token_settings(self, token, default=None):
+        setting_dict = {}
+        for key, value in iteritems(self.__dict__):
+            if ('%s_' % token in key and not callable(key) and not isinstance(value, TokenAttr)):
+                setting_dict[key] = self.__dict__.get(key, default)
+        return setting_dict
 
     def __eq__(self, other):
         return self.token_dict == other.token_dict
@@ -712,7 +733,8 @@ def gen_dict_key_matches(key, iterable):
     """
     if iterable == key:
         yield iterable
-    elif isinstance(iterable, (list, dict)):
+
+    elif isinstance(iterable, dict):
         for k, v in iteritems(iterable):
             if k == key:
                 yield v
@@ -722,6 +744,10 @@ def gen_dict_key_matches(key, iterable):
             elif isinstance(v, list):
                 for elem in v:
                     gen_dict_key_matches(key, elem)
+
+    elif isinstance(iterable, list):
+        for elem in iterable:
+            gen_dict_key_matches(key, elem)
 
 
 def get_keys_containing(input_dict, search_string, default=None, first_found=True):
