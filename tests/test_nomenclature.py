@@ -191,7 +191,7 @@ class TestTokenAttrBase(TestBase):
 
 class TestTokenAttrInstantiate(TestTokenAttrBase):
     def test_empty_instantiate(self):
-        self.assertEquals(nm.TokenAttr().get(), '')
+        self.assertEquals(nm.TokenAttr().label, '')
 
     def test_valid_instantiate(self):
         self.fixtures.append(nm.TokenAttr('test', 'test'))
@@ -209,17 +209,18 @@ class TestTokenAttrInstantiate(TestTokenAttrBase):
 
 class TestTokenAttrSet(TestTokenAttrBase):
     def test_set_invalid(self):
-        self.assertRaises(exceptions.ValidationError, nm.TokenAttr().set, 1)
-        self.assertRaises(exceptions.ValidationError, nm.TokenAttr().set, [1])
-        self.assertRaises(exceptions.ValidationError, nm.TokenAttr().set, {1: 1})
+        with self.assertRaises(exceptions.ValidationError):
+            nm.TokenAttr().label = [1]
+        with self.assertRaises(exceptions.ValidationError):
+            nm.TokenAttr().label = {1: 1}
 
 
 class TestTokenAttrGet(TestTokenAttrBase):
     def test_get(self):
-        self.assertEquals(self.token_attr.get(), 'test_label')
+        self.assertEquals(self.token_attr.label, 'test_label')
 
     def test_get_empty(self):
-        self.assertEquals(nm.TokenAttr().get(), '')
+        self.assertEquals(nm.TokenAttr().label, '')
 
 
 class TestNomenclateBase(TestBase):
@@ -458,59 +459,3 @@ class TestFormatStringValidateFormatString(TestFormatStringBase):
 
     def test_get__validate_format_string__is_format_invalid(self):
         self.assertRaises(exceptions.FormatError, self.fs._validate_format_string('notside'))
-
-
-class TestCombineDicts(TestBase):
-    def test_with_dict_with_nomenclate_object(self):
-        self.assertDictEqual(nm.combine_dicts({1: 1, 2: 2, 3: 3}, nm.Nomenclate(name='test', discipline='lots')),
-                             {1: 1, 2: 2, 3: 3, 'name': 'test', 'discipline': 'lots'})
-
-    def test_only_dicts(self):
-        self.assertDictEqual(nm.combine_dicts({1: 1, 2: 2, 3: 3}, {4: 4, 5: 5, 6: 6}),
-                             {1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6})
-
-    def test_no_dicts_or_kwargs(self):
-        self.assertDictEqual(nm.combine_dicts('five', 5, None, [], 'haha'),
-                             {})
-
-    def test_kwargs(self):
-        self.assertDictEqual(nm.combine_dicts(parse='test', plush=5),
-                             {'parse': 'test', 'plush': 5})
-
-    def test_dicts_and_kwargs(self):
-        self.assertDictEqual(nm.combine_dicts({1: 1, 2: 2, 3: 3}, {4: 4, 5: 5, 6: 6}, parse='test', plush=5),
-                             {'parse': 'test', 'plush': 5, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6})
-
-    def test_dicts_and_kwargs_with_dict_overlaps(self):
-        self.assertDictEqual(nm.combine_dicts({1: 1, 2: 2, 3: 3}, {2: 4, 4: 5, 5: 3}, parse='test', plush=5),
-                             {'parse': 'test', 'plush': 5, 1: 1, 2: 4, 3: 3, 4: 5, 5: 3})
-
-    def test_dicts_and_kwargs_and_ignorables(self):
-        self.assertDictEqual(nm.combine_dicts({1: 1, 2: 2, 3: 3}, 5, 'the', None, parse='test', plush=5),
-                             {'parse': 'test', 'plush': 5, 1: 1, 2: 2, 3: 3})
-
-
-class TestGenDictExtract(TestBase):
-    def test_with_nested(self):
-        self.checkEqual(list(nm.gen_dict_key_matches('name', {1: 1, 2: 2, 3: 3, 'test': {'name': 'mesh',
-                                                                                         'test': {'name': 'bah'}},
-                                                              'name': 'test', 'discipline': 'lots'})),
-                        ['mesh', 'bah', 'test'])
-
-    def test_not_nested(self):
-        self.assertListEqual(list(nm.gen_dict_key_matches('name',
-                                                          {1: 1, 2: 2, 3: 3, 'name': 'mesh', 'discipline': 'lots'})),
-                             ['mesh'])
-
-    def test_list(self):
-        self.checkEqual(list(nm.gen_dict_key_matches('name',
-                                                     {1: 1, 2: 2, 3: 3, 'test': {'name': 'mesh',
-                                                                                 'test': {'name': 'bah'},
-                                                                                 'suffixes': {'name':
-                                                                                                  {'bah': 'fah'}}},
-                                                      'list': [{'name': 'nested_list'}, 5]})),
-                        ['mesh', 'bah', {'bah': 'fah'}, 'nested_list'])
-
-    def test_empty(self):
-        self.assertListEqual(list(nm.gen_dict_key_matches('name', {})),
-                             [])

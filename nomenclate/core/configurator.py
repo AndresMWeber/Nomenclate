@@ -15,9 +15,18 @@ import yaml
 import os
 from collections import OrderedDict
 import nomenclate.core.exceptions as exceptions
+from nomenclate.core.tools import (
+    gen_dict_key_matches
+)
+from nomenclate.core.nlog import (
+    getLogger,
+    DEBUG
+)
 
 
 class ConfigParse(object):
+    LOG = getLogger(__name__, level=DEBUG)
+
     def __init__(self, config_filepath='env.yml'):
         """
         Args:
@@ -74,16 +83,26 @@ class ConfigParse(object):
         Raises:
             exceptions.ResourceNotFoundError: if the query path is invalid
         """
-        query_path = query_path if isinstance(query_path, list) else [query_path]
-        self.validate_query_path(query_path)
-        config_entry = self._get_path_entry_from_config(query_path)
-        query_result = self.config_entry_handler.format_query_result(config_entry,
-                                                                     query_path,
-                                                                     return_type=return_type,
-                                                                     preceding_depth=preceding_depth)
-        return query_result
+        config_entry = None
+        if isinstance(query_path, str):
+            config_entry = self._get_path_entry_from_string(query_path)
+        elif isinstance(query_path, dict):
+            config_entry = self._get_path_entry_from_list(query_path)
 
-    def _get_path_entry_from_config(self, query_path):
+        try:
+            query_result = self.config_entry_handler.format_query_result(config_entry,
+                                                                         query_path,
+                                                                         return_type=return_type,
+                                                                         preceding_depth=preceding_depth)
+            return query_result
+        except IndexError:
+            raise exceptions.ResourceNotFoundError('Could not find config entry or formatter.')
+
+    def _get_path_entry_from_string(self, query_string, first_found=True, full_path=False):
+        iter_matches = gen_dict_key_matches(query_string, self.config_file_contents, full_path=full_path)
+        return next(iter_matches) if first_found else iter_matches
+
+    def _get_path_entry_from_list(self, query_path):
         if not query_path:
             return list(self.config_file_contents)
         cur_data = self.config_file_contents
@@ -110,11 +129,13 @@ class ConfigParse(object):
         Returns (bool): True or raise IndexError on non found query
         """
         cur_data = self.config_file_contents
+
         for path in query_path:
             cur_data = cur_data.get(path)
             if cur_data is None:
-                raise exceptions.ResourceNotFoundError(
-                    'Trying to find entry: %s not found in current config file...' % ('|'.join(query_path)))
+                msg = 'Trying to find entry: %s not found in current config file...' % ('|'.join(query_path))
+                self.LOG.error(msg)
+                raise exceptions.ResourceNotFoundError(msg)
 
 
 class FormatterRegistry(type):
