@@ -83,28 +83,36 @@ class ConfigParse(object):
         Raises:
             exceptions.ResourceNotFoundError: if the query path is invalid
         """
-        config_entry = None
-        if isinstance(query_path, str):
-            config_entry = self._get_path_entry_from_string(query_path)
-        elif isinstance(query_path, dict):
-            config_entry = self._get_path_entry_from_list(query_path)
-
+        self.LOG.debug('config.get() - Trying to find %s in config and return_type %s' % (query_path, return_type))
+        config_entry = {}
         try:
-            query_result = self.config_entry_handler.format_query_result(config_entry,
-                                                                         query_path,
-                                                                         return_type=return_type,
-                                                                         preceding_depth=preceding_depth)
-            return query_result
-        except IndexError:
-            raise exceptions.ResourceNotFoundError('Could not find config entry or formatter.')
+            config_entry = self._get_path_entry_from_list(query_path)
+        except exceptions.ResourceNotFoundError:
+            self.LOG.debug('Could not find config entry via query path')
+            try:
+                self.validate_query_path(query_path)
+                config_entry = self._get_path_entry_from_string(query_path)
+            except exceptions.ResourceNotFoundError:
+                self.LOG.debug('Could not find any key matches for query path either')
 
-    def _get_path_entry_from_string(self, query_string, first_found=True, full_path=False):
-        iter_matches = gen_dict_key_matches(query_string, self.config_file_contents, full_path=full_path)
-        return next(iter_matches) if first_found else iter_matches
+        self.LOG.debug('Resulting config entry is %s' % repr(config_entry))
+        query_result = self.config_entry_handler.format_query_result(config_entry,
+                                                                     query_path,
+                                                                     return_type=return_type,
+                                                                     preceding_depth=preceding_depth)
+        return query_result
+
+    def _get_path_entry_from_string(self, qstr, first_found=True, full_path=False):
+        iter_matches = gen_dict_key_matches(qstr, self.config_file_contents, full_path=full_path)
+        if list(iter_matches):
+            return next(iter_matches) if first_found else iter_matches
+        raise exceptions.ResourceNotFoundError('Could not find search string %s in the config file contents' % qstr)
 
     def _get_path_entry_from_list(self, query_path):
-        if not query_path:
-            return list(self.config_file_contents)
+        if isinstance(query_path, str):
+            query_path = [query_path]
+        self.validate_query_path(query_path)
+
         cur_data = self.config_file_contents
         for child in query_path:
             cur_data = cur_data.get(child)
@@ -128,6 +136,9 @@ class ConfigParse(object):
             query_path list(str): list of query paths to traverse
         Returns (bool): True or raise IndexError on non found query
         """
+        if isinstance(query_path, str):
+            return True
+
         cur_data = self.config_file_contents
 
         for path in query_path:
@@ -221,6 +232,28 @@ class DictToOrderedDictEntryFormatter(BaseFormatter):
         return OrderedDict(sorted(items, key=lambda x: x[0]))
 
 
+class OrderedDictToListEntryFormatter(BaseFormatter):
+    converts = {'accepted_input_type': OrderedDict,
+                'accepted_return_type': list}
+
+    @staticmethod
+    def format_result(input):
+        """From: http://stackoverflow.com/questions/13062300/convert-a-dict-to-sorted-dict-in-python
+        """
+        return list(input)
+
+
+class NoneToDictEntryFormatter(BaseFormatter):
+    converts = {'accepted_input_type': type(None),
+                'accepted_return_type': dict}
+
+    @staticmethod
+    def format_result(input):
+        """From: http://stackoverflow.com/questions/13062300/convert-a-dict-to-sorted-dict-in-python
+        """
+        return {}
+
+
 class ListToStringEntryFormatter(BaseFormatter):
     converts = {'accepted_input_type': list,
                 'accepted_return_type': str}
@@ -256,8 +289,9 @@ class ConfigEntryFormatter(object):
             raise AttributeError(
                 "Handler not found for return type %s and input type %s" % (return_type, type(query_result_type)))
         except:
-            raise IndexError('Could not find function in conversion list',
-                             'for input type %s and return type %s' % (query_result_type, return_type))
+            msg = 'Could not find function in conversion list for input type %s and return type %s' % \
+                  (query_result_type, return_type)
+            raise IndexError(msg)
 
     def format_with_handler(self, query_result, return_type):
         handler = self.get_handler(type(query_result), return_type)
