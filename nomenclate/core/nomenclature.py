@@ -198,7 +198,7 @@ class FormatString(object):
 
     def __init__(self, format_string=""):
         self.format_string = format_string
-        self.processed_format_order = None
+        self.format_order = format_string
         self.swap_format(format_string)
 
     def swap_format(self, format_target):
