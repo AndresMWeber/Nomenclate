@@ -23,6 +23,8 @@ from nomenclate.core.tools import (
 
 
 class TokenAttr(object):
+    LOG = getLogger(__name__, level=DEBUG)
+
     def __init__(self, label=None, token=None):
         self.validate_entries(label, token)
         self.string_raw = label if label is not None else ""
@@ -44,6 +46,7 @@ class TokenAttr(object):
     @label.setter
     def label(self, label):
         self.validate_entries(label)
+        self.LOG.debug('Setting token attr %s -> %r' % (str(self), label))
         self.string_raw = label
 
     def set(self, value):
@@ -61,7 +64,7 @@ class TokenAttr(object):
         return self.token == other.token and self.label == other.label
 
     def __str__(self):
-        return '%s:%s\t\traw_token=%s' % (self.token, self.label, self.token_raw)
+        return '%s(%s):%r' % (self.token, self.token_raw, self.label)
 
 
 class TokenAttrDictHandler(object):
@@ -69,7 +72,7 @@ class TokenAttrDictHandler(object):
 
     def __init__(self, nomenclate_object):
         self.nom = nomenclate_object
-        self.build_name_attrs()
+        self.set_token_attrs(self.empty_state)
 
     @property
     def token_attrs(self):
@@ -88,6 +91,10 @@ class TokenAttrDictHandler(object):
         self.set_token_attrs(self.nom._convert_input(input_object, kwargs))
 
     @property
+    def empty_state(self):
+        return {token: "" for token in self.nom.format_order}
+
+    @property
     def unset_token_attrs(self):
         return [token_attr for token_attr in self.token_attrs if token_attr.label == '']
 
@@ -95,41 +102,39 @@ class TokenAttrDictHandler(object):
     def token_attr_dict(self):
         return dict([(attr.token, attr.label) for attr in self.token_attrs])
 
-    def build_name_attrs(self):
-        """ Creates all necessary name attributes for the naming convention
-        """
-        self.LOG.info('Building name attributes from default format order %s' % self.nom.format_order)
-        self.purge_invalid_name_attrs()
-        self.set_token_attrs({token: "" for token in self.nom.format_order})
-
     def purge_invalid_name_attrs(self):
         """ Removes name attrs not found in the format order
         """
-        for token_attr in list(self.token_attrs):
+        token_attrs = list(self.token_attrs)
+        self.LOG.debug('Checking if current TokenAttrs %s are in format order %s' % (map(str, token_attrs),
+                                                                                     self.nom.format_order))
+        for token_attr in token_attrs:
             try:
-                self._validate_name_in_format_order(token_attr.label, self.nom.format_order)
+                self._validate_name_in_format_order(token_attr.token_raw, self.nom.format_order)
             except exceptions.FormatError:
+                self.LOG.debug('Deleting invalid TokenAttr %s' % token_attr.token)
                 del self.__dict__[token_attr.token]
 
-    def purge_name_attrs(self):
-        for token_attr in list(self.token_attrs):
-            del self.__dict__[token_attr.token]
-        self.update_nomenclate_token_attributes()
-
-    def clear_name_attrs(self):
+    def reset(self):
         for token_attr in self.token_attrs:
             token_attr.set('')
 
     def set_token_attrs(self, input_dict):
         self.LOG.info('Setting token attributes %s' % input_dict)
-        for input_attr_name, input_attr_value in iteritems(input_dict):
+        defaults = self.empty_state
+        defaults.update(input_dict)
+
+        for input_attr_name, input_attr_value in iteritems(defaults):
             self.set_token_attr(input_attr_name, input_attr_value)
+
+        self.LOG.debug('Finished setting attributes on TokenDict %s' % map(str, list(self.token_attrs)))
         self.purge_invalid_name_attrs()
         self.update_nomenclate_token_attributes()
 
     def set_token_attr(self, token, value):
         self.LOG.info('set_token_attr() - Setting TokenAttr %s with value %s' % (token, repr(value)))
         token_attrs = list(self.token_attrs)
+
         if token not in [token_attr.token for token_attr in token_attrs]:
             self._create_token_attr(token, value)
         else:
@@ -150,15 +155,19 @@ class TokenAttrDictHandler(object):
         self.__dict__[token.lower()] = TokenAttr(label=value, token=token)
 
     def update_nomenclate_token_attributes(self):
-        self.LOG.info('Updating nomenclate attributes - %s' % list(self.token_attrs))
-        for token_attribute in self.token_attrs:
+        token_attrs = list(self.token_attrs)
+        self.LOG.info('Updating nomenclate attributes - %s' % map(str, token_attrs))
+        for token_attribute in token_attrs:
             setattr(self.nom, token_attribute.token, token_attribute)
+        self.LOG.info('Clearing unused tokens...')
         self.clear_nomenclate_excess_token_attributes()
+        self.LOG.info('Finished updating Nomenclate object.')
 
     def clear_nomenclate_excess_token_attributes(self):
-        for token_attr_key, token_attr_object in self.gen_object_token_attributes(self.nom):
-            if token_attr_key not in self.nom.format_order:
-                delattr(self.nom, token_attr_key)
+        for token_attr in self.gen_object_token_attributes(self.nom):
+            if token_attr.token_raw not in self.nom.format_order:
+                self.LOG.info('Deleting unsynchronized Nomenclate TokenAttr' % token_attr.token)
+                delattr(self.nom, token_attr.token)
 
     @staticmethod
     def gen_object_token_attributes(object):
@@ -185,12 +194,12 @@ class TokenAttrDictHandler(object):
         except KeyError:
             object.__getattribute__(self.__dict__, name)
 
-    def __repr__(self):
-        return ' '.join(['%s:%s' % (token_attr.token, token_attr.label) for token_attr in self.get_token_attrs()])
+    def __str__(self):
+        return ' '.join(['%s:%s' % (token_attr.token, token_attr.label) for token_attr in self.token_attrs])
 
 
 class FormatString(object):
-    FORMAT_STRING_REGEX = r'([A-Za-z][^A-Z_.]*)'
+    # FORMAT_STRING_REGEX = r'([A-Za-z][^A-Z_.]*)'
     FORMAT_STRING_REGEX = r'(?:(?<=\()[\w]+(?=\)))|([A-Za-z0-9][^A-Z_.\(\)]+)'
     SEPARATORS = '\\._-?()'
 
