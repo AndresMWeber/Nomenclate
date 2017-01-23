@@ -109,7 +109,7 @@ class TokenAttrDictHandler(object):
             try:
                 self._validate_name_in_format_order(token_attr.label, self.nom.format_order)
             except exceptions.FormatError:
-                del self[token_attr.token]
+                del self.__dict__[token_attr.token]
 
     def purge_name_attrs(self):
         for token_attr in list(self.token_attrs):
@@ -198,27 +198,27 @@ class FormatString(object):
 
     def __init__(self, format_string=""):
         self.format_string = format_string
-        self.format_order = None
+        self.processed_format_order = None
         self.swap_format(format_string)
 
     def swap_format(self, format_target):
         try:
-            self._validate_format_string(format_target)
+            self.format_order = format_target
             self.format_string = format_target
-            self.format_order = self.get_format_order(format_target)
             self.LOG.info('Successfully set format string: %s and format order: %s' % (self.format_string,
                                                                                        self.format_order))
         except exceptions.FormatError as e:
             msg = "Could not validate input format target %s"
             self.LOG.error('%s, %s' % (msg, e.message))
 
-    def get_format_order(self, format_target):
+    def parse_format_order(self, format_target):
         """ Dissects the format string and gets the order of the tokens as it finds them l->r
             Splits on camel case or periods/underscores
             Modified version from this:
                 http://stackoverflow.com/questions/2277352/python-split-a-string-at-uppercase-letters
         Returns [string]: list of the matching tokens
         """
+        self.LOG.debug('Getting format order from target %s' % repr(format_target))
         try:
             pattern = re.compile(self.FORMAT_STRING_REGEX)
             return [match.group() for match in pattern.finditer(format_target) if None not in match.groups()]
@@ -226,10 +226,23 @@ class FormatString(object):
             raise exceptions.FormatError('Format string %s is not a valid input type, must be <type str>' %
                                          format_target)
 
-    def _validate_format_string(self, format_target):
+    @property
+    def format_order(self):
+        return self.processed_format_order
+
+    @format_order.setter
+    def format_order(self, format_target):
+        if format_target:
+            self.processed_format_order = self.get_valid_format_order(format_target,
+                                                                      format_order=self.parse_format_order(format_target))
+        else:
+            self.processed_format_order = []
+
+    def get_valid_format_order(self, format_target, format_order=None):
         """ Checks to see if the target format string follows the proper style
         """
-        format_order = self.get_format_order(format_target)
+        self.LOG.debug('Validating format string and parsing for format order.')
+        format_order = format_order or self.parse_format_order(format_target)
 
         for format_str in format_order:
             format_target = format_target.replace(format_str, '')
@@ -239,6 +252,7 @@ class FormatString(object):
                 msg = "You have specified an invalid format string %s." % format_target
                 self.LOG.warning(msg)
                 raise exceptions.FormatError(msg)
+        return format_order
 
     def __str__(self):
         return str(self.format_string)
@@ -316,15 +330,20 @@ class Nomenclate(object):
                                               e.g. - this_is_a_naming_string
         Returns None: raises IOError if failure
         """
-        self.LOG.info('initialize_format_options with %s' % format_target)
+        return_type = str
+        self.LOG.info('initialize_format_options with %s' % repr(format_target))
         try:
-            format_path = format_target if isinstance(format_target, list) else [format_target]
-            format_target = self.cfg.get(format_path, return_type=str)
+            format_target = self.cfg.get(format_target, return_type=return_type)
 
         except (exceptions.ResourceNotFoundError, StopIteration):
-            format_target = format_target or self.cfg.get(self.DEFAULT_FORMAT_PATH, return_type=str)
+            pass
 
         finally:
+            if not format_target:
+                self.LOG.debug('Format not found, replacing with default format from config path %s' %
+                               self.DEFAULT_FORMAT_PATH)
+                format_target = self.cfg.get(self.DEFAULT_FORMAT_PATH, return_type=return_type)
+
             self.LOG.info('format target is now %s after looking in the config for a match' % format_target)
             self.swap_format(format_target)
 
@@ -339,8 +358,13 @@ class Nomenclate(object):
 
     def swap_format(self, format_target):
         self.LOG.info('Attempting to swap format to target %s' % format_target)
-        format_target = self.cfg.get(format_target, return_type=str)
-        self.format_string_object.swap_format(format_target)
+        try:
+            self.format_string_object.swap_format(format_target)
+        except exceptions.FormatError:
+            self.LOG.info('Format target is not a valid format string, looking in config for: %s' % format_target)
+            format_target = self.cfg.get(format_target, return_type=str)
+            if format_target:
+                self.format_string_object.swap_format(format_target)
 
     def get(self, **kwargs):
         """Gets the string of the current name of the object

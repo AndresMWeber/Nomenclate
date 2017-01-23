@@ -159,7 +159,7 @@ class TestNomenclateMergeDict(TestNomenclateBase):
 
 class TestNomenclateGetFormatOrderFromFormatString(TestNomenclateBase):
     def test_get_format_order(self):
-        self.assertEquals(self.nom.format_string_object.get_format_order(self.test_format),
+        self.assertEquals(self.nom.format_string_object.parse_format_order(self.test_format),
                           ['side', 'location', 'name', 'Decorator', 'Var', 'childtype', 'purpose', 'type'])
 
 
@@ -296,7 +296,7 @@ class TestFormatStringBase(TestBase):
 
 class TestFormatStringValidateFormatString(TestFormatStringBase):
     def test_get__validate_format_string_valid(self):
-        self.fs._validate_format_string('side_mide')
+        self.fs.get_valid_format_order('side_mide')
 
     def test_get__validate_format_string__is_format_invalid(self):
-        self.assertRaises(exceptions.FormatError, self.fs._validate_format_string('notside'))
+        self.assertRaises(exceptions.FormatError, self.fs.get_valid_format_order('notside'))

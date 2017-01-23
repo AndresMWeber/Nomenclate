@@ -71,7 +71,7 @@ class ConfigParse(object):
         self.config_file_contents = OrderedDict(sorted(items, key=lambda x: x[0], reverse=True))
         self.config_filepath = config_filepath
 
-    def get(self, query_path, default=None, return_type=list, preceding_depth=None):
+    def get(self, query_path, return_type=list, preceding_depth=None):
         """ Traverses the list of query paths to find the data requested
         Args:
             query_path list(str)]: list of query path branches
@@ -83,24 +83,27 @@ class ConfigParse(object):
         Raises:
             exceptions.ResourceNotFoundError: if the query path is invalid
         """
-        self.LOG.debug('config.get() - Trying to find %s in config and return_type %s' % (query_path, return_type))
-        config_entry = {}
-        try:
-            config_entry = self._get_path_entry_from_list(query_path)
-        except exceptions.ResourceNotFoundError:
-            self.LOG.debug('Could not find config entry via query path')
+        self.LOG.debug('config.get() - Trying to find %s in config and return_type %s' % (repr(query_path), return_type))
+        if query_path:
+            config_entry = {}
             try:
-                self.validate_query_path(query_path)
-                config_entry = self._get_path_entry_from_string(query_path)
+                config_entry = self._get_path_entry_from_list(query_path)
             except exceptions.ResourceNotFoundError:
-                self.LOG.debug('Could not find any key matches for query path either')
-
-        self.LOG.debug('Resulting config entry is %s' % repr(config_entry))
-        query_result = self.config_entry_handler.format_query_result(config_entry,
-                                                                     query_path,
-                                                                     return_type=return_type,
-                                                                     preceding_depth=preceding_depth)
-        return query_result
+                self.LOG.debug('Could not find config entry via query path')
+                try:
+                    config_entry = self._get_path_entry_from_string(query_path)
+                except exceptions.ResourceNotFoundError:
+                    self.LOG.debug('Could not find any key matches for query path either')
+            query_result = self.config_entry_handler.format_query_result(config_entry,
+                                                                         query_path,
+                                                                         return_type=return_type,
+                                                                         preceding_depth=preceding_depth)
+            self.LOG.info('Successfully retrieved and converted config entry: %s' % query_result)
+            return query_result
+        else:
+            self.LOG.debug('Empty config query path, returning default for type %s -> %s' % (return_type,
+                                                                                             repr(return_type())))
+            return return_type()
 
     def _get_path_entry_from_string(self, qstr, first_found=True, full_path=False):
         iter_matches = gen_dict_key_matches(qstr, self.config_file_contents, full_path=full_path)
@@ -144,7 +147,7 @@ class ConfigParse(object):
         for path in query_path:
             cur_data = cur_data.get(path)
             if cur_data is None:
-                msg = 'Trying to find entry: %s not found in current config file...' % ('|'.join(query_path))
+                msg = 'Invalid Entry: %s not found in current config file...' % (repr('|'.join(query_path)))
                 self.LOG.error(msg)
                 raise exceptions.ResourceNotFoundError(msg)
 
