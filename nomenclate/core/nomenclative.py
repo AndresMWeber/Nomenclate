@@ -161,10 +161,10 @@ class InputRenderer(type):
 
     @classmethod
     def render_nomenclative(cls, nomenclate_object):
-        nomenclative = Nomenclative(nomenclate_object.format_string)
+        nomenclative = Nomenclative(nomenclate_object.format)
         token_values = nomenclate_object.token_dict.token_attr_dict
         cls.render_unique_tokens(nomenclate_object, token_values)
-        rendered_nomenclative = nomenclate_object.format_string_object.format_string
+        rendered_nomenclative = nomenclate_object.format_string_object.format
 
         cls._prepend_token_match_objects(token_values, rendered_nomenclative)
 

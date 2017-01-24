@@ -119,7 +119,7 @@ class TestAcceptanceNamingFiletypes(TestAcceptanceWorkflowBase):
     def test_saving_maya_file(self):
         n = nom.Nomenclate(name='SH010', var='A', ext='mb', initials='aw', discipline='animation', version=5)
         n.initialize_format_options('working_file')
-        self.assertEquals(n.format_string, 'name_discipline_lodDecoratorVar_(v)version_initials.ext')
+        self.assertEquals(n.format, 'name_discipline_lodDecoratorVar_(v)version_initials.ext')
         self.assertEquals(n.get(), 'SH010_ANIM_A_v05_aw.mb')
         self.fixtures.append(n)
 

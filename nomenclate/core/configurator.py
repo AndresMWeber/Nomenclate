@@ -20,12 +20,13 @@ from nomenclate.core.tools import (
 )
 from nomenclate.core.nlog import (
     getLogger,
-    DEBUG
+    DEBUG,
+    INFO
 )
 
 
 class ConfigParse(object):
-    LOG = getLogger(__name__, level=DEBUG)
+    LOG = getLogger(__name__, level=INFO)
 
     def __init__(self, config_filepath='env.yml'):
         """

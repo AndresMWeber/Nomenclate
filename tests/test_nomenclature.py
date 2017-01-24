@@ -78,7 +78,10 @@ class TestNomenclateBase(TestBase):
         self.nom.side.set('left')
         self.nom.name.set('testObject')
         self.nom.type.set('locator')
+        print('setting A to A.')
         self.nom.var.set('A')
+        self.nom.var = 'A'
+        print('state is %s' % self.nom.state)
         self.fixtures = [self.cfg, self.nom, self.test_format_b, self.test_format]
 
 
@@ -88,6 +91,7 @@ class TestNomenclateTokens(TestNomenclateBase):
 
 class TestNomenclateState(TestNomenclateBase):
     def test_state_clear(self):
+        print('entering test_state_clear')
         previous_state = self.nom.state
         self.nom.token_dict.reset()
         self.assertEquals(self.nom.state,
@@ -97,13 +101,15 @@ class TestNomenclateState(TestNomenclateBase):
 
     @unittest.skip
     def test_state_purge(self):
+        print('entering test_state_purge')
         previous_state = self.nom.state
         self.nom.token_dict.purge_name_attrs()
         self.assertEquals(self.nom.state, {})
         self.nom.state = previous_state
 
     def test_state_valid(self):
-        print(self.nom.state)
+        print('Now entering test')
+        print('state is', self.nom.state)
         self.assertEquals(self.nom.state,
                           {'childtype': '',
                            'decorator': '',
@@ -208,8 +214,8 @@ class TestNomenclateEq(TestNomenclateBase):
 
 
 class TestNomenclateRepr(TestNomenclateBase):
-    def test__repr__(self):
-        self.assertEquals(self.nom.__repr__(), 'l_testObjectA_LOC')
+    def test__str__(self):
+        self.assertEquals(str(self.nom), 'l_testObjectA_LOC')
 
 
 class TestInputRendererBase(TestNomenclateBase):

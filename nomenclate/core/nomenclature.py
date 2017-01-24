@@ -3,9 +3,6 @@
 from __future__ import print_function
 from future.utils import iteritems
 import re
-import string
-import datetime
-import dateutil.parser as p
 import nomenclate.core.configurator as config
 import nomenclate.core.exceptions as exceptions
 from nomenclate.core.nomenclative import (
@@ -13,12 +10,11 @@ from nomenclate.core.nomenclative import (
 )
 from nomenclate.core.nlog import (
     getLogger,
-    DEBUG
+    DEBUG,
+    INFO
 )
 from nomenclate.core.tools import (
-    combine_dicts,
-    gen_dict_key_matches,
-    get_keys_containing
+    combine_dicts
 )
 
 
@@ -27,27 +23,28 @@ class TokenAttr(object):
 
     def __init__(self, label=None, token=None):
         self.validate_entries(label, token)
-        self.string_raw = label if label is not None else ""
-        self.token_raw = token
+        self.raw_string = label if label is not None else ""
+        self.raw_token = token
 
     @property
     def token(self):
-        return self.token_raw.lower()
+        return self.raw_token.lower()
 
     @token.setter
     def token(self, token):
         self.validate_entries(token)
-        self.token_raw = token
+        self.raw_token = token
 
     @property
     def label(self):
-        return self.string_raw
+        return self.raw_string
 
     @label.setter
     def label(self, label):
         self.validate_entries(label)
         self.LOG.debug('Setting token attr %s -> %r' % (str(self), label))
-        self.string_raw = label
+        self.raw_string = label
+        self.LOG.debug('%s and the raw_string is %s' % (self, self.raw_string))
 
     def set(self, value):
         self.label = value
@@ -64,7 +61,7 @@ class TokenAttr(object):
         return self.token == other.token and self.label == other.label
 
     def __str__(self):
-        return '%s(%s):%r' % (self.token, self.token_raw, self.label)
+        return '%s(%s):%r' % (self.token, self.raw_token, self.label)
 
 
 class TokenAttrDictHandler(object):
@@ -72,7 +69,7 @@ class TokenAttrDictHandler(object):
 
     def __init__(self, nomenclate_object):
         self.nom = nomenclate_object
-        self.set_token_attrs(self.empty_state)
+        self.set_token_attrs({})
 
     @property
     def token_attrs(self):
@@ -110,7 +107,7 @@ class TokenAttrDictHandler(object):
                                                                                      self.nom.format_order))
         for token_attr in token_attrs:
             try:
-                self._validate_name_in_format_order(token_attr.token_raw, self.nom.format_order)
+                self._validate_name_in_format_order(token_attr.raw_token, self.nom.format_order)
             except exceptions.FormatError:
                 self.LOG.debug('Deleting invalid TokenAttr %s' % token_attr.token)
                 del self.__dict__[token_attr.token]
@@ -123,6 +120,7 @@ class TokenAttrDictHandler(object):
         self.LOG.info('Setting token attributes %s' % input_dict)
         defaults = self.empty_state
         defaults.update(input_dict)
+        self.LOG.debug('Filled in empty settings %s' % defaults)
 
         for input_attr_name, input_attr_value in iteritems(defaults):
             self.set_token_attr(input_attr_name, input_attr_value)
@@ -132,14 +130,17 @@ class TokenAttrDictHandler(object):
         self.update_nomenclate_token_attributes()
 
     def set_token_attr(self, token, value):
-        self.LOG.info('set_token_attr() - Setting TokenAttr %s with value %s' % (token, repr(value)))
+        self.LOG.info('set_token_attr() - Setting TokenAttr %s with value %r' % (token, value))
         token_attrs = list(self.token_attrs)
 
-        if token not in [token_attr.token for token_attr in token_attrs]:
+        if token not in [token_attr.raw_token for token_attr in token_attrs]:
+            self.LOG.debug('Token did not exist, creating...')
             self._create_token_attr(token, value)
         else:
             for token_attr in token_attrs:
+                self.LOG.debug('Checking if token %r is equal to preexisting token %r' % (token, token_attr.token))
                 if token == token_attr.token:
+                    self.LOG.debug('Found matching token, setting value to %r' % value)
                     token_attr.label = value
                     break
 
@@ -165,7 +166,7 @@ class TokenAttrDictHandler(object):
 
     def clear_nomenclate_excess_token_attributes(self):
         for token_attr in self.gen_object_token_attributes(self.nom):
-            if token_attr.token_raw not in self.nom.format_order:
+            if token_attr.raw_token not in self.nom.format_order:
                 self.LOG.info('Deleting unsynchronized Nomenclate TokenAttr' % token_attr.token)
                 delattr(self.nom, token_attr.token)
 
@@ -270,7 +271,7 @@ class FormatString(object):
 class Nomenclate(object):
     """This class deals with renaming of objects in an approved pattern
     """
-    LOG = getLogger(__name__, level=DEBUG)
+    LOG = getLogger(__name__, level=INFO)
     CONFIG_PATH = ['overall_config']
 
     NAMING_FORMAT_PATH = ['naming_formats']
@@ -291,6 +292,10 @@ class Nomenclate(object):
         self.merge_dict(*args, **kwargs)
 
     @property
+    def empty_tokens(self):
+        return self.token_dict.unset_token_attrs
+
+    @property
     def tokens(self):
         return list(self.token_dict.state)
 
@@ -300,6 +305,7 @@ class Nomenclate(object):
 
     @property
     def state(self):
+        print(self.token_dict.var)
         return self.token_dict.state
 
     @state.setter
@@ -312,12 +318,19 @@ class Nomenclate(object):
         self.token_dict.state = input_object
 
     @property
-    def format_string(self):
+    def format(self):
         return str(self.format_string_object)
 
-    @format_string.setter
-    def format_string(self, format_target):
-        self.format_string_object.swap_format(format_target)
+    @format.setter
+    def format(self, format_target):
+        self.LOG.info('Attempting to swap format to target %s' % format_target)
+        try:
+            self.format_string_object.swap_format(format_target)
+        except exceptions.FormatError:
+            self.LOG.info('Format target is not a valid format string, looking in config for: %s' % format_target)
+            format_target = self.cfg.get(format_target, return_type=str)
+            if format_target:
+                self.format_string_object.swap_format(format_target)
 
     def reset_from_config(self):
         self.initialize_config_settings()
@@ -354,7 +367,7 @@ class Nomenclate(object):
                 format_target = self.cfg.get(self.DEFAULT_FORMAT_PATH, return_type=return_type)
 
             self.LOG.info('format target is now %s after looking in the config for a match' % format_target)
-            self.swap_format(format_target)
+            self.format = format_target
 
     def initialize_options(self):
         self.CONFIG_OPTIONS = self.cfg.get(self.CONFIG_PATH, return_type=dict)
@@ -364,16 +377,6 @@ class Nomenclate(object):
         Placeholder for all categories/sub-lists within options to be recorded here
         """
         pass
-
-    def swap_format(self, format_target):
-        self.LOG.info('Attempting to swap format to target %s' % format_target)
-        try:
-            self.format_string_object.swap_format(format_target)
-        except exceptions.FormatError:
-            self.LOG.info('Format target is not a valid format string, looking in config for: %s' % format_target)
-            format_target = self.cfg.get(format_target, return_type=str)
-            if format_target:
-                self.format_string_object.swap_format(format_target)
 
     def get(self, **kwargs):
         """Gets the string of the current name of the object
@@ -416,16 +419,9 @@ class Nomenclate(object):
         """
         raise NotImplementedError
 
-    def get_unset_tokens(self):
-        return self.token_dict.get_unset_token_attrs()
-
     def merge_dict(self, *args, **kwargs):
         input = self._convert_input(*args, **kwargs)
         self.state = self._sift_and_init_configs(input)
-
-    def get_config_setting(self, search_path, return_type=str):
-        self.LOG.info('getting config setting %s as return type %s' % (search_path, return_type))
-        return self.cfg.get(search_path, return_type=return_type)
 
     def _convert_input(self, *args, **kwargs):
         args = [arg.state if isinstance(arg, Nomenclate) else arg for arg in args]
@@ -451,22 +447,17 @@ class Nomenclate(object):
 
         self.initialize_config_settings(input_dict=configs)
 
-    def get_token_settings(self, token, default=None):
-        setting_dict = {}
-        for key, value in iteritems(self.__dict__):
-            if ('%s_' % token in key and not callable(key) and not isinstance(value, TokenAttr)):
-                setting_dict[key] = self.__dict__.get(key, default)
-        return setting_dict
-
     def __eq__(self, other):
         return self.token_dict == other.token_dict
 
-    def __repr__(self):
+    def __str__(self):
         return self.get()
 
     def __setattr__(self, key, value):
         attr = getattr(self, key, None)
         if isinstance(attr, TokenAttr):
             attr.label = value.label if isinstance(value, TokenAttr) else value
+            self.LOG.debug('User setting TokenAttr %s to %s, now is %s' % (attr, value, attr.label))
         else:
+            self.LOG.debug('User setting attribute %s to %s' % (key, value))
             object.__setattr__(self, key, value)
