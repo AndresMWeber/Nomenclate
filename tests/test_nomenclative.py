@@ -178,3 +178,80 @@ class TokenMatchAdjustPosition(TokenMatchBase):
 
     def test_invalid_type(self):
         self.assertRaises(IOError, self.token_match_start.adjust_position, 5)
+
+
+class TestInputRendererBase(TestNomenclativeBase):
+    def setUp(self):
+        super(TestInputRendererBase, self).setUp()
+        self.ir = nm.InputRenderer
+        self.fixtures.append(self.ir)
+
+
+class TestInputRendererGetAlphanumericIndex(TestInputRendererBase):
+    def test_get__get_alphanumeric_index_integer(self):
+        self.assertEquals(self.ir._get_alphanumeric_index(0),
+                          [0, 'int'])
+
+    def test_get__get_alphanumeric_index_char_start(self):
+        self.assertEquals(self.ir._get_alphanumeric_index('a'),
+                          [0, 'char_lo'])
+
+    def test_get__get_alphanumeric_index_char_end(self):
+        self.assertEquals(self.ir._get_alphanumeric_index('z'),
+                          [25, 'char_lo'])
+
+    def test_get__get_alphanumeric_index_char_upper(self):
+        self.assertEquals(self.ir._get_alphanumeric_index('B'),
+                          [1, 'char_hi'])
+
+    def test_get__get_alphanumeric_index_error(self):
+        self.assertRaises(IOError, self.ir._get_alphanumeric_index, 'asdf')
+
+
+class TestInputRendererCleanupFormattingString(TestInputRendererBase):
+    def test_cleanup_format(self):
+        self.assertEquals(self.ir.cleanup_formatted_string('test_name _messed __ up LOC'),
+                          'test_name_messed_upLOC')
+
+
+class TestInputRendererGetVariationId(TestInputRendererBase):
+    def test_get_variation_id_normal(self):
+        self.assertEquals(nm.RenderVar._get_variation_id(0), 'a')
+
+    def test_get_variation_id_negative(self):
+        self.assertEquals(nm.RenderVar._get_variation_id(-4), '')
+
+    def test_get_variation_id_negative_one(self):
+        self.assertEquals(nm.RenderVar._get_variation_id(-1), '')
+
+    def test_get_variation_id_double_upper(self):
+        self.assertEquals(nm.RenderVar._get_variation_id(1046, capital=True), 'ANG')
+
+    def test_get_variation_id_double_lower(self):
+        self.assertEquals(nm.RenderVar._get_variation_id(1046, capital=False), 'ang')
+
+
+class TestInputRendererRenderUniqueTokens(TestInputRendererBase):
+    def test_all_replaced(self):
+        test_values = {'var': 'A', 'type': 'locator', 'side': 'left', 'version': 5}
+        self.ir.render_unique_tokens(self.nom, test_values)
+        self.assertEquals(test_values,
+                          {'var': 'A', 'type': 'LOC', 'side': 'l', 'version': '005'})
+
+    def test_some_replaced(self):
+        test_values = {'var': 'A', 'type': 'locator', 'side': 'left', 'version': 5}
+        self.ir.render_unique_tokens(self.nom, test_values)
+        self.assertEquals(test_values,
+                          {'var': 'A', 'type': 'locator', 'side': 'left', 'version': '005'})
+
+    def test_empty(self):
+        test_values = {}
+        self.ir.render_unique_tokens(self.nom, test_values)
+        self.assertEquals(test_values,
+                          {})
+
+    def test_none_replaced(self):
+        test_values = {'name': 'test', 'blah': 'marg', 'not_me': 'haha', 'la': 5}
+        test_values_unchanged = test_values.copy()
+        self.ir.render_unique_tokens(self.nom, test_values)
+        self.assertEquals(test_values, test_values_unchanged)

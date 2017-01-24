@@ -21,12 +21,13 @@ from nomenclate.core.tools import (
 from nomenclate.core.nlog import (
     getLogger,
     DEBUG,
-    INFO
+    INFO,
+    CRITICAL
 )
 
 
 class ConfigParse(object):
-    LOG = getLogger(__name__, level=INFO)
+    LOG = getLogger(__name__, level=CRITICAL)
 
     def __init__(self, config_filepath='env.yml'):
         """
@@ -104,6 +105,8 @@ class ConfigParse(object):
         else:
             self.LOG.debug('Empty config query path, returning default for type %s -> %s' % (return_type,
                                                                                              repr(return_type())))
+            if return_type == list:
+                return [k for k in self.config_file_contents]
             return return_type()
 
     def _get_path_entry_from_string(self, qstr, first_found=True, full_path=False):

@@ -25,9 +25,8 @@ class TestBase(unittest.TestCase):
 
 class TestCombineDicts(TestBase):
     def test_with_dict_with_nomenclate_object(self):
-        print(nm.Nomenclate(name='test', discipline='lots').state)
-        self.assertDictEqual(combine_dicts({1: 1, 2: 2, 3: 3}, nm.Nomenclate(name='test', discipline='lots').state),
-                             {1: 1, 2: 2, 3: 3, 'name': 'test', 'discipline': 'lots'})
+        self.assertDictEqual(combine_dicts({1: 1, 2: 2, 3: 3}, nm.Nomenclate(name='test', purpose='lots').state),
+                             {1: 1, 2: 2, 3: 3, 'name': 'test', 'purpose': 'lots'})
 
     def test_only_dicts(self):
         self.assertDictEqual(combine_dicts({1: 1, 2: 2, 3: 3}, {4: 4, 5: 5, 6: 6}),

@@ -78,10 +78,7 @@ class TestNomenclateBase(TestBase):
         self.nom.side.set('left')
         self.nom.name.set('testObject')
         self.nom.type.set('locator')
-        print('setting A to A.')
         self.nom.var.set('A')
-        self.nom.var = 'A'
-        print('state is %s' % self.nom.state)
         self.fixtures = [self.cfg, self.nom, self.test_format_b, self.test_format]
 
 
@@ -91,7 +88,6 @@ class TestNomenclateTokens(TestNomenclateBase):
 
 class TestNomenclateState(TestNomenclateBase):
     def test_state_clear(self):
-        print('entering test_state_clear')
         previous_state = self.nom.state
         self.nom.token_dict.reset()
         self.assertEquals(self.nom.state,
@@ -101,15 +97,12 @@ class TestNomenclateState(TestNomenclateBase):
 
     @unittest.skip
     def test_state_purge(self):
-        print('entering test_state_purge')
         previous_state = self.nom.state
         self.nom.token_dict.purge_name_attrs()
         self.assertEquals(self.nom.state, {})
         self.nom.state = previous_state
 
     def test_state_valid(self):
-        print('Now entering test')
-        print('state is', self.nom.state)
         self.assertEquals(self.nom.state,
                           {'childtype': '',
                            'decorator': '',
@@ -144,6 +137,7 @@ class TestNomenclateInitializeFormatOptions(TestNomenclateBase):
 
     def test_switch_naming_format_from_config(self):
         self.nom.initialize_format_options(['naming_formats', 'node', 'format_lee'])
+        print(self.nom.format_order)
         self.assertTrue(self.checkEqual(self.nom.format_order,
                                         ['type', 'childtype', 'space', 'purpose', 'name', 'side']))
         self.nom.initialize_format_options(self.test_format)
@@ -218,83 +212,6 @@ class TestNomenclateRepr(TestNomenclateBase):
         self.assertEquals(str(self.nom), 'l_testObjectA_LOC')
 
 
-class TestInputRendererBase(TestNomenclateBase):
-    def setUp(self):
-        super(TestInputRendererBase, self).setUp()
-        self.ir = nm.InputRenderer
-        self.fixtures.append(self.ir)
-
-
-class TestInputRendererGetAlphanumericIndex(TestInputRendererBase):
-    def test_get__get_alphanumeric_index_integer(self):
-        self.assertEquals(self.ir._get_alphanumeric_index(0),
-                          [0, 'int'])
-
-    def test_get__get_alphanumeric_index_char_start(self):
-        self.assertEquals(self.ir._get_alphanumeric_index('a'),
-                          [0, 'char_lo'])
-
-    def test_get__get_alphanumeric_index_char_end(self):
-        self.assertEquals(self.ir._get_alphanumeric_index('z'),
-                          [25, 'char_lo'])
-
-    def test_get__get_alphanumeric_index_char_upper(self):
-        self.assertEquals(self.ir._get_alphanumeric_index('B'),
-                          [1, 'char_hi'])
-
-    def test_get__get_alphanumeric_index_error(self):
-        self.assertRaises(IOError, self.ir._get_alphanumeric_index, 'asdf')
-
-
-class TestInputRendererCleanupFormattingString(TestInputRendererBase):
-    def test_cleanup_format(self):
-        self.assertEquals(self.ir.cleanup_formatted_string('test_name _messed __ up LOC'),
-                          'test_name_messed_upLOC')
-
-
-class TestInputRendererGetVariationId(TestInputRendererBase):
-    def test_get_variation_id_normal(self):
-        self.assertEquals(nm.RenderVar._get_variation_id(0), 'a')
-
-    def test_get_variation_id_negative(self):
-        self.assertEquals(nm.RenderVar._get_variation_id(-4), '')
-
-    def test_get_variation_id_negative_one(self):
-        self.assertEquals(nm.RenderVar._get_variation_id(-1), '')
-
-    def test_get_variation_id_double_upper(self):
-        self.assertEquals(nm.RenderVar._get_variation_id(1046, capital=True), 'ANG')
-
-    def test_get_variation_id_double_lower(self):
-        self.assertEquals(nm.RenderVar._get_variation_id(1046, capital=False), 'ang')
-
-
-class TestInputRendererRenderUniqueTokens(TestInputRendererBase):
-    def test_all_replaced(self):
-        test_values = {'var': 'A', 'type': 'locator', 'side': 'left', 'version': 5}
-        self.ir.render_unique_tokens(self.nom, test_values)
-        self.assertEquals(test_values,
-                          {'var': 'A', 'type': 'LOC', 'side': 'l', 'version': '005'})
-
-    def test_some_replaced(self):
-        test_values = {'var': 'A', 'type': 'locator', 'side': 'left', 'version': 5}
-        self.ir.render_unique_tokens(self.nom, test_values)
-        self.assertEquals(test_values,
-                          {'var': 'A', 'type': 'locator', 'side': 'left', 'version': '005'})
-
-    def test_empty(self):
-        test_values = {}
-        self.ir.render_unique_tokens(self.nom, test_values)
-        self.assertEquals(test_values,
-                          {})
-
-    def test_none_replaced(self):
-        test_values = {'name': 'test', 'blah': 'marg', 'not_me': 'haha', 'la': 5}
-        test_values_unchanged = test_values.copy()
-        self.ir.render_unique_tokens(self.nom, test_values)
-        self.assertEquals(test_values, test_values_unchanged)
-
-
 class TestFormatStringBase(TestBase):
     def setUp(self):
         super(TestFormatStringBase, self).setUp()
@@ -307,4 +224,5 @@ class TestFormatStringValidateFormatString(TestFormatStringBase):
         self.fs.get_valid_format_order('side_mide')
 
     def test_get__validate_format_string__is_format_invalid(self):
-        self.assertRaises(exceptions.FormatError, self.fs.get_valid_format_order('notside'))
+        print(repr(self))
+        self.assertRaises(exceptions.FormatError, self.fs.get_valid_format_order, 'notside;blah')

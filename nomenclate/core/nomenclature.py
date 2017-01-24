@@ -200,8 +200,8 @@ class TokenAttrDictHandler(object):
 
 
 class FormatString(object):
-    # FORMAT_STRING_REGEX = r'([A-Za-z][^A-Z_.]*)'
-    FORMAT_STRING_REGEX = r'(?:(?<=\()[\w]+(?=\)))|([A-Za-z0-9][^A-Z_.\(\)]+)'
+    # Is not a hard coded (word) and does not end with any non word characters or capitals (assuming camel)
+    FORMAT_STRING_REGEX = r'(?:(?<=\()[\w]+(?=\)))|([A-Za-z0-9][^A-Z_\W]+)'
     SEPARATORS = '\\._-?()'
 
     LOG = getLogger(__name__, level=DEBUG)
@@ -251,11 +251,12 @@ class FormatString(object):
     def get_valid_format_order(self, format_target, format_order=None):
         """ Checks to see if the target format string follows the proper style
         """
-        self.LOG.debug('Validating format string and parsing for format order.')
+        self.LOG.info('Validating format target %r and parsing for format order %r.' % (format_target, format_order))
         format_order = format_order or self.parse_format_order(format_target)
+        self.LOG.info('Resulting format order is %s' % format_order)
 
         for format_str in format_order:
-            format_target = format_target.replace(format_str, '')
+            format_target = re.sub(format_str, '', format_target, count=1)
 
         for char in format_target:
             if char not in self.SEPARATORS:
@@ -282,6 +283,7 @@ class Nomenclate(object):
     SIDE_PATH = OPTIONS_PATH + ['side']
 
     def __init__(self, logger=None, *args, **kwargs):
+        self.LOG.info('\n\n\nCreating new Nomenclate object')
         self.cfg = config.ConfigParse()
         self.format_string_object = FormatString()
 
@@ -305,7 +307,6 @@ class Nomenclate(object):
 
     @property
     def state(self):
-        print(self.token_dict.var)
         return self.token_dict.state
 
     @state.setter
@@ -314,8 +315,7 @@ class Nomenclate(object):
         Args:
             input_object Union[dict, self.__class__]: accepts a dictionary or self.__class__
         """
-        input_object = self._convert_input(input_object)
-        self.token_dict.state = input_object
+        self.merge_dict(input_object)
 
     @property
     def format(self):
@@ -421,29 +421,36 @@ class Nomenclate(object):
 
     def merge_dict(self, *args, **kwargs):
         input = self._convert_input(*args, **kwargs)
-        self.state = self._sift_and_init_configs(input)
+        self._sift_and_init_configs(input)
+        self.token_dict.state = input
 
     def _convert_input(self, *args, **kwargs):
+        self.LOG.info('Converting input args %s and kwargs %s' % (args, kwargs))
         args = [arg.state if isinstance(arg, Nomenclate) else arg for arg in args]
         input_dict = combine_dicts(*args, **kwargs)
+        self.LOG.info('Converted to %s' % input_dict)
         return input_dict
+
+    def get_token_settings(self, token, default=None):
+        setting_dict = {}
+        for key, value in iteritems(self.__dict__):
+            if ('%s_' % token in key and not callable(key) and not isinstance(value, TokenAttr)):
+                setting_dict[key] = self.__dict__.get(key, default)
+        return setting_dict
 
     def _sift_and_init_configs(self, input_dict):
         """ Removes all key/v for keys that exist in the overall config and activates them.
             Used to weed out config keys from tokens in a given input.
         """
+        self.LOG.info('Sifting out config settings')
         configs = {}
-        to_pop = []
         for k, v in iteritems(input_dict):
-            try:
-                self.cfg.get(self.CONFIG_PATH + [k])
-                to_pop.append(k)
+            if self.cfg.get(self.CONFIG_PATH + [k]):
                 configs[k] = v
-            except exceptions.ResourceNotFoundError:
-                pass
 
-        for pop in to_pop:
-            input_dict.pop(pop, None)
+        for key, val in iteritems(configs):
+            self.LOG.info('Sifting out found config setting %s' % key)
+            input_dict.pop(key, None)
 
         self.initialize_config_settings(input_dict=configs)
 
