@@ -38,10 +38,10 @@ class TestTokenAttrInstantiate(TestTokenAttrBase):
         self.fixtures.append(nm.TokenAttr('test', 'test'))
 
     def test_invalid_instantiate_label(self):
-        self.assertRaises(exceptions.ValidationError, nm.TokenAttr, 'test', 1)
+        self.assertRaises(exceptions.ValidationError, nm.TokenAttr, 'test', [])
 
     def test_invalid_instantiate_token(self):
-        self.assertRaises(exceptions.ValidationError, nm.TokenAttr, 1, 'test')
+        self.assertRaises(exceptions.ValidationError, nm.TokenAttr, {}, 'test')
 
     def test_state(self):
         self.assertEquals(self.token_attr.label, 'test_label')
@@ -167,12 +167,13 @@ class TestNomenclateGetFormatOrderFromFormatString(TestNomenclateBase):
 
 class TestNomenclateGet(TestNomenclateBase):
     def test_get(self):
-        self.assertEquals(self.nom.get(), 'left_testObjectA_LOC')
+        print(self.nom.state)
+        self.assertEquals(self.nom.get(), 'l_testObjectA_LOC')
 
     def test_get_after_change(self):
         previous_state = self.nom.state
         self.nom.location.set('rear')
-        self.assertEquals(self.nom.get(), 'left_rear_testObjectA_LOC')
+        self.assertEquals(self.nom.get(), 'l_rr_testObjectA_LOC')
         self.nom.state = previous_state
 
 

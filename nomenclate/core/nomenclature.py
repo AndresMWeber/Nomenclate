@@ -11,7 +11,8 @@ from nomenclate.core.nomenclative import (
 from nomenclate.core.nlog import (
     getLogger,
     DEBUG,
-    INFO
+    INFO,
+    CRITICAL
 )
 from nomenclate.core.tools import (
     combine_dicts
@@ -52,7 +53,7 @@ class TokenAttr(object):
     @staticmethod
     def validate_entries(*entries):
         for entry in entries:
-            if isinstance(entry, str) or entry is None:
+            if isinstance(entry, (str, int)) or entry is None:
                 continue
             else:
                 raise exceptions.ValidationError('Invalid type %s, expected %s' % (type(entry), str))
@@ -65,11 +66,12 @@ class TokenAttr(object):
 
 
 class TokenAttrDictHandler(object):
-    LOG = getLogger(__name__, level=DEBUG)
+    LOG = getLogger(__name__, level=INFO)
 
     def __init__(self, nomenclate_object):
         self.nom = nomenclate_object
-        self.set_token_attrs({})
+        self.LOG.info('Initializing TokenAttrDictHandler with default values %s' % self.empty_state)
+        self.set_token_attrs(self.empty_state)
 
     @property
     def token_attrs(self):
@@ -80,12 +82,12 @@ class TokenAttrDictHandler(object):
         return dict((name_attr.token, name_attr.label) for name_attr in self.token_attrs)
 
     @state.setter
-    def state(self, input_object, **kwargs):
+    def state(self, input_dict):
         """
         Args:
             input_object Union[dict, self.__class__]: accepts a dictionary or self.__class__
         """
-        self.set_token_attrs(self.nom._convert_input(input_object, kwargs))
+        self.set_token_attrs(input_dict)
 
     @property
     def empty_state(self):
@@ -117,12 +119,13 @@ class TokenAttrDictHandler(object):
             token_attr.set('')
 
     def set_token_attrs(self, input_dict):
-        self.LOG.info('Setting token attributes %s' % input_dict)
-        defaults = self.empty_state
-        defaults.update(input_dict)
-        self.LOG.debug('Filled in empty settings %s' % defaults)
+        if not input_dict:
+            self.LOG.info('No changes to make, ignoring...')
+            return
 
-        for input_attr_name, input_attr_value in iteritems(defaults):
+        self.LOG.debug('Setting token attributes %s against current state %s' % (input_dict, self.state))
+
+        for input_attr_name, input_attr_value in iteritems(input_dict):
             self.set_token_attr(input_attr_name, input_attr_value)
 
         self.LOG.debug('Finished setting attributes on TokenDict %s' % map(str, list(self.token_attrs)))
@@ -133,8 +136,8 @@ class TokenAttrDictHandler(object):
         self.LOG.info('set_token_attr() - Setting TokenAttr %s with value %r' % (token, value))
         token_attrs = list(self.token_attrs)
 
-        if token not in [token_attr.raw_token for token_attr in token_attrs]:
-            self.LOG.debug('Token did not exist, creating...')
+        if token not in [token_attr.token for token_attr in token_attrs]:
+            self.LOG.warning('Token did not exist, creating...')
             self._create_token_attr(token, value)
         else:
             for token_attr in token_attrs:
@@ -165,9 +168,9 @@ class TokenAttrDictHandler(object):
         self.LOG.info('Finished updating Nomenclate object.')
 
     def clear_nomenclate_excess_token_attributes(self):
-        for token_attr in self.gen_object_token_attributes(self.nom):
+        for token_attr in list(self.gen_object_token_attributes(self.nom)):
             if token_attr.raw_token not in self.nom.format_order:
-                self.LOG.info('Deleting unsynchronized Nomenclate TokenAttr' % token_attr.token)
+                self.LOG.info('Deleting unsynchronized Nomenclate TokenAttr %s' % token_attr.token)
                 delattr(self.nom, token_attr.token)
 
     @staticmethod
@@ -204,7 +207,7 @@ class FormatString(object):
     FORMAT_STRING_REGEX = r'(?:(?<=\()[\w]+(?=\)))|([A-Za-z0-9][^A-Z_\W]+)'
     SEPARATORS = '\\._-?()'
 
-    LOG = getLogger(__name__, level=DEBUG)
+    LOG = getLogger(__name__, level=CRITICAL)
 
     def __init__(self, format_string=""):
         self.format_string = format_string
@@ -215,7 +218,7 @@ class FormatString(object):
         try:
             self.format_order = format_target
             self.format_string = format_target
-            self.LOG.info('Successfully set format string: %s and format order: %s' % (self.format_string,
+            self.LOG.debug('Successfully set format string: %s and format order: %s' % (self.format_string,
                                                                                        self.format_order))
         except exceptions.FormatError as e:
             msg = "Could not validate input format target %s"
@@ -251,9 +254,9 @@ class FormatString(object):
     def get_valid_format_order(self, format_target, format_order=None):
         """ Checks to see if the target format string follows the proper style
         """
-        self.LOG.info('Validating format target %r and parsing for format order %r.' % (format_target, format_order))
+        self.LOG.debug('Validating format target %r and parsing for format order %r.' % (format_target, format_order))
         format_order = format_order or self.parse_format_order(format_target)
-        self.LOG.info('Resulting format order is %s' % format_order)
+        self.LOG.debug('Resulting format order is %s' % format_order)
 
         for format_str in format_order:
             format_target = re.sub(format_str, '', format_target, count=1)
@@ -282,8 +285,8 @@ class Nomenclate(object):
     OPTIONS_PATH = ['options']
     SIDE_PATH = OPTIONS_PATH + ['side']
 
-    def __init__(self, logger=None, *args, **kwargs):
-        self.LOG.info('\n\n\nCreating new Nomenclate object')
+    def __init__(self, *args, **kwargs):
+        self.LOG.info('***CREATING NEW NOMENCLATE OBJECT***')
         self.cfg = config.ConfigParse()
         self.format_string_object = FormatString()
 
@@ -291,6 +294,7 @@ class Nomenclate(object):
 
         self.reset_from_config()
         self.token_dict = TokenAttrDictHandler(self)
+        self.LOG.info('Nomenclate init passed args %s and kwargs %s...processing' % (args, kwargs))
         self.merge_dict(*args, **kwargs)
 
     @property
@@ -382,9 +386,11 @@ class Nomenclate(object):
         """Gets the string of the current name of the object
         Returns (string): the name of the object
         """
+        self.LOG.info('RENDERING NOMENCLATE OBJECT')
+        self.LOG.info('STATE IS: %s' % self.state)
         self.merge_dict(**kwargs)
+        self.LOG.info('STATE IS: %s' % self.state)
         result = InputRenderer.render_nomenclative(self)
-        result = InputRenderer.cleanup_formatted_string(result)
         return result
 
     def get_chain(self, end, start=None, **kwargs):
@@ -420,9 +426,12 @@ class Nomenclate(object):
         raise NotImplementedError
 
     def merge_dict(self, *args, **kwargs):
-        input = self._convert_input(*args, **kwargs)
-        self._sift_and_init_configs(input)
-        self.token_dict.state = input
+        if args or kwargs:
+            input_dict = self._convert_input(*args, **kwargs)
+            self._sift_and_init_configs(input_dict)
+            self.token_dict.state = input_dict
+        else:
+            self.LOG.warning('Nothing to update...empty args/kwargs...skipping.')
 
     def _convert_input(self, *args, **kwargs):
         self.LOG.info('Converting input args %s and kwargs %s' % (args, kwargs))

@@ -122,6 +122,7 @@ class InputRenderer(type):
     def render_nomenclative(cls, nomenclate_object):
         nomenclative = Nomenclative(nomenclate_object.format)
         token_values = nomenclate_object.token_dict.token_attr_dict
+        cls.LOG.info('Current state is %s with nomenclative %s' % (token_values, nomenclative))
         cls.render_unique_tokens(nomenclate_object, token_values)
         rendered_nomenclative = nomenclate_object.format
 
@@ -130,7 +131,9 @@ class InputRenderer(type):
         for token, match_value in iteritems(token_values):
             nomenclative.add_match(*match_value)
 
+        cls.LOG.info('Before processing state has been updated to %s' % nomenclative)
         rendered_nomenclative = cls.cleanup_formatted_string(nomenclative.process_matches())
+        cls.LOG.info('Finally converted to %s' % rendered_nomenclative)
         return rendered_nomenclative
 
     @classmethod
@@ -341,6 +344,21 @@ class RenderSide(RenderBase):
                                     **kwargs)
 
 
+class RenderLocation(RenderBase):
+    __metaclass__ = InputRenderer
+    token = 'location'
+
+    @classmethod
+    def render(cls, location, nomenclate_object, **kwargs):
+
+        return cls.get_config_match(location,
+                                    cls.token,
+                                    nomenclate_object.OPTIONS_PATH + [cls.token, location],
+                                    list,
+                                    nomenclate_object,
+                                    **kwargs)
+
+
 class Nomenclative(object):
     LOG = getLogger(__name__, level=DEBUG)
 
@@ -352,8 +370,11 @@ class Nomenclative(object):
         build_str = self.str
         for token_match in self.token_matches:
             if token_match.match == build_str[token_match.start:token_match.end]:
-                self.LOG.debug('Processing: %s - %s - %s\n\t%s' % (token_match.match, list(token_match.sub),
-                                                                   token_match.sub, build_str))
+                self.LOG.debug('Processing: %s - %s - %s\n\t%s' % (token_match.match,
+                                                                   list(token_match.sub),
+                                                                   token_match.sub,
+                                                                   build_str))
+
                 build_str = build_str[:token_match.start] + token_match.sub + build_str[token_match.end:]
                 self.adjust_other_matches(token_match)
                 self.LOG.debug('Processed as:\n\t%s' % build_str)
@@ -385,4 +406,6 @@ class Nomenclative(object):
                 self.LOG.error(e.message)
 
     def __str__(self):
-        return '%s:%s' % (self.str, '\n'.join(self.token_matches))
+        print(self.token_matches)
+        matches = '' if not self.token_matches else '\n'.join(map(str, self.token_matches))
+        return '%s:\n%s' % (self.str, matches)

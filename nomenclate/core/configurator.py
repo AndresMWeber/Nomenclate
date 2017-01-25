@@ -28,7 +28,7 @@ from nomenclate.core.nlog import (
 
 
 class ConfigParse(object):
-    LOG = getLogger(__name__, level=DEBUG)
+    LOG = getLogger(__name__, level=CRITICAL)
 
     def __init__(self, config_filepath='env.yml'):
         """
@@ -92,16 +92,16 @@ class ConfigParse(object):
             try:
                 config_entry = self._get_path_entry_from_list(query_path)
             except exceptions.ResourceNotFoundError:
-                self.LOG.debug('Could not find config entry via query path')
+                self.LOG.warning('Could not find config entry via query path')
                 try:
                     config_entry = self._get_path_entry_from_string(query_path)
                 except exceptions.ResourceNotFoundError:
-                    self.LOG.debug('Could not find any key matches for query path either')
+                    self.LOG.warning('Could not find any key matches for query path either')
             query_result = self.config_entry_handler.format_query_result(config_entry,
                                                                          query_path,
                                                                          return_type=return_type,
                                                                          preceding_depth=preceding_depth)
-            self.LOG.info('Successfully retrieved and converted config entry:\n%s' % pformat(query_result, depth=1))
+            self.LOG.debug('Successfully retrieved and converted config entry:\n%s' % pformat(query_result, depth=1))
             return query_result
         else:
             self.LOG.debug('Empty config query path, returning default for type %s -> %s' % (return_type,

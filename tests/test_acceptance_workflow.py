@@ -28,7 +28,7 @@ class TestCreation(TestAcceptanceWorkflowBase):
     def test_initialize_with_dict_incomplete_and_swap_format_from_new_string(self):
         n = nom.Nomenclate({'name': 'test', 'type': 'locator', 'var': 'A', 'side': 'left'})
         self.assertEquals(n.get(), 'l_default_testA_LOC')
-        n.swap_format('new_nameDecoratorVar_childtype_purpose_type_side')
+        n.format = 'new_nameDecoratorVar_childtype_purpose_type_side'
         n.name = 'default'
         self.assertEquals(n.get(), 'default_testA_LOC_l')
         self.fixtures.append(n)
@@ -36,8 +36,7 @@ class TestCreation(TestAcceptanceWorkflowBase):
     def test_initialize_with_dict_incomplete_and_swap_format_from_path(self):
         n = nom.Nomenclate({'name': 'test', 'type': 'locator', 'var': 'A', 'side': 'left'})
         self.assertEquals(n.get(), 'l_testA_LOC')
-        n.swap_format(['naming_formats', 'node', 'format_archive'])
-
+        n.format = ['naming_formats', 'node', 'format_archive']
         self.assertEquals(n.get(), 'l_default_test_LOC')
         self.fixtures.append(n)
 
@@ -71,11 +70,8 @@ class TestCreation(TestAcceptanceWorkflowBase):
         self.fixtures.append(n)
 
     def test_initialize_from_nomenclate_object(self):
-        print('setting first one')
         n_initial = nom.Nomenclate({'name': 'test', 'type': 'locator', 'var': 'A', 'side': 'left', })
-        print('setting second one')
         n_secondary = nom.Nomenclate(n_initial)
-        print('checking second one now')
         self.assertEquals(n_secondary.get(), 'l_testA_LOC')
         self.fixtures.extend([n_secondary, n_initial])
 
