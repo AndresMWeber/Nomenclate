@@ -9,7 +9,9 @@ import dateutil.parser as p
 import nomenclate.core.exceptions as exceptions
 from nomenclate.core.nlog import (
     getLogger,
-    DEBUG
+    DEBUG,
+    CRITICAL,
+    INFO
 )
 from nomenclate.core.tools import (
     gen_dict_key_matches,
@@ -19,7 +21,7 @@ from nomenclate.core.tools import (
 
 
 class TokenMatch(object):
-    LOG = getLogger(__name__, level=DEBUG)
+    LOG = getLogger(__name__, level=INFO)
 
     def __init__(self, regex_match, substitution, group_name='token'):
         self.match = regex_match.group(group_name)
@@ -88,13 +90,65 @@ class TokenMatch(object):
         return '%s (%d)- [%d:%d] - replacement = %s' % (self.match, self.span, self.start, self.end, self.sub)
 
 
+class Nomenclative(object):
+    LOG = getLogger(__name__, level=INFO)
+
+    def __init__(self, input_str):
+        self.str = input_str
+        self.token_matches = []
+
+    def process_matches(self):
+        build_str = self.str
+        for token_match in self.token_matches:
+            if token_match.match == build_str[token_match.start:token_match.end]:
+                self.LOG.debug('Processing: %s - %s - %s\n\t%s' % (token_match.match,
+                                                                   list(token_match.sub),
+                                                                   token_match.sub,
+                                                                   build_str))
+
+                build_str = build_str[:token_match.start] + token_match.sub + build_str[token_match.end:]
+                self.adjust_other_matches(token_match)
+                self.LOG.debug('Processed as:\n\t%s' % build_str)
+        return build_str
+
+    def adjust_other_matches(self, adjuster_match):
+        for token_match in [token_match for token_match in self.token_matches if token_match != adjuster_match]:
+            try:
+                token_match.adjust_position(adjuster_match)
+            except IndexError:
+                pass
+        adjuster_match.end = adjuster_match.start + len(adjuster_match.sub)
+        adjuster_match.match = adjuster_match.sub
+
+    def add_match(self, regex_match, substitution):
+        token_match = TokenMatch(regex_match, substitution)
+        try:
+            self.validate_match(token_match)
+            self.token_matches.append(token_match)
+            self.LOG.info('Added match %s' % self.token_matches[-1])
+        except IndexError:
+            self.LOG.warning('Not adding match %s as it conflicts with a preexisting match' % token_match)
+
+    def validate_match(self, token_match_candidate):
+        for token_match in self.token_matches:
+            try:
+                token_match.overlaps(token_match_candidate)
+            except exceptions.OverlapError as e:
+                self.LOG.error(e.message)
+
+    def __str__(self):
+        print(self.token_matches)
+        matches = '' if not self.token_matches else '\n'.join(map(str, self.token_matches))
+        return '%s:\n%s' % (self.str, matches)
+
+
 class InputRenderer(type):
     RENDER_FUNCTIONS = {}
     REGEX_PARENTHESIS = r'([\(\)]+)'
     REGEX_BRACKETS = r'([\{\}]+)'
     REGEX_STATIC_TOKEN = r'(\(\w+\))'
     REGEX_BRACKET_TOKEN = r'(\{\w+\})'
-    LOG = getLogger(__name__, level=DEBUG)
+    LOG = getLogger(__name__, level=INFO)
 
     def __new__(mcs, name, bases, dct):
         cls = type.__new__(mcs, name, bases, dct)
@@ -209,7 +263,7 @@ class InputRenderer(type):
 
 class RenderBase(object):
     __metaclass__ = InputRenderer
-    LOG = getLogger(__name__, level=DEBUG)
+    LOG = getLogger(__name__, level=INFO)
 
     token = None
 
@@ -357,55 +411,3 @@ class RenderLocation(RenderBase):
                                     list,
                                     nomenclate_object,
                                     **kwargs)
-
-
-class Nomenclative(object):
-    LOG = getLogger(__name__, level=DEBUG)
-
-    def __init__(self, input_str):
-        self.str = input_str
-        self.token_matches = []
-
-    def process_matches(self):
-        build_str = self.str
-        for token_match in self.token_matches:
-            if token_match.match == build_str[token_match.start:token_match.end]:
-                self.LOG.debug('Processing: %s - %s - %s\n\t%s' % (token_match.match,
-                                                                   list(token_match.sub),
-                                                                   token_match.sub,
-                                                                   build_str))
-
-                build_str = build_str[:token_match.start] + token_match.sub + build_str[token_match.end:]
-                self.adjust_other_matches(token_match)
-                self.LOG.debug('Processed as:\n\t%s' % build_str)
-        return build_str
-
-    def adjust_other_matches(self, adjuster_match):
-        for token_match in [token_match for token_match in self.token_matches if token_match != adjuster_match]:
-            try:
-                token_match.adjust_position(adjuster_match)
-            except IndexError:
-                pass
-        adjuster_match.end = adjuster_match.start + len(adjuster_match.sub)
-        adjuster_match.match = adjuster_match.sub
-
-    def add_match(self, regex_match, substitution):
-        token_match = TokenMatch(regex_match, substitution)
-        try:
-            self.validate_match(token_match)
-            self.token_matches.append(token_match)
-            self.LOG.info('Added match %s' % self.token_matches[-1])
-        except IndexError:
-            self.LOG.warning('Not adding match %s as it conflicts with a preexisting match' % token_match)
-
-    def validate_match(self, token_match_candidate):
-        for token_match in self.token_matches:
-            try:
-                token_match.overlaps(token_match_candidate)
-            except exceptions.OverlapError as e:
-                self.LOG.error(e.message)
-
-    def __str__(self):
-        print(self.token_matches)
-        matches = '' if not self.token_matches else '\n'.join(map(str, self.token_matches))
-        return '%s:\n%s' % (self.str, matches)

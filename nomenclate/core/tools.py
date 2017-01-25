@@ -4,14 +4,15 @@ import collections
 
 def combine_dicts(*args, **kwargs):
     dicts = [arg for arg in args if isinstance(arg, dict)]
+    print('dicts are ', dicts)
     dicts.append(kwargs)
     super_dict = collections.defaultdict(dict)
 
     for d in dicts:
         for k, v in iteritems(d):
-            if k and v:
+            if k:
                 super_dict[k] = v
-
+    print('super dict is ', dict(super_dict))
     return dict(super_dict)
 
 

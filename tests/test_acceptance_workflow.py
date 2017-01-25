@@ -27,9 +27,9 @@ class TestCreation(TestAcceptanceWorkflowBase):
 
     def test_initialize_with_dict_incomplete_and_swap_format_from_new_string(self):
         n = nom.Nomenclate({'name': 'test', 'type': 'locator', 'var': 'A', 'side': 'left'})
-        self.assertEquals(n.get(), 'l_default_testA_LOC')
+        self.assertEquals(n.get(), 'l_testA_LOC')
         n.format = 'new_nameDecoratorVar_childtype_purpose_type_side'
-        n.name = 'default'
+        n.new = 'default'
         self.assertEquals(n.get(), 'default_testA_LOC_l')
         self.fixtures.append(n)
 

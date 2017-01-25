@@ -207,7 +207,7 @@ class FormatString(object):
     FORMAT_STRING_REGEX = r'(?:(?<=\()[\w]+(?=\)))|([A-Za-z0-9][^A-Z_\W]+)'
     SEPARATORS = '\\._-?()'
 
-    LOG = getLogger(__name__, level=CRITICAL)
+    LOG = getLogger(__name__, level=INFO)
 
     def __init__(self, format_string=""):
         self.format_string = format_string
@@ -219,7 +219,7 @@ class FormatString(object):
             self.format_order = format_target
             self.format_string = format_target
             self.LOG.debug('Successfully set format string: %s and format order: %s' % (self.format_string,
-                                                                                       self.format_order))
+                                                                                        self.format_order))
         except exceptions.FormatError as e:
             msg = "Could not validate input format target %s"
             self.LOG.error('%s, %s' % (msg, e.message))
@@ -328,6 +328,8 @@ class Nomenclate(object):
     @format.setter
     def format(self, format_target):
         self.LOG.info('Attempting to swap format to target %s' % format_target)
+        orig_format, orig_order = (self.format, self.format_order)
+
         try:
             self.format_string_object.swap_format(format_target)
         except exceptions.FormatError:
@@ -335,6 +337,12 @@ class Nomenclate(object):
             format_target = self.cfg.get(format_target, return_type=str)
             if format_target:
                 self.format_string_object.swap_format(format_target)
+
+        if hasattr(self, 'token_dict') and self.format != orig_format:
+            self.LOG.info('Comparing new format order %s with old format order %s' % (self.format_order, orig_order))
+            fillers = dict.fromkeys(list(set(self.format_order) - set(orig_order)), '')
+            self.LOG.info('Format string has been changed, updating internal attributes with fillers %s' % fillers)
+            self.merge_dict(fillers)
 
     def reset_from_config(self):
         self.initialize_config_settings()
@@ -360,8 +368,12 @@ class Nomenclate(object):
         self.LOG.info('initialize_format_options with %s' % repr(format_target))
         try:
             format_target = self.cfg.get(format_target, return_type=return_type)
-
         except (exceptions.ResourceNotFoundError, StopIteration):
+            pass
+
+        try:
+            self.format = format_target
+        except exceptions.FormatError:
             pass
 
         finally:
@@ -369,9 +381,9 @@ class Nomenclate(object):
                 self.LOG.debug('Format not found, replacing with default format from config path %s' %
                                self.DEFAULT_FORMAT_PATH)
                 format_target = self.cfg.get(self.DEFAULT_FORMAT_PATH, return_type=return_type)
+                self.format = format_target
 
             self.LOG.info('format target is now %s after looking in the config for a match' % format_target)
-            self.format = format_target
 
     def initialize_options(self):
         self.CONFIG_OPTIONS = self.cfg.get(self.CONFIG_PATH, return_type=dict)
@@ -436,6 +448,7 @@ class Nomenclate(object):
     def _convert_input(self, *args, **kwargs):
         self.LOG.info('Converting input args %s and kwargs %s' % (args, kwargs))
         args = [arg.state if isinstance(arg, Nomenclate) else arg for arg in args]
+        self.LOG.info('new args %s' % args)
         input_dict = combine_dicts(*args, **kwargs)
         self.LOG.info('Converted to %s' % input_dict)
         return input_dict
