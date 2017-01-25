@@ -13,54 +13,9 @@ from nomenclate.core.nlog import (
 )
 from nomenclate.core.tools import (
     gen_dict_key_matches,
-    get_keys_containing
+    get_keys_containing,
+    flatten
 )
-
-
-class Nomenclative(object):
-    LOG = getLogger(__name__, level=DEBUG)
-
-    def __init__(self, input_str):
-        self.str = input_str
-        self.token_matches = []
-
-    def process_matches(self):
-        build_str = self.str
-        for token_match in self.token_matches:
-            if token_match.match == build_str[token_match.start:token_match.end]:
-                self.LOG.debug('Processing: %s - %s - %s\n\t%s' % (token_match.match, list(token_match.sub),
-                                                      token_match.sub, build_str))
-                build_str = build_str[:token_match.start] + token_match.sub + build_str[token_match.end:]
-                self.adjust_other_matches(token_match)
-        return build_str
-
-    def adjust_other_matches(self, adjuster_match):
-        for token_match in [token_match for token_match in self.token_matches if token_match != adjuster_match]:
-            try:
-                token_match.adjust_position(adjuster_match)
-            except IndexError:
-                pass
-        adjuster_match.end = adjuster_match.start + len(adjuster_match.sub)
-        adjuster_match.match = adjuster_match.sub
-
-    def add_match(self, regex_match, substitution):
-        token_match = TokenMatch(regex_match, substitution)
-        try:
-            self.validate_match(token_match)
-            self.token_matches.append(token_match)
-            self.LOG.info('Added match %s' % self.token_matches[-1])
-        except IndexError:
-            self.LOG.warning('Not adding match %s as it conflicts with a preexisting match' % token_match)
-
-    def validate_match(self, token_match_candidate):
-        for token_match in self.token_matches:
-            try:
-                token_match.overlaps(token_match_candidate)
-            except exceptions.OverlapError as e:
-                self.LOG.error(e.message)
-
-    def __str__(self):
-        return '%s:%s' % (self.str, '\n'.join(self.token_matches))
 
 
 class TokenMatch(object):
@@ -151,20 +106,24 @@ class InputRenderer(type):
     @classmethod
     def render_unique_tokens(cls, nomenclate_object, input_dict):
         for k, v in iteritems(input_dict):
-            renderer = None
-            for token, render_method in iteritems(cls.RENDER_FUNCTIONS):
-                if token in k:
-                    renderer = render_method
-            if 'render' in dir(renderer):
-                cls.LOG.info('render_unique_tokens() - token %s renderer %s with token settings %s' % (k, v, nomenclate_object.get_token_settings(token)))
-                input_dict[k] = renderer.render(v, nomenclate_object, **nomenclate_object.get_token_settings(token))
+            if v:
+                renderer = cls.RENDER_FUNCTIONS.get(k, None)
+
+                if 'render' in dir(renderer):
+                    cls.LOG.info('render_unique_tokens() - token %s renderer %s with token settings %s' %
+                                 (k, v, nomenclate_object.get_token_settings(k)))
+
+                    rendered_token = renderer.render(v, nomenclate_object, **nomenclate_object.get_token_settings(k))
+                    cls.LOG.info('Unique token rendered as: %s' % rendered_token)
+
+                    input_dict[k] = rendered_token
 
     @classmethod
     def render_nomenclative(cls, nomenclate_object):
         nomenclative = Nomenclative(nomenclate_object.format)
         token_values = nomenclate_object.token_dict.token_attr_dict
         cls.render_unique_tokens(nomenclate_object, token_values)
-        rendered_nomenclative = nomenclate_object.format_string_object.format
+        rendered_nomenclative = nomenclate_object.format
 
         cls._prepend_token_match_objects(token_values, rendered_nomenclative)
 
@@ -255,6 +214,39 @@ class RenderBase(object):
     def render(cls, arg, nomenclate_object, **kwargs):
         raise NotImplementedError
 
+    @classmethod
+    def get_config_match(cls, query_string, token, entry_path, return_type,
+                         nomenclate_object, config_entry_suffix='length', **kwargs):
+
+        try:
+            options = nomenclate_object.cfg.get(entry_path, return_type=return_type)
+
+            if type(options) == dict:
+                options = list(gen_dict_key_matches(query_string, options))
+            options = list(flatten(options))
+
+            criteria = kwargs.get('%s_%s' % (cls.token, config_entry_suffix), None)
+            cls.LOG.debug('%s(%s) options: %s criteria: %s' % (token, query_string, options, criteria))
+
+            for option in options:
+                cls.LOG.debug('Running through option %s' % option)
+                if len(option) == criteria and criteria:
+                    cls.LOG.debug('Found item matching criteria: %s -> %s' % (criteria, option))
+                    return option
+
+            try:
+                result_option = next(options)
+            except StopIteration:
+                result_option = options
+
+            cls.LOG.debug('Best match is: %s' % result_option)
+            return result_option
+
+        except exceptions.ResourceNotFoundError:
+            cls.LOG.warning('No entry for token %s - defaulting to current: %s' % (token,
+                                                                                   query_string))
+            return query_string
+
 
 class RenderDate(RenderBase):
     token = 'date'
@@ -325,15 +317,13 @@ class RenderType(RenderBase):
     token = 'type'
 
     @classmethod
-    def render(cls, type, nomenclate_object, **kwargs):
-        length = kwargs.get('%s_length' % cls.token, None)
-        try:
-            suffixes = nomenclate_object.cfg.get(nomenclate_object.SUFFIXES_PATH, return_type=dict)
-        except exceptions.ResourceNotFoundError:
-            cls.LOG.warning('Could not find entry, defaulting to current: %s' % type)
-        options = gen_dict_key_matches(type, suffixes)
-        cls.LOG.debug('type: %s = %s' % (length, list(options)))
-        return options
+    def render(cls, ttype, nomenclate_object, **kwargs):
+        return cls.get_config_match(ttype,
+                                    cls.token,
+                                    nomenclate_object.SUFFIXES_PATH,
+                                    dict,
+                                    nomenclate_object,
+                                    **kwargs)
 
 
 class RenderSide(RenderBase):
@@ -342,12 +332,57 @@ class RenderSide(RenderBase):
 
     @classmethod
     def render(cls, side, nomenclate_object, **kwargs):
-        length = kwargs.get('%s_length' % cls.token, None)
-        side_options = nomenclate_object.cfg.get(nomenclate_object.OPTIONS_PATH + [cls.token, side])
-        cls.LOG.debug('side: %s' % list(side_options))
 
-        for side_option in side_options:
-            if len(side_option) == length:
-                return side_option
+        return cls.get_config_match(side,
+                                    cls.token,
+                                    nomenclate_object.OPTIONS_PATH + [cls.token, side],
+                                    list,
+                                    nomenclate_object,
+                                    **kwargs)
 
-        return next(iter(side_options))
+
+class Nomenclative(object):
+    LOG = getLogger(__name__, level=DEBUG)
+
+    def __init__(self, input_str):
+        self.str = input_str
+        self.token_matches = []
+
+    def process_matches(self):
+        build_str = self.str
+        for token_match in self.token_matches:
+            if token_match.match == build_str[token_match.start:token_match.end]:
+                self.LOG.debug('Processing: %s - %s - %s\n\t%s' % (token_match.match, list(token_match.sub),
+                                                                   token_match.sub, build_str))
+                build_str = build_str[:token_match.start] + token_match.sub + build_str[token_match.end:]
+                self.adjust_other_matches(token_match)
+                self.LOG.debug('Processed as:\n\t%s' % build_str)
+        return build_str
+
+    def adjust_other_matches(self, adjuster_match):
+        for token_match in [token_match for token_match in self.token_matches if token_match != adjuster_match]:
+            try:
+                token_match.adjust_position(adjuster_match)
+            except IndexError:
+                pass
+        adjuster_match.end = adjuster_match.start + len(adjuster_match.sub)
+        adjuster_match.match = adjuster_match.sub
+
+    def add_match(self, regex_match, substitution):
+        token_match = TokenMatch(regex_match, substitution)
+        try:
+            self.validate_match(token_match)
+            self.token_matches.append(token_match)
+            self.LOG.info('Added match %s' % self.token_matches[-1])
+        except IndexError:
+            self.LOG.warning('Not adding match %s as it conflicts with a preexisting match' % token_match)
+
+    def validate_match(self, token_match_candidate):
+        for token_match in self.token_matches:
+            try:
+                token_match.overlaps(token_match_candidate)
+            except exceptions.OverlapError as e:
+                self.LOG.error(e.message)
+
+    def __str__(self):
+        return '%s:%s' % (self.str, '\n'.join(self.token_matches))

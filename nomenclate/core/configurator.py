@@ -15,6 +15,7 @@ import yaml
 import os
 from collections import OrderedDict
 import nomenclate.core.exceptions as exceptions
+from pprint import pformat
 from nomenclate.core.tools import (
     gen_dict_key_matches
 )
@@ -27,7 +28,7 @@ from nomenclate.core.nlog import (
 
 
 class ConfigParse(object):
-    LOG = getLogger(__name__, level=CRITICAL)
+    LOG = getLogger(__name__, level=DEBUG)
 
     def __init__(self, config_filepath='env.yml'):
         """
@@ -100,7 +101,7 @@ class ConfigParse(object):
                                                                          query_path,
                                                                          return_type=return_type,
                                                                          preceding_depth=preceding_depth)
-            self.LOG.info('Successfully retrieved and converted config entry: %s' % query_result)
+            self.LOG.info('Successfully retrieved and converted config entry:\n%s' % pformat(query_result, depth=1))
             return query_result
         else:
             self.LOG.debug('Empty config query path, returning default for type %s -> %s' % (return_type,

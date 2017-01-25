@@ -5,7 +5,7 @@ import unittest
 import re
 import nomenclate.core.nomenclative as nm
 import nomenclate.core.exceptions as ex
-
+import nomenclate.core.nomenclature as nc
 
 class TestBase(unittest.TestCase):
     def setUp(self):
@@ -184,7 +184,12 @@ class TestInputRendererBase(TestNomenclativeBase):
     def setUp(self):
         super(TestInputRendererBase, self).setUp()
         self.ir = nm.InputRenderer
-        self.fixtures.append(self.ir)
+        self.nom = nc.Nomenclate()
+        self.nom.side.set('left')
+        self.nom.name.set('testObject')
+        self.nom.type.set('locator')
+        self.nom.var.set('A')
+        self.fixtures.append([self.ir, self.nom])
 
 
 class TestInputRendererGetAlphanumericIndex(TestInputRendererBase):
@@ -242,7 +247,7 @@ class TestInputRendererRenderUniqueTokens(TestInputRendererBase):
         test_values = {'var': 'A', 'type': 'locator', 'side': 'left', 'version': 5}
         self.ir.render_unique_tokens(self.nom, test_values)
         self.assertEquals(test_values,
-                          {'var': 'A', 'type': 'locator', 'side': 'left', 'version': '005'})
+                          {'var': 'A', 'type': 'LOC', 'side': 'l', 'version': '005'})
 
     def test_empty(self):
         test_values = {}
