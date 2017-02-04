@@ -327,13 +327,13 @@ class Nomenclate(object):
 
     @format.setter
     def format(self, format_target):
-        self.LOG.info('Attempting to swap format to target %s' % format_target)
+        self.LOG.info('Attempting to swap format to target %r' % format_target)
         orig_format, orig_order = (self.format, self.format_order)
 
         try:
             self.format_string_object.swap_format(format_target)
         except exceptions.FormatError:
-            self.LOG.info('Format target is not a valid format string, looking in config for: %s' % format_target)
+            self.LOG.info('Format target is not a valid format string, looking in config for: %r' % format_target)
             format_target = self.cfg.get(format_target, return_type=str)
             if format_target:
                 self.format_string_object.swap_format(format_target)
@@ -341,7 +341,7 @@ class Nomenclate(object):
         if hasattr(self, 'token_dict') and self.format != orig_format:
             self.LOG.info('Comparing new format order %s with old format order %s' % (self.format_order, orig_order))
             fillers = dict.fromkeys(list(set(self.format_order) - set(orig_order)), '')
-            self.LOG.info('Format string has been changed, updating internal attributes with fillers %s' % fillers)
+            self.LOG.info('Format string has been changed, updating internal attributes with fillers %r' % fillers)
             self.merge_dict(fillers)
 
     def reset_from_config(self):
@@ -365,7 +365,7 @@ class Nomenclate(object):
         Returns None: raises IOError if failure
         """
         return_type = str
-        self.LOG.info('initialize_format_options with %s' % repr(format_target))
+        self.LOG.info('initialize_format_options with format target %r' % format_target)
         try:
             format_target = self.cfg.get(format_target, return_type=return_type)
         except (exceptions.ResourceNotFoundError, StopIteration):

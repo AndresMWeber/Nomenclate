@@ -137,7 +137,6 @@ class Nomenclative(object):
                 self.LOG.error(e.message)
 
     def __str__(self):
-        print(self.token_matches)
         matches = '' if not self.token_matches else '\n'.join(map(str, self.token_matches))
         return '%s:\n%s' % (self.str, matches)
 
