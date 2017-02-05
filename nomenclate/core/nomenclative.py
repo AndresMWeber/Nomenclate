@@ -410,3 +410,18 @@ class RenderLocation(RenderBase):
                                     list,
                                     nomenclate_object,
                                     **kwargs)
+
+
+class RenderDiscipline(RenderBase):
+    __metaclass__ = InputRenderer
+    token = 'discipline'
+
+    @classmethod
+    def render(cls, discipline, nomenclate_object, **kwargs):
+
+        return cls.get_config_match(discipline,
+                                    cls.token,
+                                    nomenclate_object.OPTIONS_PATH + [cls.token, discipline],
+                                    list,
+                                    nomenclate_object,
+                                    **kwargs)

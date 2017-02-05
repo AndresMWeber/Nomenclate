@@ -17,7 +17,8 @@ from collections import OrderedDict
 import nomenclate.core.exceptions as exceptions
 from pprint import pformat
 from nomenclate.core.tools import (
-    gen_dict_key_matches
+    gen_dict_key_matches,
+    get_keys_containing
 )
 from nomenclate.core.nlog import (
     getLogger,
@@ -28,7 +29,7 @@ from nomenclate.core.nlog import (
 
 
 class ConfigParse(object):
-    LOG = getLogger(__name__, level=CRITICAL)
+    LOG = getLogger(__name__, level=DEBUG)
 
     def __init__(self, config_filepath='env.yml'):
         """
@@ -86,45 +87,51 @@ class ConfigParse(object):
         Raises:
             exceptions.ResourceNotFoundError: if the query path is invalid
         """
+        function_type_lookup = {str: self._get_path_entry_from_string,
+                                list: self._get_path_entry_from_list}
+
         self.LOG.debug('config.get() - Trying to find %s in config and return_type %s' % (repr(query_path), return_type))
-        if query_path:
-            config_entry = {}
-            try:
-                config_entry = self._get_path_entry_from_list(query_path)
-            except exceptions.ResourceNotFoundError:
-                self.LOG.warning('Could not find config entry via query path')
-                try:
-                    config_entry = self._get_path_entry_from_string(query_path)
-                except exceptions.ResourceNotFoundError:
-                    self.LOG.warning('Could not find any key matches for query path either')
+
+        if not query_path:
+            return self._default_config(return_type)
+
+        try:
+            config_entry = function_type_lookup[type(query_path)](query_path)
             query_result = self.config_entry_handler.format_query_result(config_entry,
                                                                          query_path,
                                                                          return_type=return_type,
                                                                          preceding_depth=preceding_depth)
             self.LOG.debug('Successfully retrieved and converted config entry:\n%s' % pformat(query_result, depth=1))
             return query_result
-        else:
-            self.LOG.debug('Empty config query path, returning default for type %s -> %s' % (return_type,
-                                                                                             repr(return_type())))
-            if return_type == list:
-                return [k for k in self.config_file_contents]
+        except IndexError:
             return return_type()
 
     def _get_path_entry_from_string(self, qstr, first_found=True, full_path=False):
         iter_matches = gen_dict_key_matches(qstr, self.config_file_contents, full_path=full_path)
-        if list(iter_matches):
+        print(iter_matches)
+        try:
             return next(iter_matches) if first_found else iter_matches
-        raise exceptions.ResourceNotFoundError('Could not find search string %s in the config file contents' % qstr)
+        except (StopIteration, TypeError):
+            raise exceptions.ResourceNotFoundError('Could not find search string %s in the config file contents %s' % (qstr, self.config_file_contents))
 
     def _get_path_entry_from_list(self, query_path):
-        if isinstance(query_path, str):
-            query_path = [query_path]
-        self.validate_query_path(query_path)
-
         cur_data = self.config_file_contents
-        for child in query_path:
-            cur_data = cur_data.get(child)
-        return cur_data
+        try:
+            self.LOG.debug('starting path search from list...' % query_path)
+            for child in query_path:
+                self.LOG.debug(' -> %s' % child)
+                cur_data = cur_data[child]
+            self.LOG.debug('Found data %s' % cur_data)
+            return cur_data
+        except (AttributeError, KeyError):
+            raise exceptions.ResourceNotFoundError('Could not find query path %s in the config file contents' %
+                                                   query_path)
+
+    def _default_config(self, return_type):
+        self.LOG.debug('Returning default for type %s -> %s' % (return_type, repr(return_type())))
+        if return_type == list:
+            return [k for k in self.config_file_contents]
+        return return_type()
 
     @classmethod
     def validate_config_file(cls, config_filepath):
@@ -137,24 +144,6 @@ class ConfigParse(object):
         with open(config_filepath, 'r') as f:
             if yaml.load(f) is None:
                 raise IOError('No YAML config was found in file %s' % config_filepath)
-
-    def validate_query_path(self, query_path):
-        """ Determines whether the query path given is found in the current dataset
-        Args:
-            query_path list(str): list of query paths to traverse
-        Returns (bool): True or raise IndexError on non found query
-        """
-        if isinstance(query_path, str):
-            return True
-
-        cur_data = self.config_file_contents
-
-        for path in query_path:
-            cur_data = cur_data.get(path)
-            if cur_data is None:
-                msg = 'Invalid Entry: %s not found in current config file...' % (repr('|'.join(query_path)))
-                self.LOG.error(msg)
-                raise exceptions.ResourceNotFoundError(msg)
 
 
 class FormatterRegistry(type):

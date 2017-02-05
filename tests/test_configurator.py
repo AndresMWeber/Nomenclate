@@ -13,10 +13,10 @@ import nomenclate.core.configurator as config
 from collections import OrderedDict
 
 
-class TestNameparser(unittest.TestCase):
+class TestConfigurator(unittest.TestCase):
 
     def setUp(self):
-        self.maxDiff=1000
+        self.maxDiff = 1000
         self.mock_config = MockConfig()
         self.cfg = self.mock_config.parser
         self.fixtures =[self.cfg, self.mock_config]
@@ -48,10 +48,10 @@ class TestNameparser(unittest.TestCase):
                                         ['texturing', 'node']))
 
     def test_query_valid_entry(self):
-        self.cfg.validate_query_path(self.format_test)
-        self.assertRaises(exceptions.ResourceNotFoundError, self.cfg.validate_query_path, [self.format_title, 'submuerts'])
-        self.assertRaises(exceptions.ResourceNotFoundError, self.cfg.validate_query_path, ['faming_subsets', self.default_format])
-        self.assertRaises(exceptions.ResourceNotFoundError, self.cfg.validate_query_path, ['faming_subsets', 'dubsteps'])
+        self.cfg.get(self.format_test)
+        self.assertRaises(exceptions.ResourceNotFoundError, self.cfg.get, [self.format_title, 'submuerts'])
+        self.assertRaises(exceptions.ResourceNotFoundError, self.cfg.get, ['faming_subsets', self.default_format])
+        self.assertRaises(exceptions.ResourceNotFoundError, self.cfg.get, ['faming_subsets', 'dubsteps'])
 
     def test_get_section_ordered_dict(self):
         self.assertEquals(self.cfg.get(self.discipline_path, return_type=OrderedDict),
@@ -69,6 +69,12 @@ class TestNameparser(unittest.TestCase):
         self.assertTrue(self.checkEqual(self.cfg.get(self.discipline_path, return_type=str).split(),
                                         self.discipline_subsets))
 
+    def test_get_as_string_search(self):
+        print(self.cfg.config_file_contents)
+        print(self.cfg.get('animation', return_type=str))
+        self.assertTrue(self.checkEqual(self.cfg.get('animation', return_type=str),
+                                        'AN ANI ANIM ANIMN'))
+
     def test_get_as_dict(self):
         self.assertEquals(self.cfg.get(self.discipline_path, return_type=list, preceding_depth=-1),
                           {self.discipline_path[0]: {self.discipline_path[1]: self.discipline_subsets}})
@@ -81,7 +87,6 @@ class TestNameparser(unittest.TestCase):
         self.assertTrue(self.checkEqual(self.cfg.get(self.discipline_path, return_type=dict), self.discipline_subsets))
 
     def test_list_sections(self):
-        print(self.cfg.get([], return_type=list))
         six.assertCountEqual(self,
                              self.cfg.get([], return_type=list),
                              ['overall_config', 'options', 'naming_formats'])
