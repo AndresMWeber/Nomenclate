@@ -37,7 +37,7 @@ class TestCreation(TestAcceptanceWorkflowBase):
         n = nom.Nomenclate({'name': 'test', 'type': 'locator', 'var': 'A', 'side': 'left'})
         self.assertEquals(n.get(), 'l_testA_LOC')
         n.format = ['naming_formats', 'node', 'format_archive']
-        self.assertEquals(n.get(), 'l_default_test_LOC')
+        self.assertEquals(n.get(), 'l_test_LOC')
         self.fixtures.append(n)
 
     def test_initialize_with_dict_complete(self):
@@ -98,7 +98,7 @@ class TestCreation(TestAcceptanceWorkflowBase):
         n = nom.Nomenclate({'name': 'test', 'type': 'locator', 'var': 'A', 'side': 'left'})
         n.initialize_format_options('new_nameDecoratorVar_childtype_purpose_type_side')
         n.name = 'default'
-        self.assertEquals(n.get(), 'default_testA_LOC_l')
+        self.assertEquals(n.get(), 'defaultA_LOC_l')
 
     def test_initialize_with_nomenclate_and_get_kwargs(self):
         n_initial = nom.Nomenclate({'name': 'test', 'type': 'locator', 'var': 'A', 'side': 'left'})
@@ -115,7 +115,7 @@ class TestAcceptanceNamingFiletypes(TestAcceptanceWorkflowBase):
     def test_saving_maya_file(self):
         n = nom.Nomenclate(name='SH010', var='A', ext='mb', initials='aw', discipline='animation', version=5)
         n.initialize_format_options('working_file')
-        self.assertEquals(n.format, 'name_discipline_lodDecoratorVar_(v)version_initials.ext')
+        self.assertEquals(n.format, 'name_discipline_lodDecoratorVar_version_initials.ext')
         self.assertEquals(n.get(), 'SH010_ANIM_A_v005_aw.mb')
         self.fixtures.append(n)
 
@@ -123,19 +123,25 @@ class TestAcceptanceNamingFiletypes(TestAcceptanceWorkflowBase):
         n = nom.Nomenclate()
         n.initialize_format_options('techops_file')
         n.merge_dict({'shot': 'LSC_sh01',
-                      'version1': 8,
+                      'version': 8,
                       'name': 'Nesquick',
                       'type': 'SFX_MS',
                       'status': 'WIP',
-                      'date': '%m%d%y',
+                      'date': 'September 21, 2005',
                       'filetype': 'Quicktime',
                       'var': 'A',
                       'ext': 'mov',
                       'initials': 'aw',
                       'discipline': 'animation',
                       'quality': '540p',
-                      'version': 3})
-        self.assertEquals('LSC_sh01_v8_Nesquick_SFX_MS_WIP_v3_032415-540p_Quicktime.mov', n.get())
+                      'version1': 3,
+                      'version_padding': 1,
+                      'version1_format': 'v#',
+                      'version1_padding': 1})
+        self.assertEquals('LSC_sh01_v8_Nesquick_SFX_MS_WIP_v3_2005-09-21-540p_Quicktime.mov', n.get())
+        n.date_format = '%m%d%y'
+        self.assertEquals('LSC_sh01_v8_Nesquick_SFX_MS_WIP_v3_092105-540p_Quicktime.mov', n.get())
+
         self.fixtures.append(n)
 
 

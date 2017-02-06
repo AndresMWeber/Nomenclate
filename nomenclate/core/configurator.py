@@ -29,7 +29,7 @@ from nomenclate.core.nlog import (
 
 
 class ConfigParse(object):
-    LOG = getLogger(__name__, level=DEBUG)
+    LOG = getLogger(__name__, level=CRITICAL)
 
     def __init__(self, config_filepath='env.yml'):
         """
@@ -108,7 +108,6 @@ class ConfigParse(object):
 
     def _get_path_entry_from_string(self, qstr, first_found=True, full_path=False):
         iter_matches = gen_dict_key_matches(qstr, self.config_file_contents, full_path=full_path)
-        print(iter_matches)
         try:
             return next(iter_matches) if first_found else iter_matches
         except (StopIteration, TypeError):

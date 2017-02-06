@@ -12,6 +12,28 @@ from pyfakefs import fake_filesystem
 import nomenclate.core.configurator as config
 from collections import OrderedDict
 
+test_data = ('overall_config:\n'
+             '  version_padding: 3\n'
+             'naming_formats:\n'
+             '  node:\n'
+             '    default: side_location_nameDecoratorVar_childtype_purpose_type\n'
+             '    format_archive: side_name_space_purpose_decorator_childtype_type\n'
+             '    format_lee: type_childtype_space_purpose_name_side\n'
+             '  texturing:\n'
+             '    shader: side_name_type\n'
+             'options:\n'
+             '  discipline:\n'
+             '    animation: AN ANI ANIM ANIMN\n'
+             '    lighting: LT LGT LGHT LIGHT\n'
+             '    rigging: RG RIG RIGG RIGNG\n'
+             '    matchmove: MM MMV MMOV MMOVE\n'
+             '    compositing: CM CMP COMP COMPG\n'
+             '    modeling: MD MOD MODL MODEL\n'
+             '  side:\n'
+             '    - left\n'
+             '    - right\n'
+             '    - center\n')
+
 
 class TestConfigurator(unittest.TestCase):
 
@@ -110,30 +132,8 @@ class TestConfigurator(unittest.TestCase):
                 self.assertEqual(v1, v2, msg)
         return True
 
-test_data = ('overall_config:\n'
-             '  version_padding: 3\n'
-             'naming_formats:\n'
-             '  node:\n'
-             '    default: side_location_nameDecoratorVar_childtype_purpose_type\n'
-             '    format_archive: side_name_space_purpose_decorator_childtype_type\n'
-             '    format_lee: type_childtype_space_purpose_name_side\n'
-             '  texturing:\n'
-             '    shader: side_name_type\n'
-             'options:\n'
-             '  discipline:\n'
-             '    animation: AN ANI ANIM ANIMN\n'
-             '    lighting: LT LGT LGHT LIGHT\n'
-             '    rigging: RG RIG RIGG RIGNG\n'
-             '    matchmove: MM MMV MMOV MMOVE\n'
-             '    compositing: CM CMP COMP COMPG\n'
-             '    modeling: MD MOD MODL MODEL\n'
-             '  side:\n'
-             '    - left\n'
-             '    - right\n'
-             '    - center\n')
 
-
-class MockConfig():
+class MockConfig(object):
     def __init__(self):
         self.build_test_config()
 

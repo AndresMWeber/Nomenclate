@@ -469,14 +469,17 @@ class Nomenclate(object):
         """ Removes all key/v for keys that exist in the overall config and activates them.
             Used to weed out config keys from tokens in a given input.
         """
-        self.LOG.info('Sifting out config settings from input %s' % input_dict)
+        self.LOG.info('_sift_and_init_configs() - removing config settings from input %s' % input_dict)
         configs = {}
         for k, v in iteritems(input_dict):
-            try:
-                if self.cfg.get(self.CONFIG_PATH + [k]):
+            if (k not in map(str.lower, self.format_order) and
+                    any([f_order.lower() in k for f_order in self.format_order])):
+                try:
+                    self.cfg.get(self.CONFIG_PATH + [k])
+                except exceptions.ResourceNotFoundError:
+                    pass
+                finally:
                     configs[k] = v
-            except exceptions.ResourceNotFoundError:
-                pass
 
         for key, val in iteritems(configs):
             self.LOG.info('Sifting out found config setting %s' % key)

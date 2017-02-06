@@ -27,7 +27,7 @@ class TokenMatch(object):
         self.match = regex_match.group(group_name)
         self.start = regex_match.start(group_name)
         self.end = regex_match.end(group_name)
-        self.sub = substitution
+        self.sub = str(substitution)
 
     @property
     def span(self):
@@ -47,7 +47,8 @@ class TokenMatch(object):
         other.overlaps(self)
 
         if self < other:
-            raise IndexError('Current TokenMatch is not affected by input TokenMatch\n\t%s\n\t%s' % (repr(self), repr(other)))
+            raise IndexError('Current TokenMatch is not affected by input TokenMatch\n\t%s\n\t%s' % (repr(self),
+                                                                                                     repr(other)))
 
     def _adjust_order(self, adjust_value):
         self.start -= adjust_value
@@ -56,7 +57,8 @@ class TokenMatch(object):
 
     def overlaps(self, other):
         if self in other or other in self:
-            raise exceptions.OverlapError('Match with overlaps with an existing match:\n\t%s\n\t%s' % (self, other))
+            raise exceptions.OverlapError('Match %s overlaps with an existing match:\n\t%s\n\t%s' % (self.match,
+                                                                                                     self, other))
         return True
 
     def __contains__(self, other):
@@ -102,7 +104,7 @@ class Nomenclative(object):
         for token_match in self.token_matches:
             if token_match.match == build_str[token_match.start:token_match.end]:
                 self.LOG.debug('Processing: %s - %s - %s\n\t%s' % (token_match.match,
-                                                                   list(token_match.sub),
+                                                                   token_match.sub,
                                                                    token_match.sub,
                                                                    build_str))
 
@@ -147,6 +149,8 @@ class InputRenderer(type):
     REGEX_BRACKETS = r'([\{\}]+)'
     REGEX_STATIC_TOKEN = r'(\(\w+\))'
     REGEX_BRACKET_TOKEN = r'(\{\w+\})'
+    REGEX_TOKEN_SEARCH = r'(?P<token>((?<![a-z]){TOKEN}(?![0-9]))|((?<=[a-z]){TOKEN_CAPITALIZED}(?![0-9])))'
+
     LOG = getLogger(__name__, level=INFO)
 
     def __new__(mcs, name, bases, dct):
@@ -160,22 +164,24 @@ class InputRenderer(type):
     def render_unique_tokens(cls, nomenclate_object, input_dict):
         for k, v in iteritems(input_dict):
             if v:
-                renderer = cls.RENDER_FUNCTIONS.get(k, None)
+                for func in [func for func in list(cls.RENDER_FUNCTIONS)
+                             if k.replace(func, '').isdigit() or k.replace(func, '') == '']:
+                    renderer = cls.RENDER_FUNCTIONS.get(func, None)
 
-                if 'render' in dir(renderer):
-                    cls.LOG.info('render_unique_tokens() - token %s renderer %s with token settings %s' %
-                                 (k, v, nomenclate_object.get_token_settings(k)))
+                    if 'render' in dir(renderer):
+                        cls.LOG.info('render_unique_tokens() - token %s renderer %s with token settings %s' %
+                                     (k, v, nomenclate_object.get_token_settings(k)))
 
-                    rendered_token = renderer.render(v, nomenclate_object, **nomenclate_object.get_token_settings(k))
-                    cls.LOG.info('Unique token rendered as: %s' % rendered_token)
+                        rendered_token = renderer.render(v, k, nomenclate_object, **nomenclate_object.get_token_settings(k))
+                        cls.LOG.info('Unique token %s rendered as: %s' % (k, rendered_token))
 
-                    input_dict[k] = rendered_token
+                        input_dict[k] = rendered_token
 
     @classmethod
     def render_nomenclative(cls, nomenclate_object):
         nomenclative = Nomenclative(nomenclate_object.format)
         token_values = nomenclate_object.token_dict.token_attr_dict
-        cls.LOG.info('Current state is %s with nomenclative %s' % (token_values, nomenclative))
+        cls.LOG.info('render_nomenclative() - Current state is %s with nomenclative %s' % (token_values, nomenclative))
         cls.render_unique_tokens(nomenclate_object, token_values)
         rendered_nomenclative = nomenclate_object.format
 
@@ -192,9 +198,8 @@ class InputRenderer(type):
     @classmethod
     def _prepend_token_match_objects(cls, token_values, incomplete_nomenclative):
         for token, value in iteritems(token_values):
-            re_token = r'(?P<token>((?<![a-z]){TOKEN})|((?<=[a-z]){TOKEN_CAPITALIZED}))'
-            re_token = re_token.format(TOKEN=token,
-                                       TOKEN_CAPITALIZED=token[0].upper()+token[1:])
+            re_token = cls.REGEX_TOKEN_SEARCH.format(TOKEN=token,
+                                                     TOKEN_CAPITALIZED=token[0].upper()+token[1:])
             re_matches = re.finditer(re_token, incomplete_nomenclative, 0)
 
             for re_match in re_matches:
@@ -232,12 +237,11 @@ class InputRenderer(type):
         result = re.sub(cls.REGEX_PARENTHESIS, '', result)
         # Remove any multiple underscores
         result = re.sub('_+', '_', result)
-        # Remove trailing or preceding underscores
-        result = re.match(r'^_*(.*?)_*$', result)
-        if result:
-            return result.groups()[0]
-        else:
-            return result
+        # Remove trailing or preceding non letter characters
+        result = re.sub(r'(^[\W_]+)|([\W_]+$)', '', result)
+        #  not sure what this one was...but certainly not it.
+        result = re.sub(r'(\()|(\))', '', result)
+        return result
 
     @staticmethod
     def _get_alphanumeric_index(query_string):
@@ -267,12 +271,18 @@ class RenderBase(object):
     token = None
 
     @classmethod
-    def render(cls, arg, nomenclate_object, **kwargs):
+    def render(cls, arg, token, nomenclate_object, **kwargs):
         raise NotImplementedError
 
     @classmethod
-    def get_config_match(cls, query_string, token, entry_path, return_type,
-                         nomenclate_object, config_entry_suffix='length', **kwargs):
+    def get_config_match(cls,
+                         query_string,
+                         token,
+                         entry_path,
+                         return_type,
+                         nomenclate_object,
+                         config_entry_suffix='length',
+                         **kwargs):
 
         try:
             options = nomenclate_object.cfg.get(entry_path, return_type=return_type)
@@ -292,7 +302,7 @@ class RenderBase(object):
 
             try:
                 result_option = next(options)
-            except StopIteration:
+            except (StopIteration, TypeError):
                 result_option = options
 
             cls.LOG.debug('Best match is: %s' % result_option)
@@ -308,7 +318,7 @@ class RenderDate(RenderBase):
     token = 'date'
 
     @classmethod
-    def render(cls, date, nomenclate_object, **kwargs):
+    def render(cls, date, token, nomenclate_object, **kwargs):
         if date == 'now':
             d = datetime.datetime.now()
         else:
@@ -316,8 +326,9 @@ class RenderDate(RenderBase):
                 d = p.parse(date)
             except ValueError:
                 return ''
-
-        return d.strftime(get_keys_containing('format', nomenclate_object.__dict__, '%Y-%m-%d'))
+        date_format = getattr(nomenclate_object, '%s_format' % cls.token, '%Y-%m-%d')
+        # return d.strftime(get_keys_containing('format', nomenclate_object.__dict__, '%Y-%m-%d'))
+        return d.strftime(date_format)
 
 
 class RenderVar(RenderBase):
@@ -325,7 +336,7 @@ class RenderVar(RenderBase):
     token = 'var'
 
     @classmethod
-    def render(cls, var, nomenclate_object, **kwargs):
+    def render(cls, var, token, nomenclate_object, **kwargs):
         if var:
             var_index = kwargs.get('%s_index' % cls.token, 0)
             return cls._get_variation_id(var_index, var.isupper())
@@ -363,9 +374,11 @@ class RenderVersion(RenderBase):
     token = 'version'
 
     @classmethod
-    def render(cls, version, nomenclate_object, **kwargs):
-        padding = kwargs.get('%s_padding' % cls.token, 4)
-        return '%0{0}d'.format(padding) % version
+    def render(cls, version, token, nomenclate_object, **kwargs):
+        padding = kwargs.get('%s_padding' % token, 4)
+        format = kwargs.get('%s_format' % token, '#')
+        version_string = format.replace('#', '%0{0}d')
+        return version_string.format(padding) % version
 
 
 class RenderType(RenderBase):
@@ -373,13 +386,13 @@ class RenderType(RenderBase):
     token = 'type'
 
     @classmethod
-    def render(cls, ttype, nomenclate_object, **kwargs):
+    def render(cls, ttype, token, nomenclate_object, **kwargs):
         return cls.get_config_match(ttype,
                                     cls.token,
                                     nomenclate_object.SUFFIXES_PATH,
                                     dict,
                                     nomenclate_object,
-                                    **kwargs)
+                                    **kwargs) or ttype
 
 
 class RenderSide(RenderBase):
@@ -387,7 +400,7 @@ class RenderSide(RenderBase):
     token = 'side'
 
     @classmethod
-    def render(cls, side, nomenclate_object, **kwargs):
+    def render(cls, side, token, nomenclate_object, **kwargs):
 
         return cls.get_config_match(side,
                                     cls.token,
@@ -402,7 +415,7 @@ class RenderLocation(RenderBase):
     token = 'location'
 
     @classmethod
-    def render(cls, location, nomenclate_object, **kwargs):
+    def render(cls, location, token, nomenclate_object, **kwargs):
 
         return cls.get_config_match(location,
                                     cls.token,
@@ -417,7 +430,7 @@ class RenderDiscipline(RenderBase):
     token = 'discipline'
 
     @classmethod
-    def render(cls, discipline, nomenclate_object, **kwargs):
+    def render(cls, discipline, token, nomenclate_object, **kwargs):
 
         return cls.get_config_match(discipline,
                                     cls.token,

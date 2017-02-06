@@ -8,7 +8,7 @@ from nlog import (
     CRITICAL
 )
 
-LOG = getLogger(__name__, level=DEBUG)
+LOG = getLogger(__name__, level=CRITICAL)
 
 
 def combine_dicts(*args, **kwargs):

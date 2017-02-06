@@ -241,13 +241,13 @@ class TestInputRendererRenderUniqueTokens(TestInputRendererBase):
         test_values = {'var': 'A', 'type': 'locator', 'side': 'left', 'version': 5}
         self.ir.render_unique_tokens(self.nom, test_values)
         self.assertEquals(test_values,
-                          {'var': 'A', 'type': 'LOC', 'side': 'l', 'version': '005'})
+                          {'var': 'A', 'type': 'LOC', 'side': 'l', 'version': 'v005'})
 
     def test_some_replaced(self):
         test_values = {'var': 'A', 'type': 'locator', 'side': 'left', 'version': 5}
         self.ir.render_unique_tokens(self.nom, test_values)
         self.assertEquals(test_values,
-                          {'var': 'A', 'type': 'LOC', 'side': 'l', 'version': '005'})
+                          {'var': 'A', 'type': 'LOC', 'side': 'l', 'version': 'v005'})
 
     def test_empty(self):
         test_values = {}
