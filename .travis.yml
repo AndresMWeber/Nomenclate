@@ -8,9 +8,12 @@ language: python
 services:
   - docker
 
-env:
-  - TOXENV=python2.7
-  - TOXENV=python3.5
+python:
+  - "2.7"
+  - "3.5"
+#env:
+#  - TOXENV=python2.7
+#  - TOXENV=python3.5
 
 before_install:
   - docker build -t daemonecles/nomenclate .
@@ -19,17 +22,18 @@ before_install:
 
 branches:
   except:
-  - "/^dev-.+$/"
+    - "/^dev-.+$/"
 
 install:
   - pip install tox
+  - pip install tox-travis
 
 script:
   - tox
 
 deploy:
   provider: pypi
-  distributions: "sdist bdist_wheel" # Your distributions here
+  distributions: "sdist bdist_wheel"
   repo: AndresMWeber/Nomenclate
   user: andresmweber
   password:

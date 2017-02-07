@@ -62,6 +62,7 @@ class TestConfigurator(unittest.TestCase):
         self.assertRaises(IOError, self.cfg.validate_config_file, '/mock/config.yml')
 
     def test_get_as_string(self):
+        print(self.cfg.get([self.format_title, self.default_format], return_type=str))
         self.assertEquals(self.cfg.get([self.format_title, self.default_format], return_type=str),
                           ' '.join(self.discipline_subsets))
 
@@ -81,23 +82,23 @@ class TestConfigurator(unittest.TestCase):
 
     def test_get_section_ordered_dict_full_path(self):
         self.assertEquals(self.cfg.get(self.discipline_path, return_type=OrderedDict, preceding_depth=-1),
-                          {'options':{'discipline': OrderedDict(sorted(iteritems(self.discipline_data), key=lambda x:x[0]))}})
+                          {'options':{'discipline': OrderedDict(sorted(iteritems(self.discipline_data), key=lambda x: x[0]))}})
 
     def test_get_section_ordered_dict_partial_path(self):
         self.assertEquals(self.cfg.get(self.discipline_path, return_type=OrderedDict, preceding_depth=0),
-                          {'discipline': OrderedDict(sorted(iteritems(self.discipline_data), key=lambda x:x[0]))})
+                          {'discipline': OrderedDict(sorted(iteritems(self.discipline_data), key=lambda x: x[0]))})
 
     def test_get_as_string(self):
+        print(self.cfg.get(self.discipline_path, return_type=str).split())
         self.assertTrue(self.checkEqual(self.cfg.get(self.discipline_path, return_type=str).split(),
                                         self.discipline_subsets))
 
     def test_get_as_string_search(self):
-        print(self.cfg.config_file_contents)
-        print(self.cfg.get('animation', return_type=str))
         self.assertTrue(self.checkEqual(self.cfg.get('animation', return_type=str),
                                         'AN ANI ANIM ANIMN'))
 
     def test_get_as_dict(self):
+        print(self.cfg.get(self.discipline_path, return_type=list, preceding_depth=-1))
         self.assertEquals(self.cfg.get(self.discipline_path, return_type=list, preceding_depth=-1),
                           {self.discipline_path[0]: {self.discipline_path[1]: self.discipline_subsets}})
 

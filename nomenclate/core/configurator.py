@@ -29,7 +29,7 @@ from nomenclate.core.nlog import (
 
 
 class ConfigParse(object):
-    LOG = getLogger(__name__, level=CRITICAL)
+    LOG = getLogger(__name__, level=DEBUG)
 
     def __init__(self, config_filepath='env.yml'):
         """
@@ -97,11 +97,12 @@ class ConfigParse(object):
 
         try:
             config_entry = function_type_lookup[type(query_path)](query_path)
+            self.LOG.debug('Retrieved and config entry:\n%s' % pformat(config_entry, depth=1))
             query_result = self.config_entry_handler.format_query_result(config_entry,
                                                                          query_path,
                                                                          return_type=return_type,
                                                                          preceding_depth=preceding_depth)
-            self.LOG.debug('Successfully retrieved and converted config entry:\n%s' % pformat(query_result, depth=1))
+            self.LOG.debug('Converted config entry:\n%s' % pformat(query_result, depth=1))
             return query_result
         except IndexError:
             return return_type()
