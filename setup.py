@@ -36,7 +36,7 @@ class ToxWithRecreate(Tox):
 
 setup(
     name='nomenclate',
-    version='0.2.0',
+    version='0.2.8',
     packages=['nomenclate'],
     url='https://github.com/andresmweber/nomenclate',
     license='MIT',
@@ -62,36 +62,35 @@ setup(
     ],
 
     install_requires=[
-	'configparser==3.5.0',
-	'coverage==4.2',
-	'extras==1.0.0',
-	'fixtures==3.0.0',
-	'funcsigs==1.0.2',
-	'future==0.16.0',
-	'linecache2==1.0.0',
-	'mock==2.0.0',
-	'mox3==0.18.0',
-	'nomenclate==0.2.0',
-	'nose==1.3.7',
-	'pbr==1.10.0',
-	'pluggy==0.4.0',
-	'py==1.4.31',
-	'pyfakefs==2.9',
-	'python-mimeparse==1.6.0',
-	'PyYAML==3.12',
-	'requests==2.11.1',
-	'six==1.10.0',
-	'testtools==2.2.0',
-	'tox==2.4.1',
-	'traceback2==1.4.0',
-	'unittest2==1.1.0',
-	'virtualenv==15.0.3'
+        'configparser',
+        'future',
+        'python-dateutil',
+        'PyYAML',
+        'six'
     ],
 
     # tox is responsible for setting up the test runner and its dependencies
     # (e.g., code coverage tools) -- see the tox.ini file
     tests_require=[
+        'python-mimeparse',
+        'pbr',
+        'mox3',
+        'virtualenv',
+        'traceback2',
+        'coverage',
+        'extras',
+        'funcsigs',
+        'linecache2',
+        'pluggy',
+        'py',
+        'fixtures',
+        'unittest2',
+        'mock',
+        'nose',
+        'pyfakefs',
         'tox >= 1.9, < 3',
+        'testtools',
+        'tox'
     ],
 
     cmdclass={

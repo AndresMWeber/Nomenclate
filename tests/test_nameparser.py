@@ -14,7 +14,6 @@ __author__ = "Andres Weber"
 __email__ = "andresmweber@gmail.com"
 
 
-@unittest.skip("skipping until finished testing nomenclate")
 class TestNameparser(unittest.TestCase):
     def setUp(self):
         self.fixture = np.NameParser()
@@ -165,6 +164,7 @@ class TestNameparser(unittest.TestCase):
                     result = (result['datetime'], result['format'])
                 self.assertEqual(result,
                                  (datetime.datetime.strptime(input_time.strftime(test_format), test_format), test_format))
+
 
     def test_valid_camel(self):
         for test in [('aAaa', True), ('Aaaa', False), ('AAAaaaaa', True), ('AAAAaaaAAA', True),

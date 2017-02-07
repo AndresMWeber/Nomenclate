@@ -15,9 +15,22 @@ import yaml
 import os
 from collections import OrderedDict
 import nomenclate.core.exceptions as exceptions
+from pprint import pformat
+from nomenclate.core.tools import (
+    gen_dict_key_matches,
+    get_keys_containing
+)
+from nomenclate.core.nlog import (
+    getLogger,
+    DEBUG,
+    INFO,
+    CRITICAL
+)
 
 
 class ConfigParse(object):
+    LOG = getLogger(__name__, level=CRITICAL)
+
     def __init__(self, config_filepath='env.yml'):
         """
         Args:
@@ -62,7 +75,7 @@ class ConfigParse(object):
         self.config_file_contents = OrderedDict(sorted(items, key=lambda x: x[0], reverse=True))
         self.config_filepath = config_filepath
 
-    def get(self, query_path, default=None, return_type=list, preceding_depth=None):
+    def get(self, query_path, return_type=list, preceding_depth=None):
         """ Traverses the list of query paths to find the data requested
         Args:
             query_path list(str)]: list of query path branches
@@ -71,23 +84,53 @@ class ConfigParse(object):
                                     that traces back up the path for x depth
                                     -1 for the full traversal back up the path
                                     None is default for no traversal
+        Raises:
+            exceptions.ResourceNotFoundError: if the query path is invalid
         """
-        query_path = query_path if isinstance(query_path, list) else [query_path]
-        self.validate_query_path(query_path)
-        config_entry = self.get_path_entry_from_config(query_path)
-        query_result = self.config_entry_handler.format_query_result(config_entry,
-                                                                     query_path,
-                                                                     return_type,
-                                                                     preceding_depth)
-        return query_result
+        function_type_lookup = {str: self._get_path_entry_from_string,
+                                list: self._get_path_entry_from_list}
 
-    def get_path_entry_from_config(self, query_path):
+        self.LOG.debug('config.get() - Trying to find %s in config and return_type %s' % (repr(query_path), return_type))
+
         if not query_path:
-            return list(self.config_file_contents)
+            return self._default_config(return_type)
+
+        try:
+            config_entry = function_type_lookup[type(query_path)](query_path)
+            query_result = self.config_entry_handler.format_query_result(config_entry,
+                                                                         query_path,
+                                                                         return_type=return_type,
+                                                                         preceding_depth=preceding_depth)
+            self.LOG.debug('Successfully retrieved and converted config entry:\n%s' % pformat(query_result, depth=1))
+            return query_result
+        except IndexError:
+            return return_type()
+
+    def _get_path_entry_from_string(self, qstr, first_found=True, full_path=False):
+        iter_matches = gen_dict_key_matches(qstr, self.config_file_contents, full_path=full_path)
+        try:
+            return next(iter_matches) if first_found else iter_matches
+        except (StopIteration, TypeError):
+            raise exceptions.ResourceNotFoundError('Could not find search string %s in the config file contents %s' % (qstr, self.config_file_contents))
+
+    def _get_path_entry_from_list(self, query_path):
         cur_data = self.config_file_contents
-        for child in query_path:
-            cur_data = cur_data.get(child)
-        return cur_data
+        try:
+            self.LOG.debug('starting path search from list...' % query_path)
+            for child in query_path:
+                self.LOG.debug(' -> %s' % child)
+                cur_data = cur_data[child]
+            self.LOG.debug('Found data %s' % cur_data)
+            return cur_data
+        except (AttributeError, KeyError):
+            raise exceptions.ResourceNotFoundError('Could not find query path %s in the config file contents' %
+                                                   query_path)
+
+    def _default_config(self, return_type):
+        self.LOG.debug('Returning default for type %s -> %s' % (return_type, repr(return_type())))
+        if return_type == list:
+            return [k for k in self.config_file_contents]
+        return return_type()
 
     @classmethod
     def validate_config_file(cls, config_filepath):
@@ -100,19 +143,6 @@ class ConfigParse(object):
         with open(config_filepath, 'r') as f:
             if yaml.load(f) is None:
                 raise IOError('No YAML config was found in file %s' % config_filepath)
-
-    def validate_query_path(self, query_path):
-        """ Determines whether the query path given is found in the current dataset
-        Args:
-            query_path list(str): list of query paths to traverse
-        Returns (bool): True or raise IndexError on non found query
-        """
-        cur_data = self.config_file_contents
-        for path in query_path:
-            cur_data = cur_data.get(path)
-            if cur_data is None:
-                raise exceptions.ResourceNotFoundError(
-                    'Trying to find entry: %s not found in current config file...' % ('|'.join(query_path)))
 
 
 class FormatterRegistry(type):
@@ -198,6 +228,28 @@ class DictToOrderedDictEntryFormatter(BaseFormatter):
         return OrderedDict(sorted(items, key=lambda x: x[0]))
 
 
+class OrderedDictToListEntryFormatter(BaseFormatter):
+    converts = {'accepted_input_type': OrderedDict,
+                'accepted_return_type': list}
+
+    @staticmethod
+    def format_result(input):
+        """From: http://stackoverflow.com/questions/13062300/convert-a-dict-to-sorted-dict-in-python
+        """
+        return list(input)
+
+
+class NoneToDictEntryFormatter(BaseFormatter):
+    converts = {'accepted_input_type': type(None),
+                'accepted_return_type': dict}
+
+    @staticmethod
+    def format_result(input):
+        """From: http://stackoverflow.com/questions/13062300/convert-a-dict-to-sorted-dict-in-python
+        """
+        return {}
+
+
 class ListToStringEntryFormatter(BaseFormatter):
     converts = {'accepted_input_type': list,
                 'accepted_return_type': str}
@@ -233,8 +285,9 @@ class ConfigEntryFormatter(object):
             raise AttributeError(
                 "Handler not found for return type %s and input type %s" % (return_type, type(query_result_type)))
         except:
-            raise IndexError('Could not find function in conversion list',
-                             'for input type %s and return type %s' % (query_result_type, return_type))
+            msg = 'Could not find function in conversion list for input type %s and return type %s' % \
+                  (query_result_type, return_type)
+            raise IndexError(msg)
 
     def format_with_handler(self, query_result, return_type):
         handler = self.get_handler(type(query_result), return_type)

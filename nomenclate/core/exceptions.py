@@ -49,3 +49,9 @@ class ResetError(NomenclateException):
     """Reset error.
     """
     pass
+
+
+class OverlapError(NomenclateException):
+    """Overlap error.
+    """
+    pass

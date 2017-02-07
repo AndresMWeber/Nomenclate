@@ -12,11 +12,33 @@ from pyfakefs import fake_filesystem
 import nomenclate.core.configurator as config
 from collections import OrderedDict
 
+test_data = ('overall_config:\n'
+             '  version_padding: 3\n'
+             'naming_formats:\n'
+             '  node:\n'
+             '    default: side_location_nameDecoratorVar_childtype_purpose_type\n'
+             '    format_archive: side_name_space_purpose_decorator_childtype_type\n'
+             '    format_lee: type_childtype_space_purpose_name_side\n'
+             '  texturing:\n'
+             '    shader: side_name_type\n'
+             'options:\n'
+             '  discipline:\n'
+             '    animation: AN ANI ANIM ANIMN\n'
+             '    lighting: LT LGT LGHT LIGHT\n'
+             '    rigging: RG RIG RIGG RIGNG\n'
+             '    matchmove: MM MMV MMOV MMOVE\n'
+             '    compositing: CM CMP COMP COMPG\n'
+             '    modeling: MD MOD MODL MODEL\n'
+             '  side:\n'
+             '    - left\n'
+             '    - right\n'
+             '    - center\n')
 
-class TestNameparser(unittest.TestCase):
+
+class TestConfigurator(unittest.TestCase):
 
     def setUp(self):
-        self.maxDiff=1000
+        self.maxDiff = 1000
         self.mock_config = MockConfig()
         self.cfg = self.mock_config.parser
         self.fixtures =[self.cfg, self.mock_config]
@@ -48,10 +70,10 @@ class TestNameparser(unittest.TestCase):
                                         ['texturing', 'node']))
 
     def test_query_valid_entry(self):
-        self.cfg.validate_query_path(self.format_test)
-        self.assertRaises(exceptions.ResourceNotFoundError, self.cfg.validate_query_path, [self.format_title, 'submuerts'])
-        self.assertRaises(exceptions.ResourceNotFoundError, self.cfg.validate_query_path, ['faming_subsets', self.default_format])
-        self.assertRaises(exceptions.ResourceNotFoundError, self.cfg.validate_query_path, ['faming_subsets', 'dubsteps'])
+        self.cfg.get(self.format_test)
+        self.assertRaises(exceptions.ResourceNotFoundError, self.cfg.get, [self.format_title, 'submuerts'])
+        self.assertRaises(exceptions.ResourceNotFoundError, self.cfg.get, ['faming_subsets', self.default_format])
+        self.assertRaises(exceptions.ResourceNotFoundError, self.cfg.get, ['faming_subsets', 'dubsteps'])
 
     def test_get_section_ordered_dict(self):
         self.assertEquals(self.cfg.get(self.discipline_path, return_type=OrderedDict),
@@ -69,6 +91,12 @@ class TestNameparser(unittest.TestCase):
         self.assertTrue(self.checkEqual(self.cfg.get(self.discipline_path, return_type=str).split(),
                                         self.discipline_subsets))
 
+    def test_get_as_string_search(self):
+        print(self.cfg.config_file_contents)
+        print(self.cfg.get('animation', return_type=str))
+        self.assertTrue(self.checkEqual(self.cfg.get('animation', return_type=str),
+                                        'AN ANI ANIM ANIMN'))
+
     def test_get_as_dict(self):
         self.assertEquals(self.cfg.get(self.discipline_path, return_type=list, preceding_depth=-1),
                           {self.discipline_path[0]: {self.discipline_path[1]: self.discipline_subsets}})
@@ -81,7 +109,6 @@ class TestNameparser(unittest.TestCase):
         self.assertTrue(self.checkEqual(self.cfg.get(self.discipline_path, return_type=dict), self.discipline_subsets))
 
     def test_list_sections(self):
-        print(self.cfg.get([], return_type=list))
         six.assertCountEqual(self,
                              self.cfg.get([], return_type=list),
                              ['overall_config', 'options', 'naming_formats'])
@@ -105,30 +132,8 @@ class TestNameparser(unittest.TestCase):
                 self.assertEqual(v1, v2, msg)
         return True
 
-test_data = ('overall_config:\n'
-             '  version_padding: 3\n'
-             'naming_formats:\n'
-             '  node:\n'
-             '    default: side_location_nameDecoratorVar_childtype_purpose_type\n'
-             '    format_archive: side_name_space_purpose_decorator_childtype_type\n'
-             '    format_lee: type_childtype_space_purpose_name_side\n'
-             '  texturing:\n'
-             '    shader: side_name_type\n'
-             'options:\n'
-             '  discipline:\n'
-             '    animation: AN ANI ANIM ANIMN\n'
-             '    lighting: LT LGT LGHT LIGHT\n'
-             '    rigging: RG RIG RIGG RIGNG\n'
-             '    matchmove: MM MMV MMOV MMOVE\n'
-             '    compositing: CM CMP COMP COMPG\n'
-             '    modeling: MD MOD MODL MODEL\n'
-             '  side:\n'
-             '    - left\n'
-             '    - right\n'
-             '    - center\n')
 
-
-class MockConfig():
+class MockConfig(object):
     def __init__(self):
         self.build_test_config()
 
