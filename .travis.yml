@@ -8,11 +8,9 @@ language: python
 services:
   - docker
 
-# Going to re-add support for 3.5 later to reduce builds in Travis for now.
 env:
-  - TOXENV=py27
-#  - TOXENV=py34
-#  - TOXENV=py35
+  - TOXENV=python2.7
+  - TOXENV=python3.5
 
 before_install:
   - docker build -t daemonecles/nomenclate .
