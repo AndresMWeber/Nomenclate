@@ -179,7 +179,8 @@ class TestNomenclateGet(TestNomenclateBase):
 
 class TestNomenclateGetChain(TestNomenclateBase):
     def test_get_chain(self):
-        self.assertIsNone(self.nom.get_chain(0, 5))
+        self.assertRaises(NotImplementedError, self.nom.get_chain, (0, 5))
+        #self.assertIsNone(self.nom.get_chain(0, 5))
 
 
 class TestNomenclateUpdateTokenAttributes(TestNomenclateBase):
