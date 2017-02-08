@@ -14,8 +14,9 @@ from future.utils import iteritems
 import yaml
 import os
 from collections import OrderedDict
-import nomenclate.core.exceptions as exceptions
+from six import add_metaclass
 from pprint import pformat
+import nomenclate.core.exceptions as exceptions
 from nomenclate.core.tools import (
     gen_dict_key_matches,
     get_keys_containing
@@ -97,7 +98,7 @@ class ConfigParse(object):
 
         try:
             config_entry = function_type_lookup[type(query_path)](query_path)
-            self.LOG.debug('Retrieved and config entry:\n%s' % pformat(config_entry, depth=1))
+            self.LOG.debug('Retrieved config entry:\n%s' % pformat(config_entry, depth=1))
             query_result = self.config_entry_handler.format_query_result(config_entry,
                                                                          query_path,
                                                                          return_type=return_type,
@@ -105,14 +106,17 @@ class ConfigParse(object):
             self.LOG.debug('Converted config entry:\n%s' % pformat(query_result, depth=1))
             return query_result
         except IndexError:
+            self.LOG.debug('Not sure why but IndexError was found...defaulting to return: %s = %r' %
+                           (return_type, return_type()))
             return return_type()
 
-    def _get_path_entry_from_string(self, qstr, first_found=True, full_path=False):
-        iter_matches = gen_dict_key_matches(qstr, self.config_file_contents, full_path=full_path)
+    def _get_path_entry_from_string(self, query_string, first_found=True, full_path=False):
+        iter_matches = gen_dict_key_matches(query_string, self.config_file_contents, full_path=full_path)
         try:
             return next(iter_matches) if first_found else iter_matches
         except (StopIteration, TypeError):
-            raise exceptions.ResourceNotFoundError('Could not find search string %s in the config file contents %s' % (qstr, self.config_file_contents))
+            raise exceptions.ResourceNotFoundError('Could not find search string %s in the config file contents %s' %
+                                                   (query_string, self.config_file_contents))
 
     def _get_path_entry_from_list(self, query_path):
         cur_data = self.config_file_contents
@@ -170,8 +174,8 @@ class FormatterRegistry(type):
         return mcs.CONVERSION_TABLE[input_type][return_type]
 
 
+@add_metaclass(FormatterRegistry)
 class BaseFormatter(object):
-    __metaclass__ = FormatterRegistry
     converts = {'accepted_input_type': None,
                 'accepted_return_type': None}
 
@@ -258,6 +262,15 @@ class ListToStringEntryFormatter(BaseFormatter):
     @staticmethod
     def format_result(input):
         return ' '.join(input)
+
+
+class IntToListEntryFormatter(BaseFormatter):
+    converts = {'accepted_input_type': int,
+                'accepted_return_type': list}
+
+    @staticmethod
+    def format_result(input):
+        return [input]
 
 
 class ConfigEntryFormatter(object):

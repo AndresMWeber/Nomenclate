@@ -3,7 +3,6 @@ from __future__ import print_function
 from imp import reload
 from future.utils import iteritems
 import six
-
 import nomenclate.core.exceptions as exceptions
 import unittest
 import mock
@@ -123,11 +122,11 @@ class TestConfigurator(unittest.TestCase):
         return len(L1) == len(L2) and sorted(L1) == sorted(L2)
 
     def assertDictEqual(self, d1, d2, msg=None):  # assertEqual uses for dicts
-        for k, v1 in d1.iteritems():
+        for k, v1 in iteritems(d1):
             self.assertIn(k, d2, msg)
             v2 = d2[k]
             if (isinstance(v1, collections.Iterable) and
-                    not isinstance(v1, basestring)):
+                    not isinstance(v1, six.string_types)):
                 self.checkEqual(v1, v2)
             else:
                 self.assertEqual(v1, v2, msg)
