@@ -281,7 +281,7 @@ class FormatString(object):
 class Nomenclate(object):
     """This class deals with renaming of objects in an approved pattern
     """
-    LOG = getLogger(__name__, level=INFO)
+    LOG = getLogger(__name__, level=DEBUG)
     CONFIG_PATH = ['overall_config']
 
     NAMING_FORMAT_PATH = ['naming_formats']

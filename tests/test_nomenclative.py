@@ -100,13 +100,13 @@ class TokenMatchBase(TestBase):
         self.regex_custom_group_match = next(re.compile(r'(?P<look>test)').finditer('test'))
 
         test_re_matches = re.compile(r'(?P<token>te)').finditer('test')
-        self.token_match_start = nm.TokenMatch(test_re_matches.next(), 'mx', group_name='token')
+        self.token_match_start = nm.TokenMatch(next(test_re_matches), 'mx', group_name='token')
 
         test_re_matches = re.compile(r'(?P<token>es)').finditer('test')
-        self.token_match_mid = nm.TokenMatch(test_re_matches.next(), 'lz', group_name='token')
+        self.token_match_mid = nm.TokenMatch(next(test_re_matches), 'lz', group_name='token')
 
         test_re_matches = re.compile(r'(?P<token>st)').finditer('test')
-        self.token_match_end = nm.TokenMatch(test_re_matches.next(), 'fr', group_name='token')
+        self.token_match_end = nm.TokenMatch(next(test_re_matches), 'fr', group_name='token')
 
         self.fixtures.extend([self.token_match_start,
                               self.token_match_mid,

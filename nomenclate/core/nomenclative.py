@@ -2,6 +2,7 @@
 # Ensure Python 2/3 compatibility: http://python-future.org/compatible_idioms.html
 from __future__ import print_function
 from future.utils import iteritems
+from six import add_metaclass
 import re
 import string
 import datetime
@@ -140,7 +141,7 @@ class Nomenclative(object):
 
     def __str__(self):
         matches = '' if not self.token_matches else '\n'.join(map(str, self.token_matches))
-        return '%s:\n%s' % (self.str, matches)
+        return '%s:%s' % (self.str, matches)
 
 
 class InputRenderer(type):
@@ -151,7 +152,7 @@ class InputRenderer(type):
     REGEX_BRACKET_TOKEN = r'(\{\w+\})'
     REGEX_TOKEN_SEARCH = r'(?P<token>((?<![a-z]){TOKEN}(?![0-9]))|((?<=[a-z]){TOKEN_CAPITALIZED}(?![0-9])))'
 
-    LOG = getLogger(__name__, level=INFO)
+    LOG = getLogger(__name__, level=DEBUG)
 
     def __new__(mcs, name, bases, dct):
         cls = type.__new__(mcs, name, bases, dct)
@@ -162,12 +163,14 @@ class InputRenderer(type):
 
     @classmethod
     def render_unique_tokens(cls, nomenclate_object, input_dict):
+        cls.LOG.info('current list of render functions: %s' % list(cls.RENDER_FUNCTIONS))
         for k, v in iteritems(input_dict):
+            cls.LOG.info('Checking for unique token on token %s:%r' % (k, v))
             if v:
                 for func in [func for func in list(cls.RENDER_FUNCTIONS)
                              if k.replace(func, '').isdigit() or k.replace(func, '') == '']:
                     renderer = cls.RENDER_FUNCTIONS.get(func, None)
-
+                    cls.LOG.info('Attempting to find token unique render function for token %s with renderer %s' % (k, renderer))
                     if 'render' in dir(renderer):
                         cls.LOG.info('render_unique_tokens() - token %s renderer %s with token settings %s' %
                                      (k, v, nomenclate_object.get_token_settings(k)))
@@ -184,7 +187,7 @@ class InputRenderer(type):
         cls.LOG.info('render_nomenclative() - Current state is %s with nomenclative %s' % (token_values, nomenclative))
         cls.render_unique_tokens(nomenclate_object, token_values)
         rendered_nomenclative = nomenclate_object.format
-
+        cls.LOG.info('Finished rendering unique tokens.')
         cls._prepend_token_match_objects(token_values, rendered_nomenclative)
 
         for token, match_value in iteritems(token_values):
@@ -256,18 +259,18 @@ class InputRenderer(type):
         except ValueError:
             if len(query_string) == 1:
                 if query_string.isupper():
-                    return [string.uppercase.index(query_string), 'char_hi']
+                    return [string.ascii_uppercase.index(query_string), 'char_hi']
                 elif query_string.islower():
-                    return [string.lowercase.index(query_string), 'char_lo']
+                    return [string.ascii_lowercase.index(query_string), 'char_lo']
             else:
                 raise IOError('The input is a string longer than one character')
         return [0, 'char_hi']
 
 
+@add_metaclass(InputRenderer)
 class RenderBase(object):
-    __metaclass__ = InputRenderer
     LOG = getLogger(__name__, level=INFO)
-
+    #metaclass__ = InputRenderer
     token = None
 
     @classmethod
@@ -362,7 +365,7 @@ class RenderVar(RenderBase):
         # create alpha representation
         alphas = ['a'] * base_power
         for index in range(base_power - 1, -1, -1):
-            alphas[index] = chr(97 + (base_index % 26))
+            alphas[index] = chr(int(97 + (base_index % 26)))
             base_index /= 26
 
         characters = ''.join(alphas)

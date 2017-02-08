@@ -1,7 +1,7 @@
 from future.utils import iteritems
 import collections
 from pprint import pformat
-from nlog import (
+from nomenclate.core.nlog import (
     getLogger,
     DEBUG,
     INFO,

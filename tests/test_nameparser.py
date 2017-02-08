@@ -126,6 +126,7 @@ class TestNameparser(unittest.TestCase):
                             self.assertIsNone(side_results)
                         else:
                             for element in [side, permutation]:
+                                print(element, side_results)
                                 self.assertIn(element, side_results)
 
     def test_get_date_specific(self):

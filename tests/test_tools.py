@@ -81,10 +81,10 @@ class TestGenDictKeyMatches(TestBase):
                              [])
 
     def test_simple(self):
-        self.assertEquals(gen_dict_key_matches('test', {'test': 1}).next(), 1)
+        self.assertEquals(next(gen_dict_key_matches('test', {'test': 1})), 1)
 
     def test_simple_with_path(self):
-        self.assertEquals(gen_dict_key_matches('test', {'test': 1}, full_path=True).next(), (['test'], 1))
+        self.assertEquals(next(gen_dict_key_matches('test', {'test': 1}, full_path=True)), (['test'], 1))
 
     def test_list_full_path(self):
         self.checkEqual(list(gen_dict_key_matches('name',

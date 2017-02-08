@@ -157,7 +157,7 @@ class Logger(object):
         if hasattr(self._log, attr):
             return getattr(self._log, attr)
         else:
-            raise AttributeError, "No attribute %s" % attr
+            raise (AttributeError, "No attribute %s" % attr)
 
     def __repr__(self):
         return "%s(%s Level:%i)" % (self.__class__, self._name, self.level)
