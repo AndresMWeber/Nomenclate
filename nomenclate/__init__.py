@@ -1,2 +1,1 @@
-import core
-import ui
+from core.nomenclature import Nomenclate as Nom

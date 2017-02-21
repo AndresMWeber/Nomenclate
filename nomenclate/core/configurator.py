@@ -30,7 +30,7 @@ from nomenclate.core.nlog import (
 
 
 class ConfigParse(object):
-    LOG = getLogger(__name__, level=DEBUG)
+    LOG = getLogger(__name__, level=CRITICAL)
 
     def __init__(self, config_filepath='env.yml'):
         """

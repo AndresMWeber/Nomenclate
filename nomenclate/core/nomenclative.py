@@ -22,7 +22,7 @@ from nomenclate.core.tools import (
 
 
 class TokenMatch(object):
-    LOG = getLogger(__name__, level=INFO)
+    LOG = getLogger(__name__, level=CRITICAL)
 
     def __init__(self, regex_match, substitution, group_name='token'):
         self.match = regex_match.group(group_name)
@@ -94,7 +94,7 @@ class TokenMatch(object):
 
 
 class Nomenclative(object):
-    LOG = getLogger(__name__, level=INFO)
+    LOG = getLogger(__name__, level=CRITICAL)
 
     def __init__(self, input_str):
         self.str = input_str
@@ -152,7 +152,7 @@ class InputRenderer(type):
     REGEX_BRACKET_TOKEN = r'(\{\w+\})'
     REGEX_TOKEN_SEARCH = r'(?P<token>((?<![a-z]){TOKEN}(?![0-9]))|((?<=[a-z]){TOKEN_CAPITALIZED}(?![0-9])))'
 
-    LOG = getLogger(__name__, level=DEBUG)
+    LOG = getLogger(__name__, level=CRITICAL)
 
     def __new__(mcs, name, bases, dct):
         cls = type.__new__(mcs, name, bases, dct)
@@ -269,7 +269,7 @@ class InputRenderer(type):
 
 @add_metaclass(InputRenderer)
 class RenderBase(object):
-    LOG = getLogger(__name__, level=INFO)
+    LOG = getLogger(__name__, level=CRITICAL)
     #metaclass__ = InputRenderer
     token = None
 

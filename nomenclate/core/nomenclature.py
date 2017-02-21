@@ -20,7 +20,7 @@ from nomenclate.core.tools import (
 
 
 class TokenAttr(object):
-    LOG = getLogger(__name__, level=DEBUG)
+    LOG = getLogger(__name__, level=CRITICAL)
 
     def __init__(self, label=None, token=None):
         self.validate_entries(label, token)
@@ -66,7 +66,7 @@ class TokenAttr(object):
 
 
 class TokenAttrDictHandler(object):
-    LOG = getLogger(__name__, level=INFO)
+    LOG = getLogger(__name__, level=CRITICAL)
 
     def __init__(self, nomenclate_object):
         self.nom = nomenclate_object
@@ -207,7 +207,7 @@ class FormatString(object):
     FORMAT_STRING_REGEX = r'(?:\([\w]+\))|([A-Za-z0-9][^A-Z_\W]+)'
     SEPARATORS = '\\._-?()'
 
-    LOG = getLogger(__name__, level=INFO)
+    LOG = getLogger(__name__, level=CRITICAL)
 
     def __init__(self, format_string=""):
         self.LOG.info('Initializing formt string with input %r' % format_string)
@@ -281,7 +281,7 @@ class FormatString(object):
 class Nomenclate(object):
     """This class deals with renaming of objects in an approved pattern
     """
-    LOG = getLogger(__name__, level=DEBUG)
+    LOG = getLogger(__name__, level=CRITICAL)
     CONFIG_PATH = ['overall_config']
 
     NAMING_FORMAT_PATH = ['naming_formats']
