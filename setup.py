@@ -36,7 +36,7 @@ class ToxWithRecreate(Tox):
 
 setup(
     name='nomenclate',
-    version='0.2.8',
+    version='1.0.0',
     packages=['nomenclate'],
     url='https://github.com/andresmweber/nomenclate',
     license='MIT',
