@@ -62,6 +62,9 @@ class TokenAttr(object):
         return self.token == other.token and self.label == other.label
 
     def __str__(self):
+        return self.label
+
+    def __repr__(self):
         return '%s(%s):%r' % (self.token, self.raw_token, self.label)
 
 
