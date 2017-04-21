@@ -36,9 +36,9 @@ class ToxWithRecreate(Tox):
 
 setup(
     name='nomenclate',
-    version='1.0.2',
+    version='1.0.4',
     packages=find_packages(),
-    package_data={b'configYML': ['nomenclate/core/*.yml']},
+    package_data={'configYML': ['nomenclate/core/*.yml']},
     include_package_data=True,
     url='https://github.com/andresmweber/nomenclate',
     license='MIT',

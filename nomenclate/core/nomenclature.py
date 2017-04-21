@@ -23,7 +23,11 @@ class TokenAttr(object):
     LOG = getLogger(__name__, level=CRITICAL)
 
     def __init__(self, label=None, token=None):
-        self.validate_entries(label, token)
+        try:
+            self.validate_entries(label)
+        except exceptions.ValidationError:
+            label = None
+        self.validate_entries(token)
         self.raw_string = label if label is not None else ""
         self.raw_token = token
 
@@ -45,7 +49,7 @@ class TokenAttr(object):
         self.validate_entries(label)
         self.LOG.debug('Setting token attr %s -> %r' % (str(self), label))
         self.raw_string = label
-        self.LOG.debug('%s and the raw_string is %s' % (self, self.raw_string))
+        self.LOG.debug('%r and the raw_string is %s' % (self, self.raw_string))
 
     def set(self, value):
         self.label = value
@@ -62,7 +66,7 @@ class TokenAttr(object):
         return self.token == other.token and self.label == other.label
 
     def __str__(self):
-        return self.label
+        return str(self.label)
 
     def __repr__(self):
         return '%s(%s):%r' % (self.token, self.raw_token, self.label)
@@ -115,7 +119,7 @@ class TokenAttrDictHandler(object):
         for input_attr_name, input_attr_value in iteritems(input_dict):
             self.set_token_attr(input_attr_name, input_attr_value)
 
-        self.LOG.debug('Finished setting attributes on TokenDict %s' % map(str, list(self.token_attrs)))
+        self.LOG.debug('Finished setting attributes on TokenDict %s' % [attr for attr in list(self.token_attrs)])
         self.update_nomenclate_token_attributes()
 
     def update_nomenclate_token_attributes(self):
@@ -206,7 +210,7 @@ class TokenAttrDictHandler(object):
 
 class FormatString(object):
     # Is not a hard coded (word) and does not end with any non word characters or capitals (assuming camel)
-    #FORMAT_STRING_REGEX = r'(?:(?<=\()[\w]+(?=\)))|([A-Za-z0-9][^A-Z_\W]+)'
+    # FORMAT_STRING_REGEX = r'(?:(?<=\()[\w]+(?=\)))|([A-Za-z0-9][^A-Z_\W]+)'
     FORMAT_STRING_REGEX = r'(?:\([\w]+\))|([A-Za-z0-9][^A-Z_\W]+)'
     SEPARATORS = '\\._-?()'
 
@@ -253,7 +257,8 @@ class FormatString(object):
     def format_order(self, format_target):
         if format_target:
             self.processed_format_order = self.get_valid_format_order(format_target,
-                                                                      format_order=self.parse_format_order(format_target))
+                                                                      format_order=self.parse_format_order(
+                                                                          format_target))
         else:
             self.processed_format_order = []
 
