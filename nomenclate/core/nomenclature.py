@@ -509,3 +509,6 @@ class Nomenclate(object):
         else:
             self.LOG.debug('User setting attribute %s to %s' % (key, value))
             object.__setattr__(self, key, value)
+
+    def __dir__(self):
+        return dir(super(Nomenclate, self)) + self.tokens
