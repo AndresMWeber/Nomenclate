@@ -75,14 +75,17 @@ Use this tool via package level functions
     # Your Nomenclate object has now been initialized and all of the default token set have been added based on
     # The default format_string property from the env.yml config file
     # default: side_location_nameDecoratorVar_childtype_purpose_type
-    >>> b.state
+    >>> nomenclate_empty.state
     {'name': '', 'childtype': '', 'location': '', 'var': '', 'type': '', 'side': '', 'decorator': '', 'purpose': ''}
-    >>> a.state
+    >>> nomenclate_init_kwargs.state
     {'name': 'test', 'childtype': '', 'location': '', 'var': '', 'type': 'group', 'side': '', 'decorator': '', 'purpose': ''}
 
     # The format string will automate the process of hot swapping naming formats allows any string to be input.
-    >>> a.format
+    >>> nomenclate_init_kwargs.format
     'side_location_nameDecoratorVar_childtype_purpose_type'
+    >>> nomenclate_init_kwargs.format = 'name_type'
+    >>> nomenclate_init_kwargs.state
+    {name:'test', type='group'}
 
     # At any time you can query the state of the nomenclate object through the .state property
 
