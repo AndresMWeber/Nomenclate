@@ -157,11 +157,11 @@ class TokenAttrDictHandler(object):
 
     def purge(self):
         # Should not be used in case we want to swap formats...only in the case of necessity
-        self.purge_invalid_name_attrs()
+        self.purge_invalid_tokens()
         self.purge_nomenclate_excess_token_attributes()
 
-    def purge_invalid_name_attrs(self):
-        """ Removes name attrs not found in the format order
+    def purge_invalid_tokens(self):
+        """ Removes tokens not found in the format order
         """
         token_attrs = list(self.token_attrs)
         self.LOG.debug('Checking if current TokenAttrs %s are in format order %s' % (map(str, token_attrs),
@@ -171,7 +171,7 @@ class TokenAttrDictHandler(object):
                 self._validate_name_in_format_order(token_attr.raw_token, self.nom.format_order)
             except exceptions.FormatError:
                 self.LOG.info('Deleting invalid TokenAttr %s' % token_attr.token)
-                del self.__dict__[token_attr.token]
+                delattr(self, token_attr.token)
 
     def purge_nomenclate_excess_token_attributes(self):
         for token_attr in list(self.gen_object_token_attributes(self.nom)):
@@ -289,7 +289,7 @@ class FormatString(object):
 class Nomenclate(object):
     """This class deals with renaming of objects in an approved pattern
     """
-    LOG = getLogger(__name__, level=CRITICAL)
+    LOG = getLogger(__name__, level=INFO)
     CONFIG_PATH = ['overall_config']
 
     NAMING_FORMAT_PATH = ['naming_formats']
@@ -340,9 +340,17 @@ class Nomenclate(object):
         return str(self.format_string_object)
 
     @format.setter
-    def format(self, format_target):
+    def format(self, format_target, remove_obsolete_tokens=True):
+        """ Changes the internal self.format_string_object format target based on input.  Also checks to see if input
+            is an entry in the config file in case we want to switch to a preexisting config format.
+
+        :param format_target: str, input for the new format type.  All strings will be the new tokens.
+        :param remove_obsolete_tokens: bool, dictates whether we are removing the obselete tokens or not that
+               previously existed
+        :return: None
+        """
         self.LOG.info('Attempting to swap format to target %r' % format_target)
-        orig_format, orig_order = (self.format, self.format_order)
+        original_format, original_format_order = (self.format, self.format_order)
 
         try:
             self.LOG.info('Looking in config for format target: %r' % format_target)
@@ -350,16 +358,35 @@ class Nomenclate(object):
             if format_target:
                 self.format_string_object.swap_format(format_target)
                 self.LOG.info('Found entry: %r' % format_target)
+
         except exceptions.ResourceNotFoundError:
             self.LOG.info('Format target not found in config, validating as a format string...')
             self.format_string_object.swap_format(format_target)
 
-        if hasattr(self, 'token_dict') and self.format != orig_format:
-            self.LOG.info('Comparing new format order %s with old format order %s' % (self.format_order, orig_order))
-            new_entries = [token for token in set(self.format_order) - set(orig_order) if not hasattr(self, token)]
-            fillers = dict.fromkeys(new_entries, '')
-            self.LOG.info('Format string has been changed, updating internal attributes with fillers %r' % fillers)
-            self.merge_dict(fillers)
+        self._update_tokens_from_format(original_format,
+                                        original_format_order,
+                                        remove_obsolete_tokens=remove_obsolete_tokens)
+
+    def _update_tokens_from_format(self, original_format, original_format_order, remove_obsolete_tokens=True):
+        if hasattr(self, 'token_dict') and self.format != original_format:
+            self.LOG.info('Comparing new format order %s with old format order %s' % (self.format_order,
+                                                                                      original_format_order))
+
+            old_tokens = [token for token in list(set(original_format_order) - set(self.format_order))
+                          if hasattr(self, token)]
+            new_tokens = [token for token in set(self.format_order) - set(original_format_order)
+                          if not hasattr(self, token)]
+            self.LOG.info('\nToken Status:\n\tObselete tokens: %s\n\tNew tokens: %s' % (old_tokens, new_tokens))
+            if new_tokens:
+                fillers = dict.fromkeys(new_tokens, '')
+                self.merge_dict(fillers)
+                self.LOG.info(
+                    'Format string has been changed, updating filling new internal attributes %s' % new_tokens)
+
+            if remove_obsolete_tokens:
+                self.token_dict.purge_invalid_tokens()
+        else:
+            self.LOG.info('No change necessary to update internal token set')
 
     def reset_from_config(self):
         self.initialize_config_settings()
@@ -458,6 +485,13 @@ class Nomenclate(object):
         else:
             self.LOG.warning('Nothing to update...empty args/kwargs...skipping.')
 
+    def get_token_settings(self, token, default=None):
+        setting_dict = {}
+        for key, value in iteritems(self.__dict__):
+            if '%s_' % token in key and not callable(key) and not isinstance(value, TokenAttr):
+                setting_dict[key] = self.__dict__.get(key, default)
+        return setting_dict
+
     def _convert_input(self, *args, **kwargs):
         self.LOG.info('Converting input args %s and kwargs %s' % (args, kwargs))
         args = [arg.state if isinstance(arg, Nomenclate) else arg for arg in args]
@@ -465,13 +499,6 @@ class Nomenclate(object):
         input_dict = combine_dicts(*args, **kwargs)
         self.LOG.info('Converted to %s' % input_dict)
         return input_dict
-
-    def get_token_settings(self, token, default=None):
-        setting_dict = {}
-        for key, value in iteritems(self.__dict__):
-            if '%s_' % token in key and not callable(key) and not isinstance(value, TokenAttr):
-                setting_dict[key] = self.__dict__.get(key, default)
-        return setting_dict
 
     def _sift_and_init_configs(self, input_dict):
         """ Removes all key/v for keys that exist in the overall config and activates them.
@@ -511,4 +538,5 @@ class Nomenclate(object):
             object.__setattr__(self, key, value)
 
     def __dir__(self):
-        return dir(super(Nomenclate, self)) + self.tokens
+        return [attr for attr in list(self.__dict__) if
+                not attr.startswith('_')] + self.tokens  # dir(super(Nomenclate, self))

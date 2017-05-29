@@ -36,23 +36,24 @@ class ToxWithRecreate(Tox):
 
 setup(
     name='nomenclate',
-    version='1.0.5',
+    version='1.0.6',
     packages=find_packages(),
     package_data={'configYML': ['nomenclate/core/*.yml']},
     include_package_data=True,
     url='https://github.com/andresmweber/nomenclate',
     license='MIT',
     author='Andres Weber',
+    author_email='andresmweber@gmail.com',
     description='Naming Convention Generator ',
     long_description='Tool for generating string-based labels based on a preset convention configuration.',
     keywords='naming conventions labels config convention name',
-    
+
     entry_points={
-        'console_scripts':[
+        'console_scripts': [
             'nomenclate = nomenclate.app:run',
         ]
     },
-    
+
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
@@ -92,9 +93,32 @@ setup(
         'pyfakefs',
         'tox >= 1.9, < 3',
         'testtools',
-        'tox'
+        'tox',
+        'coveralls'
     ],
-
+    extras_require={
+        'test': ['python-mimeparse',
+                 'pbr',
+                 'mox3',
+                 'virtualenv',
+                 'traceback2',
+                 'coverage',
+                 'extras',
+                 'funcsigs',
+                 'linecache2',
+                 'pluggy',
+                 'py',
+                 'fixtures',
+                 'unittest2',
+                 'mock',
+                 'nose',
+                 'pyfakefs',
+                 'tox >= 1.9, < 3',
+                 'testtools',
+                 'tox',
+                 'coveralls'],
+        'dev': ['twine', 'sphinx', 'docutils', 'docopt']
+    },
     cmdclass={
         'test': Tox,
         'clean_test': ToxWithRecreate,
