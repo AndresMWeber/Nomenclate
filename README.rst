@@ -1,5 +1,5 @@
 Nomenclate: A toolset for automating and generating strings based on arbitrary user-defined naming conventions
-###################################################################################################
+##############################################################################################################
 `Online Documentation (ReadTheDocs) <http://nomenclate.readthedocs.io/en/latest/>`_
 
 .. image:: https://readthedocs.org/projects/nomenclate/badge/?version=latest
@@ -27,19 +27,39 @@ Synopsis
 =============
 
 Nomenclate is a tool which creates persistent objects that can be used to generate strings that follow naming
-conventions that you designate.  There are sets of current naming conventions that can be replaced or extended following
-certain rules for creation.  You can add arbitrary tokens as needed and register token filtering of your own designation.
+conventions that you designate.  There are sets of current naming conventions (format strings) that can be replaced or
+extended following certain rules for creation.
+You can add arbitrary tokens as needed and register token filtering of your own designation.
 
-To start off there is a full set of yaml defined suffix/side substitution strings as found in env.yml.  If you want you
-can create your own yml file that you will pass to a Nomenclate instance to have your own configuration.
+There is a full set of yaml defined suffix/side substitution strings as found in env.yml.  If you want you can create
+your own yml file that you will pass to a Nomenclate instance to have your own configuration.
 
+Concept Definitions
+-------------------
+token
+    : A component of the format string which is a meaningful symbol/definition pair that will be filtered by
+    a grammar of regular expressions.
+    A simplified representation could be token=value wherein the token (as found in the format string) will be resolved
+    to the value as is adheres to the token's syntax/grammar rules
+
+format string
+    : A string that represents a series of tokens separated with arbitrary delimiters.
+    e.g. - side_location_nameDecoratorVar_childtype_purpose_type
+    Note: Nomenclate automatically supports camelCasing the tokens to separate them as a natural delimiter.
+
+`For a review of parsing/composition look here <https://en.wikipedia.org/wiki/Parsing>`_
 
 Features
 --------
+-  Applies a naming convention with arbitrary syntax/grammar to the formatting of string tokens
+-  Top down parsing of format string given token-specific grammar rule classes that are extensible
 -  Persistent state object instances
 -  Up to date with online help docs
 -  User-customizable YAML/human-readable config file
 -  Easy object property or dictionary state manipulation
+-  Cross-Python compatible: Tested and working with Python 2.7 and 3.5
+-  Cross-Platform compatible: Works under Linux/Mac OS/Windows environments
+-  Full module/class documentation
 
 Installation
 ============
@@ -90,55 +110,59 @@ Use this tool via package level functions
     # At any time you can query the state of the nomenclate object through the .state property
 
     # This is the detailed explanation of how to manipulate env.yml from the file header itself:
-    # List of configurations written in YAML
-    #
-    # So far the suffixes is a look up dictionary for Maya objects, however I will be adding support for more later.
-    # To properly enter a naming format string:
-    #
-    # Enter all fields you want to look for with a special look up word you want to use
-    # as a descriptor for that naming token e.g. -
-    #                                       name
-    # and place it where you want it in order in the formatting string you set.
-    # If you want something to space out or separate the names just input whatever separator
-    # you want to use like _ or . and it will keep those for usage.
-    #
-    # Name the format whatever sub-section name you think is appropriate with an appropriate header
-    #
-    # If you want them camel cased for example name and type:
-    #                                       nameType
-    # and it will do the camelcasing for whatever you input.
-    #
-    # If you want a static string to always be present in a format string just
-    # enclose it with parenthesis, for example a version:
-    #                                       (v)version
-    # if version is 3 and your version padding config is set to 2
-    # will evaluate to
-    #                                       v02
-    #
-    #
-    #  There are 3 naming tokens with specific formatting functions that will give you customized results
-    #  You can designate multiple fields for added granularity by adding a number after e.g. var1, var2
-    #       <var> - this depends on var in the config being set to upper or lower
-    #             a -returns a character based on position in alphabet, if you go over it starts aa -> az -> ba -> bz etc.
-    #             A - returns a character based on position in alphabet, if you go over it starts AA -> AZ -> BA -> BZ etc.
-    #       <version> - will return a string number based on the version_padding config setting
-    #       <date> - will return a date as a string based on a datetime module formatted string
-    #              that the user will input or default to YYYY-MM-DD
-    #              full list of options can be found here:
-    #              https://docs.python.org/2/library/datetime.html#strftime-strptime-behavior
-    #              please specify whichever separators (or lack of) you want to override the default behavior
-    #              just modify the config
-    #
-    #  If you need any custom token conversion functions you can specify them by extending the nomenclate class with methods
-    #  with the following naming structure: convert_<token>(self, token_data) which should return a string
-    #
-    #  Otherwise, unless you specify an options list for a specific naming token
-    #  it will just replace the text with whatever you set that naming token to
-    #  on the nomenclate object.  The options lists will be used as a filter for the
-    #  naming token validity or as a look up table for UIs and if you specify
-    #  different lengths after it, it will use the first in the list unless
-    #  otherwise specified in the overall_config section under "<naming_token>_length"
-    #  If there is no abbreviation list afterwards then just write it as a list with -
+
+
+List of configurations written in YAML
+
+So far the suffixes is a look up dictionary for Maya objects, however I will be adding support for more later.
+To properly enter a naming format string:
+
+Enter all fields you want to look for with a special look up word you want to use
+as a descriptor for that naming token e.g. -
+.. code-block:: yaml
+    name
+and place it where you want it in order in the formatting string you set.
+If you want something to space out or separate the names just input whatever separator
+you want to use like _ or . and it will keep those for usage.
+
+Name the format whatever sub-section name you think is appropriate with an appropriate header
+
+If you want them camel cased for example name and type:
+.. code-block:: yaml
+    nameType
+and it will do the camelcasing for whatever you input.
+
+If you want a static string to always be present in a format string just
+enclose it with parenthesis, for example a version:
+                                      (v)version
+if version is 3 and your version padding config is set to 2
+will evaluate to
+                                      v02
+
+
+ There are 3 naming tokens with specific formatting functions that will give you customized results
+ You can designate multiple fields for added granularity by adding a number after e.g. var1, var2
+      <var> - this depends on var in the config being set to upper or lower
+            a -returns a character based on position in alphabet, if you go over it starts aa -> az -> ba -> bz etc.
+            A - returns a character based on position in alphabet, if you go over it starts AA -> AZ -> BA -> BZ etc.
+      <version> - will return a string number based on the version_padding config setting
+      <date> - will return a date as a string based on a datetime module formatted string
+             that the user will input or default to YYYY-MM-DD
+             full list of options can be found here:
+             `Datetime Documentation <https://docs.python.org/2/library/datetime.html#strftime-strptime-behavior>`_
+             please specify whichever separators (or lack of) you want to override the default behavior
+             just modify the config
+
+ If you need any custom token conversion functions you can specify them by extending the nomenclate class with methods
+ with the following naming structure: convert_<token>(self, token_data) which should return a string
+
+ Otherwise, unless you specify an options list for a specific naming token
+ it will just replace the text with whatever you set that naming token to
+ on the nomenclate object.  The options lists will be used as a filter for the
+ naming token validity or as a look up table for UIs and if you specify
+ different lengths after it, it will use the first in the list unless
+ otherwise specified in the overall_config section under "<naming_token>_length"
+ If there is no abbreviation list afterwards then just write it as a list with -
 
 
 Version Support
