@@ -215,13 +215,13 @@ Further version/var/date specific token notes:
         The full list of options can be found here:
         `Datetime Documentation <https://docs.python.org/2/library/datetime.html#strftime-strptime-behavior>`_
 
- If you need any custom token value conversion functions you can specify them by inheriting from nomenclate.core.nomenclative.RenderBase and implementing its render function like so:
+ If you need any custom token value conversion functions you can specify them by inheriting from ``nomenclate.core.rendering.RenderBase`` and implementing its render function like so:
 
     .. code-block:: python
 
         import nomenclate
 
-        class RenderCustom(nomenclate.core.nomenclative.RenderBase):
+        class RenderCustom(nomenclate.core.rendering.RenderBase):
             token = 'custom'
             def render(cls, value, token, nomenclate_object, **kwargs):
                 """ Always prepend "meh"
