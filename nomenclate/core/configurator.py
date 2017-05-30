@@ -1,5 +1,6 @@
 # Ensure Python 2/3 compatibility: http://python-future.org/compatible_idioms.html
 from __future__ import print_function
+
 from future.utils import iteritems
 
 """
@@ -16,15 +17,12 @@ import os
 from collections import OrderedDict
 from six import add_metaclass
 from pprint import pformat
-import nomenclate.core.exceptions as exceptions
-from nomenclate.core.tools import (
-    gen_dict_key_matches,
-    get_keys_containing
+import errors as errors
+from tools import (
+    gen_dict_key_matches
 )
-from nomenclate.core.nlog import (
+from nlog import (
     getLogger,
-    DEBUG,
-    INFO,
     CRITICAL
 )
 
@@ -60,7 +58,7 @@ class ConfigParse(object):
             cur_file_filepath = os.path.normpath(os.path.join(os.path.dirname(__file__), config_filepath))
             return cwd_filepath if os.path.isfile(cwd_filepath) else cur_file_filepath
         except IOError:
-            raise exceptions.SourceError('No config file found in current working directory or nomenclate/core')
+            raise errors.SourceError('No config file found in current working directory or nomenclate/core')
 
     def rebuild_config_cache(self, config_filepath):
         """ Loads from file and caches all data from the config file in the form of an OrderedDict to self.data
@@ -133,8 +131,8 @@ class ConfigParse(object):
         try:
             return next(iter_matches) if first_found else iter_matches
         except (StopIteration, TypeError):
-            raise exceptions.ResourceNotFoundError('Could not find search string %s in the config file contents %s' %
-                                                   (query_string, self.config_file_contents))
+            raise errors.ResourceNotFoundError('Could not find search string %s in the config file contents %s' %
+                                               (query_string, self.config_file_contents))
 
     def _get_path_entry_from_list(self, query_path):
         """ Returns the config entry at query path
@@ -145,15 +143,15 @@ class ConfigParse(object):
         """
         cur_data = self.config_file_contents
         try:
-            self.LOG.debug('starting path search from list...' % query_path)
+            self.LOG.info('starting path search from list...' % query_path)
             for child in query_path:
                 self.LOG.debug(' -> %s' % child)
                 cur_data = cur_data[child]
             self.LOG.debug('Found data %s' % cur_data)
             return cur_data
         except (AttributeError, KeyError):
-            raise exceptions.ResourceNotFoundError('Could not find query path %s in the config file contents' %
-                                                   query_path)
+            raise errors.ResourceNotFoundError('Could not find query path %s in the config file contents' %
+                                               query_path)
 
     def _default_config(self, return_type):
         """ Generates a default instance of whatever the type requested was (in case of miss)

@@ -1,20 +1,14 @@
 #!/usr/bin/env python
 from __future__ import print_function
 from future.utils import iteritems
-import nomenclate.core.exceptions as exceptions
-from nomenclate.core.nlog import (
-    getLogger,
-    DEBUG,
-    INFO,
-    CRITICAL
-)
-from nomenclate.core.tools import (
-    combine_dicts
-)
+import errors as exceptions
+import nomenclate.settings as settings
+
+MODULE_LEVEL_OVERRIDE = None
 
 
 class TokenAttr(object):
-    LOG = getLogger(__name__, level=CRITICAL)
+    LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LEVEL_OVERRIDE)
 
     def __init__(self, label=None, token=None):
         try:
@@ -70,7 +64,7 @@ class TokenAttr(object):
 
 
 class TokenAttrDictHandler(object):
-    LOG = getLogger(__name__, level=CRITICAL)
+    LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LEVEL_OVERRIDE)
 
     def __init__(self, nomenclate_object):
         self.nom = nomenclate_object

@@ -1,1 +1,4 @@
-from core.nomenclature import Nomenclate as Nom
+import settings
+import core
+
+Nom = core.nomenclature.Nomenclate

@@ -3,7 +3,7 @@ from __future__ import print_function
 from imp import reload
 from future.utils import iteritems
 import six
-import nomenclate.core.exceptions as exceptions
+import nomenclate.core.errors as exceptions
 import unittest
 import mock
 import collections

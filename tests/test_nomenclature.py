@@ -5,7 +5,7 @@ import nomenclate.core.nomenclature as nm
 import nomenclate.core.tokens as tokens
 import nomenclate.core.formatter as formatter
 import nomenclate.core.configurator as config
-import nomenclate.core.exceptions as exceptions
+import nomenclate.core.errors as exceptions
 from basetest import TestBase
 
 
@@ -124,11 +124,23 @@ class TestNomenclateInitializeFormatOptions(TestNomenclateBase):
                                         ['side', 'location', 'name', 'Decorator', 'Var', 'childtype', 'purpose',
                                          'type']))
 
-    def test_switch_naming_format_from_config(self):
-        self.nom.initialize_format_options(['naming_formats', 'node', 'format_lee'])
-        print(self.nom.format_order)
+    def test_switch_multiple_naming_formats_from_config(self):
+        self.nom.initialize_format_options(['naming_formats', 'riggers', 'lee_wolland'])
+        self.nom.LOG.info(str(self.nom.format_order))
         self.assertTrue(self.checkEqual(self.nom.format_order,
                                         ['type', 'childtype', 'space', 'purpose', 'name', 'side']))
+
+        self.nom.initialize_format_options(['naming_formats', 'riggers', 'raffaele_fragapane'])
+        self.nom.name = 'test'
+        self.nom.height = 'top'
+        self.nom.side = 'left'
+        self.nom.depth = 'rear'
+        self.nom.purpose = 'hierarchy'
+        self.nom.LOG.info('%r' % self.nom.get())
+        self.nom.LOG.info(str(self.nom.format_order))
+        self.assertTrue(self.checkEqual(self.nom.format_order,
+                                        ['name', 'height', 'Side', 'depth', 'purpose']))
+
         self.nom.initialize_format_options(self.test_format)
 
 

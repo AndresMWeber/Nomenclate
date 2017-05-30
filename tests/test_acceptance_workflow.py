@@ -62,17 +62,15 @@ class TestCreation(TestAcceptanceWorkflowBase):
 
     def test_initialize_with_attributes_complete(self):
         n = nom.Nomenclate()
-        print('setting attributes')
         n.name = 'test'
         n.decorator = 'J'
         n.childtype = 'joint'
         n.purpose = 'offset'
-        print('midway through')
         n.var = 'A'
         n.side = 'left'
         n.type = 'locator'
         n.location = 'rear'
-        print(n.state)
+        n.LOG.info(str(n.state))
         self.assertEquals(n.get(), 'l_rr_testJA_joint_offset_LOC')
         self.fixtures.append(n)
 

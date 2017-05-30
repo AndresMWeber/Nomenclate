@@ -3,29 +3,25 @@
 from __future__ import print_function
 from future.utils import iteritems
 
-import nomenclate.core.configurator as config
-import nomenclate.core.exceptions as exceptions
-import nomenclate.core.tokens as tokens
-import nomenclate.core.formatter as formatter
-from nomenclate.core.rendering import (
-    InputRenderer
-)
-from nomenclate.core.nlog import (
-    getLogger,
-    DEBUG,
-    INFO,
-    CRITICAL
-)
-from nomenclate.core.tools import (
+import nomenclate.settings as settings
+import configurator as config
+import errors as exceptions
+import tokens as tokens
+import formatter as formatter
+import rendering as rendering
+from tools import (
     combine_dicts,
     NomenclateNotifier
 )
 
 
+MODULE_LOGGER_LEVEL_OVERRIDE = None
+
+
 class Nomenclate(object):
     """This class deals with renaming of objects in an approved pattern
     """
-    LOG = getLogger(__name__, level=CRITICAL)
+    LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
     CONFIG_PATH = ['overall_config']
 
     NAMING_FORMAT_PATH = ['naming_formats']
@@ -126,7 +122,7 @@ class Nomenclate(object):
         input_dict = self.cfg.get(self.CONFIG_PATH, return_type=dict) if input_dict is None else input_dict
         for setting, value in iteritems(input_dict):
             setattr(self, setting, value)
-            self.LOG.info('\tNew value %s' % getattr(self, setting))
+            self.LOG.info('\tNew config value <%s>.%s=%s' % (self.__class__.__name__, setting, getattr(self, setting)))
 
     def initialize_format_options(self, format_target=''):
         """ First attempts to use format_target as a config path or gets the default format
@@ -174,7 +170,7 @@ class Nomenclate(object):
         self.LOG.info('STATE IS: %s' % self.state)
         self.merge_dict(**kwargs)
         self.LOG.info('STATE IS: %s' % self.state)
-        result = InputRenderer.render_nomenclative(self)
+        result = rendering.InputRenderer.render_nomenclative(self)
         return result
 
     def get_chain(self, end, start=None, **kwargs):
@@ -264,7 +260,7 @@ class Nomenclate(object):
         self.token_dict.purge_tokens(token_attrs)
 
         for token_attr in token_attrs:
-            self.LOG.info('Purging nomenclate attributes - %s' % map(str, token_attrs))
+            self.LOG.info('Purging nomenclate attribute - %s' % str(token_attr))
             delattr(self, token_attr)
 
         self.LOG.info('Finished purging Nomenclate object and token_dict.')
@@ -277,14 +273,16 @@ class Nomenclate(object):
         :param remove_obsolete_tokens: bool, whether to remove obsolete tokens
                                              if off: persistent state across format swaps of missing tokens
         """
+        old_format_order = [_.lower() for _ in original_format_order]
+        new_format_order = [_.lower() for _ in self.format_order]
         if hasattr(self, 'token_dict') and self.format != original_format:
-            self.LOG.info('Comparing new format order %s with old format order %s' % (self.format_order,
-                                                                                      original_format_order))
+            self.LOG.info('Comparing new format order %s with old format order %s' % (new_format_order,
+                                                                                      old_format_order))
 
-            old_tokens = [token for token in list(set(original_format_order) - set(self.format_order))
+            old_tokens = [token for token in list(set(old_format_order) - set(new_format_order))
                           if hasattr(self, token)]
 
-            new_tokens = [token for token in set(self.format_order) - set(original_format_order)
+            new_tokens = [token for token in set(new_format_order) - set(old_format_order)
                           if not hasattr(self, token)]
 
             self.LOG.info('\nToken Status:\n\tObselete tokens: %s\n\tNew tokens: %s' % (old_tokens, new_tokens))
@@ -342,7 +340,7 @@ class Nomenclate(object):
 
         """
         attr = getattr(self, key, None)
-        self.LOG.info('Trying to set preexisting attribute: %s = %r -> %r' % (key, attr, value))
+        self.LOG.debug('Trying to set preexisting attribute: %s = %r -> %r' % (key, attr, value))
         if isinstance(attr, tokens.TokenAttr):
             self.LOG.debug('User setting TokenAttr %r = %r -> %r' % (attr, attr.label, value))
             attr.label = value.label if isinstance(value, tokens.TokenAttr) else value

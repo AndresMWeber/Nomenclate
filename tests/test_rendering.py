@@ -4,7 +4,7 @@ from future.utils import iteritems
 import unittest
 import re
 import nomenclate.core.rendering as nm
-import nomenclate.core.exceptions as ex
+import nomenclate.core.errors as ex
 import nomenclate.core.nomenclature as nc
 
 class TestBase(unittest.TestCase):

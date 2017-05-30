@@ -1,40 +1,20 @@
 #!/usr/bin/env python
+""" This module does name parsing to recover information about the name based on common conventions.
+    it will be very prone to missing information since names will be very variable, but hopefully
+    it will be more intelligent as time goes on
+"""
 # Ensure Python 2/3 compatibility: http://python-future.org/compatible_idioms.html
 from __future__ import print_function
-
-from imp import reload
-
-"""
-.. module:: nameparser
-    :platform: Win/Linux/Mac
-    :synopsis: This module does name parsing to recover information about the name based on common conventions.
-                it will be very prone to missing information since names will be very variable, but hopefully
-                it will be more intelligent as time goes on.
-    :plans:
-        0.1.0: Added base template functionality
-        0.2.0: Added abbreviation generation technology
-        0.2.1: Removed nomenclate.core.toolbox opting to auto-configure config path
-               Optimized get_side to use the env.ini settings
-        0.3.0: Normalized the returns of each of the get functions and added an extra function to parse the entire name
-               Fixed testing for everything as well.
-               All static data stored as class variables now
-               Need to implement both get_discipline and get_initials still
-"""
 import re
 import datetime
 import itertools
 from future.utils import iteritems
-import nomenclate.core.configurator as config
-
-__author__ = "Andres Weber"
-__email__ = "andresmweber@gmail.com"
-__version__ = '0.3.0'
-
-reload(config)
+import configurator as config
 
 
 class NameParser(object):
     """ This parses names of assets.  It assumes the usual convention of strings separated by underscores.
+
     """
     CONFIG_SIDES = config.ConfigParse().get(['options', 'side'])
     CONFIG_DISCIPLINES = config.ConfigParse().get(['options', 'discipline'])

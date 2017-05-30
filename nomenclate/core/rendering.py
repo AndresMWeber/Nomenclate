@@ -7,22 +7,18 @@ import re
 import string
 import datetime
 import dateutil.parser as p
-import nomenclate.core.exceptions as exceptions
-from nomenclate.core.nlog import (
-    getLogger,
-    DEBUG,
-    CRITICAL,
-    INFO
-)
+import errors as exceptions
+import nomenclate.settings as settings
 from nomenclate.core.tools import (
     gen_dict_key_matches,
-    get_keys_containing,
     flatten
 )
 
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
+
 
 class TokenMatch(object):
-    LOG = getLogger(__name__, level=CRITICAL)
+    LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
 
     def __init__(self, regex_match, substitution, group_name='token'):
         self.match = regex_match.group(group_name)
@@ -64,7 +60,7 @@ class TokenMatch(object):
 
     def __contains__(self, other):
         try:
-            return (self.start < other.start < self.end or self.start < other.end < self.end)
+            return self.start < other.start < self.end or self.start < other.end < self.end
         except:
             raise NotImplementedError(
                 '{C} objects do not handle in syntax for non class objects'.format(C=self.__class__.__name__))
@@ -94,7 +90,7 @@ class TokenMatch(object):
 
 
 class Nomenclative(object):
-    LOG = getLogger(__name__, level=CRITICAL)
+    LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
 
     def __init__(self, input_str):
         self.str = input_str
@@ -152,7 +148,7 @@ class InputRenderer(type):
     REGEX_BRACKET_TOKEN = r'(\{\w+\})'
     REGEX_TOKEN_SEARCH = r'(?P<token>((?<![a-z]){TOKEN}(?![0-9]))|((?<=[a-z]){TOKEN_CAPITALIZED}(?![0-9])))'
 
-    LOG = getLogger(__name__, level=CRITICAL)
+    LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
 
     def __new__(mcs, name, bases, dct):
         cls = type.__new__(mcs, name, bases, dct)
@@ -170,12 +166,14 @@ class InputRenderer(type):
                 for func in [func for func in list(cls.RENDER_FUNCTIONS)
                              if k.replace(func, '').isdigit() or k.replace(func, '') == '']:
                     renderer = cls.RENDER_FUNCTIONS.get(func, None)
-                    cls.LOG.info('Attempting to find token unique render function for token %s with renderer %s' % (k, renderer))
+                    cls.LOG.info(
+                        'Attempting to find token unique render function for token %s with renderer %s' % (k, renderer))
                     if 'render' in dir(renderer):
                         cls.LOG.info('render_unique_tokens() - token %s renderer %s with token settings %s' %
                                      (k, v, nomenclate_object.get_token_settings(k)))
 
-                        rendered_token = renderer.render(v, k, nomenclate_object, **nomenclate_object.get_token_settings(k))
+                        rendered_token = renderer.render(v, k, nomenclate_object,
+                                                         **nomenclate_object.get_token_settings(k))
                         cls.LOG.info('Unique token %s rendered as: %s' % (k, rendered_token))
 
                         input_dict[k] = rendered_token
@@ -202,7 +200,7 @@ class InputRenderer(type):
     def _prepend_token_match_objects(cls, token_values, incomplete_nomenclative):
         for token, value in iteritems(token_values):
             re_token = cls.REGEX_TOKEN_SEARCH.format(TOKEN=token,
-                                                     TOKEN_CAPITALIZED=token[0].upper()+token[1:])
+                                                     TOKEN_CAPITALIZED=token[0].upper() + token[1:])
             re_matches = re.finditer(re_token, incomplete_nomenclative, 0)
 
             for re_match in re_matches:
@@ -253,7 +251,7 @@ class InputRenderer(type):
         :param query_string: str, query string
         :return: (int, str), list of the index and type
         """
-        #TODO: could probably rework this. it works, but it's ugly as hell.
+        # TODO: could probably rework this. it works, but it's ugly as hell.
         try:
             return [int(query_string), 'int']
         except ValueError:
@@ -269,7 +267,7 @@ class InputRenderer(type):
 
 @add_metaclass(InputRenderer)
 class RenderBase(object):
-    LOG = getLogger(__name__, level=CRITICAL)
+    LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
     token = None
 
     @classmethod
@@ -400,7 +398,6 @@ class RenderSide(RenderBase):
 
     @classmethod
     def render(cls, side, token, nomenclate_object, **kwargs):
-
         return cls.get_config_match(side,
                                     cls.token,
                                     nomenclate_object.OPTIONS_PATH + [cls.token, side],
@@ -414,7 +411,6 @@ class RenderLocation(RenderBase):
 
     @classmethod
     def render(cls, location, token, nomenclate_object, **kwargs):
-
         return cls.get_config_match(location,
                                     cls.token,
                                     nomenclate_object.OPTIONS_PATH + [cls.token, location],
@@ -428,7 +424,6 @@ class RenderDiscipline(RenderBase):
 
     @classmethod
     def render(cls, discipline, token, nomenclate_object, **kwargs):
-
         return cls.get_config_match(discipline,
                                     cls.token,
                                     nomenclate_object.OPTIONS_PATH + [cls.token, discipline],

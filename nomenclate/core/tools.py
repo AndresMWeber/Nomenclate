@@ -1,14 +1,10 @@
 from future.utils import iteritems
 import collections
 from pprint import pformat
-from nomenclate.core.nlog import (
-    getLogger,
-    DEBUG,
-    INFO,
-    CRITICAL
-)
+import nomenclate.settings as settings
 
-LOG = getLogger(__name__, level=INFO)
+MODULE_LOGGER_LEVEL_OVERRIDE = None
+LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
 
 
 class NomenclateNotifier(object):

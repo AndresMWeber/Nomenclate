@@ -2,14 +2,10 @@
 # Ensure Python 2/3 compatibility: http://python-future.org/compatible_idioms.html
 from __future__ import print_function
 import re
-import nomenclate.core.exceptions as exceptions
+import errors as exceptions
+import nomenclate.settings as settings
 
-from nomenclate.core.nlog import (
-    getLogger,
-    DEBUG,
-    INFO,
-    CRITICAL
-)
+MODULE_LOGGER_LEVEL_OVERRIDE = None
 
 
 class FormatString(object):
@@ -18,7 +14,7 @@ class FormatString(object):
     FORMAT_STRING_REGEX = r'(?:\([\w]+\))|([A-Za-z0-9][^A-Z_\W]+)'
     SEPARATORS = '\\._-?()'
 
-    LOG = getLogger(__name__, level=CRITICAL)
+    LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
 
     def __init__(self, format_string=""):
         self.LOG.info('Initializing format string with input %r' % format_string)
