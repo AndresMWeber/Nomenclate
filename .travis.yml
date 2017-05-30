@@ -12,9 +12,13 @@ cache:
     directories:
         - $HOME/.cache/pip
 
+# For PyQt 4 Mimicking this Travis build: https://travis-ci.org/Asvel/pygs/jobs/42198306
+# For manual installation copy this:
+# Install PyQt4 from: https://stackoverflow.com/questions/35513019/install-pyqt4-with-python3-on-travis-ci
 addons:
   apt:
     packages:
+      # For PyQt4
       - libqt4-dev
       - libglu1-mesa-dev
       - mesa-common-dev
@@ -26,10 +30,10 @@ addons:
 
 before_install:
   # For PyQt5
-  - sudo apt-add-repository ppa:beineri/opt-qt551 -y
-  - sudo apt-get update
-  - sudo apt-get install qt-latest
-  - source /opt/qt55/bin/qt55-env.sh
+  #- sudo apt-add-repository ppa:beineri/opt-qt551 -y
+  #- sudo apt-get update
+  #- sudo apt-get install qt-latest
+  #- source /opt/qt55/bin/qt55-env.sh
   # Builds
   - sudo mkdir -p /builds
   - sudo chmod a+rw /builds
@@ -39,18 +43,17 @@ branches:
     - "/^dev-.+$/"
 
 install:
-  ## Install PyQt4 from: https://stackoverflow.com/questions/35513019/install-pyqt4-with-python3-on-travis-ci
   - export DISPLAY=:99.0
   - sh -e /etc/init.d/xvfb start
   # Install PyQt5 from: https://stackoverflow.com/questions/35019662/how-can-i-install-python3-and-pyqt5-on-travis
-  - sudo mkdir -p /builds && sudo chmod a+rw /builds
-  - sudo mkdir -p /downloads && sudo chmod a+rw /downloads
-  - curl -L -o /downloads/sip.tar.gz http://sourceforge.net/projects/pyqt/files/sip/sip-4.17/sip-4.17.tar.gz
-  - curl -L -o /downloads/pyqt.tar.gz https://downloads.sourceforge.net/project/pyqt/PyQt5/PyQt-5.8.2/PyQt5_gpl-5.8.2.tar.gz
-  - tar xzf /downloads/sip.tar.gz -C /builds --keep-newer-files
-  - tar xzf /downloads/pyqt.tar.gz -C /builds --keep-newer-files
-  - cd /builds/sip-4.17 && python configure.py && sudo make && sudo make install
-  - cd /builds/PyQt-gpl-5.8.2 && python configure.py --confirm-license && sudo make && sudo make install
+  #- sudo mkdir -p /builds && sudo chmod a+rw /builds
+  #- sudo mkdir -p /downloads && sudo chmod a+rw /downloads
+  #- curl -L -o /downloads/sip.tar.gz http://sourceforge.net/projects/pyqt/files/sip/sip-4.17/sip-4.17.tar.gz
+  #- curl -L -o /downloads/pyqt.tar.gz https://downloads.sourceforge.net/project/pyqt/PyQt5/PyQt-5.8.2/PyQt5_gpl-5.8.2.tar.gz
+  #- tar xzf /downloads/sip.tar.gz -C /builds --keep-newer-files
+  #- tar xzf /downloads/pyqt.tar.gz -C /builds --keep-newer-files
+  #- cd /builds/sip-4.17 && python configure.py && sudo make && sudo make install
+  #- cd /builds/PyQt5_gpl-5.8.2 && python configure.py --confirm-license && sudo make && sudo make install
   # Builds Complete
   - cd Andresmweber/Nomenclate
   - pip install tox-travis
