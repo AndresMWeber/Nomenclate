@@ -28,14 +28,6 @@ nomenclate\.core\.nameparser module
     :undoc-members:
     :show-inheritance:
 
-nomenclate\.core\.nlog module
------------------------------
-
-.. automodule:: nomenclate.core.nlog
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 nomenclate\.core\.nomenclative module
 -------------------------------------
 

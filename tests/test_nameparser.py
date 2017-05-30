@@ -109,7 +109,7 @@ class TestNameparser(unittest.TestCase):
     def _side_runner(self, test_options):
         for side in ['left', 'right']:
             permutations = []
-            for abbr in np.NameParser._get_abbrs(side, 3):
+            for abbr in np.NameParser._get_abbreviations(side, 3):
                 permutations = itertools.chain(permutations,
                                                np.NameParser._get_casing_permutations(abbr))
 
@@ -191,8 +191,8 @@ class TestNameparser(unittest.TestCase):
                           ['lf', 'Lf', 'lF', 'LF'])
 
     def test_get_abbrs_options(self):
-        self.assertEquals([i for i in self.fixture._get_abbrs('test', 2)], ['te', 'tes', 'test', 'ts', 'tst', 'tt'])
-        self.assertEquals([i for i in self.fixture._get_abbrs('test')], ['te', 'tes', 'test', 'ts', 'tst', 'tt', 't'])
+        self.assertEquals([i for i in self.fixture._get_abbreviations('test', 2)], ['te', 'tes', 'test', 'ts', 'tst', 'tt'])
+        self.assertEquals([i for i in self.fixture._get_abbreviations('test')], ['te', 'tes', 'test', 'ts', 'tst', 'tt', 't'])
 
     def test_get_base_options(self):
         self.assertEquals(self.fixture.get_base('gus_clothing_v10_aw.ZPR')['match'], 'gus_clothing')

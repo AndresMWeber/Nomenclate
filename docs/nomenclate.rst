@@ -7,7 +7,6 @@ Subpackages
 .. toctree::
 
     nomenclate.core
-    nomenclate.ui
 
 Submodules
 ----------

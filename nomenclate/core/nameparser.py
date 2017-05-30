@@ -20,7 +20,6 @@ from imp import reload
                All static data stored as class variables now
                Need to implement both get_discipline and get_initials still
 """
-from pprint import pprint
 import re
 import datetime
 import itertools
@@ -57,9 +56,9 @@ class NameParser(object):
     def parse_name(cls, name):
         """ Parses a name into a dictionary of identified subsections with accompanying information to
             correctly identify and replace if necessary
-        Args:
-            name (str): string to be parsed
-        Returns (dict): dictionary with relevant parsed information
+
+        :param name: str, string to be parsed
+        :return: dict, dictionary with relevant parsed information
         """
         parse_dict = dict.fromkeys(cls.PARSABLE, None)
         parse_dict['date'] = cls.get_date(name)
@@ -74,8 +73,10 @@ class NameParser(object):
         """ Checks a string for a possible side string token, this assumes its on its own
             and is not part of or camel cased and combined with a word.  Returns first found side to reduce duplicates.
             We can be safe to assume the abbreviation for the side does not have camel casing within its own word.
-        Args:
-            name (str): string that represents a possible name of an object
+
+        :param name: str, string that represents a possible name of an object
+        :param name: str, string that represents a possible name of an object
+        :return: (None, str), either the found permutation of the side found in name or None
         """
         for side in cls.CONFIG_SIDES:
             """ Tried using a regex, however it would've taken too long to debug
@@ -95,12 +96,14 @@ class NameParser(object):
 
     @classmethod
     def get_discipline(cls, name, ignore='', min_length=3):
-        """
-        Args:
-            name (str): the string based object name
-            ignore (str): specific ignore string for the search to avoid
-            min_length (int): minimum length for possible abbrevations of disciplines.  Lower = more wrong guesses.
-        Returns (dict): match dictionary
+        """ Checks a string for a possible discipline string token, this assumes its on its own
+            and is not part of or camel cased and combined with a word.  Returns first found match to reduce duplicates.
+            We can be safe to assume the abbreviation for the discipline does not have camel casing within its own word.
+
+        :param name: str, the string based object name
+        :param ignore: str, specific ignore string for the search to avoid
+        :param min_length: int, minimum length for possible abbreviations of disciplines. Lower = more wrong guesses.
+        :return: dict, match dictionary
         """
         for discipline in cls.CONFIG_DISCIPLINES:
             re_abbr = '({RECURSE}(?=[0-9]|[A-Z]|{SEPARATORS}))'.format(
@@ -118,9 +121,9 @@ class NameParser(object):
     def get_base(cls, name):
         """ Checks a string for a possible base name of an object (no prefix, no suffix).
             We need to do a full parse to make sure we've ruled out all the possible other parse queries
-        Args:
-            name (str): string that represents a possible name of an object
-        Returns (str): the detected basename
+
+        :param name: str, string that represents a possible name of an object
+        :return: str, the detected basename
         """
         return cls.parse_name(name).get('basename', None)
 
@@ -128,9 +131,9 @@ class NameParser(object):
     def get_base_naive(cls, name, ignore=''):
         """ Checks a string for a possible base name of an object (no prefix, no suffix).
             We need to do a full parse to make sure we've ruled out all the possible other parse queries
-        Args:
-            name (str): string that represents a possible name of an object
-        Returns (str): the detected basename
+
+        :param name: str, string that represents a possible name of an object
+        :return: str, the detected basename
         """
         return cls._get_regex_search(name, cls.REGEX_BASENAME, match_index=0, ignore=ignore)
 
@@ -138,9 +141,9 @@ class NameParser(object):
     def get_version(cls, name):
         """ Checks a string for a possible version of an object (no prefix, no suffix).
             Assumes only up to 4 digit padding
-        Args:
-            name (str): string that represents a possible name of an object
-        Returns (float|int, [str]): gets the version number as a float or int if whole then the string matches or None
+
+        :param name: str, string that represents a possible name of an object
+        :return: (float, int, list(str), None), gets the version number then the string matches
         """
         # Dates can confuse th
         # is stuff, so we'll check for that first and remove it from the string if found
@@ -155,9 +158,9 @@ class NameParser(object):
     def get_version_naive(cls, name, ignore=''):
         """ Checks a string for a possible version of an object (no prefix, no suffix) without filtering date out
             Assumes only up to 4 digit padding
-        Args:
-            name (str): string that represents a possible name of an object
-        Returns (float|int, [str]): gets the version number as a float or int if whole then the string matches or None
+
+        :param name: str, string that represents a possible name of an object
+        :return: (float, int, list(str), None), gets the version number then the string matches
         """
         match = cls._get_regex_search(name, cls.REGEX_VERSION.format(SEP=cls.REGEX_SEPARATORS), ignore=ignore)
 
@@ -182,9 +185,9 @@ class NameParser(object):
     @classmethod
     def get_udim(cls, name):
         """ Checks a string for a possible base name of an object (no prefix, no suffix)
-        Args:
-            name (str): string that represents a possible name of an object
-        Returns (int): the last found match because convention keeps UDIM markers at the end.
+
+        :param name: str, string that represents a possible name of an object
+        :returns: int, the last found match because convention keeps UDIM markers at the end.
         """
         match = cls._get_regex_search(name, cls.REGEX_UDIM, match_index=-1)
         if match:
@@ -195,8 +198,9 @@ class NameParser(object):
     @classmethod
     def get_short(cls, name):
         """ Returns the short name of a Maya asset name or path
-        Args:
-            name (str): string that represents a possible name of an object
+
+        :param name: str, string that represents a possible name of an object
+        :return: str, the short name of the maya node
         """
         return name.split('|')[-1].split('//')[-1]
 
@@ -207,9 +211,9 @@ class NameParser(object):
             Heavily relies on datetime for error checking to see
             if date is actually viable. It follows similar ideas to this post:
             http://stackoverflow.com/questions/9978534/match-dates-using-python-regular-expressions
-            Args:
-                name (str): string that represents a possible name of an object
-            Returns (datetime.datetime): datetime object with current time or None if not found
+
+        :param name: str, string that represents a possible name of an object
+        :return: datetime.datetime, datetime object with current time or None if not found
         """
         time_formats = ['%Y-%m-%d_%H-%M-%S',
                         '%Y-%m-%d-%H-%M-%S',
@@ -247,7 +251,7 @@ class NameParser(object):
                 try:
                     match.update({
                         'datetime': datetime.datetime.strptime(match['match'], time_format.replace('%yy', '%y'))
-                        })
+                    })
                     return match
                 except ValueError:
                     pass
@@ -255,15 +259,15 @@ class NameParser(object):
 
     @classmethod
     def get_string_camel_patterns(cls, name, min_length=0):
-        """
-        Args:
-            name (str): the name we need to get all possible permutations and abbreviations for
-            min_length (int): minimum length we want for abbreviations
-        Return list(list(str)): list casing permutations of list of abbreviations
+        """ Finds all permutations of possible camel casing of the given name
+
+        :param name: str, the name we need to get all possible permutations and abbreviations for
+        :param min_length: int, minimum length we want for abbreviations
+        :return: list(list(str)), list casing permutations of list of abbreviations
         """
         # Have to check for longest first and remove duplicates
         patterns = []
-        abbreviations = list(set(cls._get_abbrs(name, output_length=min_length)))
+        abbreviations = list(set(cls._get_abbreviations(name, output_length=min_length)))
         abbreviations.sort(key=len, reverse=True)
 
         for abbr in abbreviations:
@@ -282,10 +286,10 @@ class NameParser(object):
     @classmethod
     def _reduce_name(cls, name, parse_dict):
         """ Reduces a name against matches found in a parse dictionary
-        Args:
-            name (str): name to be reduced
-            parse_dict (dict): dictionary of matches to reduce against
-        Returns (str): reduced string
+
+        :param name: str, name to be reduced
+        :param parse_dict: dict, dictionary of matches to reduce against
+        :return: str, reduced string
         """
         # Now remove all found entries to make basename regex have an easier time
         removal_indices = []
@@ -322,12 +326,12 @@ class NameParser(object):
     @staticmethod
     def _get_regex_search(input_string, regex, metadata={}, match_index=None, ignore='', flags=0):
         """ Using this so that all results from the functions return similar results
-        Args:
-            input_string (str): input string to be checked
-            regex (str): input regex to be compiled and searched with
-            match_index (int or None): whether to get a specific match, if None returns all matches as list
-            metadata (dict): dictionary of extra metatags needed to identify information
-        Returns list(dict): list of dictionaries if multiple hits or a specific entry or None
+
+        :param input_string: str, input string to be checked
+        :param regex: str, input regex to be compiled and searched with
+        :param match_index: (int, None), whether to get a specific match, if None returns all matches as list
+        :param metadata: dict, dictionary of extra meta tags needed to identify information
+        :return: list(dict), list of dictionaries if multiple hits or a specific entry or None
         """
         generator = re.compile(regex, flags=flags).finditer(input_string)
         matches = []
@@ -362,12 +366,12 @@ class NameParser(object):
     @classmethod
     def _generic_search(cls, name, search_string, metadata={}, ignore=''):
         """ Searches for a specific string given three types of regex search types.  Also auto-checks for camel casing.
-        Args:
-            name (str): name of object in question
-            search_string (str): string to find and insert into the search regexes
-            metadata (dict): metadata to add to the result if we find a match
-            ignore (str): ignore specific string for the search
-        Returns Optional(dict): dictionary of search results
+
+        :param name: str, name of object in question
+        :param search_string: str, string to find and insert into the search regexes
+        :param metadata: dict, metadata to add to the result if we find a match
+        :param ignore: str, ignore specific string for the search
+        :return: dict, dictionary of search results
         """
         patterns = [cls.REGEX_ABBR_SEOS,
                     cls.REGEX_ABBR_ISLAND,
@@ -388,12 +392,12 @@ class NameParser(object):
         return None
 
     @staticmethod
-    def _get_abbrs(input_string, output_length=0):
+    def _get_abbreviations(input_string, output_length=0):
         """ Generates abbreviations for input_string
-        Args:
-            input_string (str): name of object
-            output_length (num): optional specific length of abbreviations, default is off
-        Returns: [str]: list of all combinations that include the first letter (possible abbreviations)
+
+        :param input_string: str, name of object
+        :param output_length: int, optional specific length of abbreviations, default is off
+        :return: list(str), list of all combinations that include the first letter (possible abbreviations)
         """
         for i, j in itertools.combinations(range(len(input_string[1:]) + 1), 2):
             abbr = input_string[0] + input_string[1:][i:j]
@@ -410,12 +414,13 @@ class NameParser(object):
         """ Checks to see if an input string is valid for use in camel casing
             This assumes that all lowercase strings are not valid camel case situations and no camel string
             can just be a capitalized word.  Took ideas from here:
-                http://stackoverflow.com/questions/29916065/how-to-do-camelcase-split-in-python
-        Args:
-            input_string (str): input word
-            strcmp (str): force detection on a substring just in case its undetectable
-                          (e.g. part of a section of text that's all lowercase)
-        Returns (bool): whether it is valid or not
+            http://stackoverflow.com/questions/29916065/how-to-do-camelcase-split-in-python
+
+        :param input_string: str, input word
+        :param strcmp: str, force detection on a substring just in case its undetectable
+                            (e.g. part of a section of text that's all lowercase)
+        :param ignore: str, what kind of string to ignore in the regex search
+        :return: bool, whether it is valid or not
         """
         # clear any non chars from the string
         if not input_string:
@@ -440,14 +445,19 @@ class NameParser(object):
 
     @staticmethod
     def _split_camel(name):
+        """ Splits up a camel case name into its constituent components.
+
+        :param name: str, name to split
+        :return: list(str), list of components of the camel case string
+        """
         return re.sub('(?!^)([A-Z][a-z]+)', r' \1', name).split()
 
     @classmethod
     def _get_casing_permutations(cls, input_string):
         """ Takes a string and gives all possible permutations of casing for comparative purposes
-        Args:
-            input_string (str): name of object
-        Yields: (str): iterator of all possible permutations of casing for the input_string
+
+        :param input_string: str, name of object
+        :return: Generator(str), iterator of all possible permutations of casing for the input_string
         """
         if not input_string:
             yield ""
@@ -458,14 +468,13 @@ class NameParser(object):
                 yield first.upper() + sub_casing
 
     @staticmethod
-    def _string_remove_slice(input_str, start, end, ref_string=''):
-        """
-        Args:
-            input_str (str): input string
-            start (int): end search index
-            end (int): start search index
-            ref_string (str): reference string for correct index references
-        :return:
+    def _string_remove_slice(input_str, start, end):
+        """ Removes portions of a string
+
+        :param input_str: str, input string
+        :param start: int, end search index
+        :param end: int, start search index
+        :return: str, the cut string
         """
         if 0 <= start < end <= len(input_str):
             return input_str[:start] + input_str[end:]
@@ -475,9 +484,9 @@ class NameParser(object):
     def _build_abbreviation_regex(input_string):
         """ builds a recursive regex based on an input string to find possible abbreviations more simply.
             e.g. = punct(u(a(t(i(on?)?)?)?)?)?
-        Args:
-            input_string (str): input string
-        Returns (str): output regex
+
+        :param input_string: str, input string
+        :return: str, output regex
         """
         result = '([%s%s]' % (input_string[0].upper(), input_string[0].lower())
         for char in input_string[1:]:

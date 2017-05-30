@@ -34,9 +34,8 @@ class ConfigParse(object):
 
     def __init__(self, config_filepath='env.yml'):
         """
-        Args:
-            section (str): section to query
-            subsection (str):subsection to query
+
+        :param config_filepath: str, the path to a user specified config, or the nomenclate default
         """
         self.config_filepath = self.get_default_config_file(config_filepath)
         self.config_file_contents = None
@@ -44,6 +43,12 @@ class ConfigParse(object):
         self.rebuild_config_cache(self.config_filepath)
 
     def get_default_config_file(self, config_filepath):
+        """ Searches both the working directory and nomenclate/core for the specified config file.
+            If it is a valid file, skips check and uses the file
+
+        :param config_filepath: str, file path or relative file name within package
+        :return: str, resolved full file path to the config file
+        """
         try:
             self.validate_config_file(config_filepath)
             return config_filepath
@@ -59,9 +64,9 @@ class ConfigParse(object):
 
     def rebuild_config_cache(self, config_filepath):
         """ Loads from file and caches all data from the config file in the form of an OrderedDict to self.data
-        Args:
-            config_filepath (str): the full filepath to the config file
-        Returns (bool): success status
+
+        :param config_filepath: str, the full filepath to the config file
+        :return: bool, success status
         """
         self.validate_config_file(config_filepath)
         config_data = None
@@ -78,20 +83,20 @@ class ConfigParse(object):
 
     def get(self, query_path, return_type=list, preceding_depth=None):
         """ Traverses the list of query paths to find the data requested
-        Args:
-            query_path list(str)]: list of query path branches
-            return_type (Union[list, str, dict, OrderedDict]): desired return type for the data
-            preceding_depth (int): always returns a dictionary encapsulating the data
-                                    that traces back up the path for x depth
-                                    -1 for the full traversal back up the path
-                                    None is default for no traversal
-        Raises:
-            exceptions.ResourceNotFoundError: if the query path is invalid
+
+        :param query_path: list(str), list of query path branches
+        :param return_type: (list, str, dict, OrderedDict), desired return type for the data
+        :param preceding_depth: int, returns a dictionary containing the data that traces back up the path for x depth
+                                     -1: for the full traversal back up the path
+                                     None: is default for no traversal
+        :return: (list, str, dict, OrderedDict), the type specified from return_type
+        :raises: exceptions.ResourceNotFoundError: if the query path is invalid
         """
         function_type_lookup = {str: self._get_path_entry_from_string,
                                 list: self._get_path_entry_from_list}
 
-        self.LOG.debug('config.get() - Trying to find %s in config and return_type %s' % (repr(query_path), return_type))
+        self.LOG.debug(
+            'config.get() - Trying to find %s in config and return_type %s' % (repr(query_path), return_type))
 
         if not query_path:
             return self._default_config(return_type)
@@ -111,6 +116,14 @@ class ConfigParse(object):
             return return_type()
 
     def _get_path_entry_from_string(self, query_string, first_found=True, full_path=False):
+        """ Parses a string to form a list of strings that represents a possible config entry header
+
+        :param query_string: str, query string we are looking for
+        :param first_found: bool, return first found entry or entire list
+        :param full_path: bool, whether to return each entry with their corresponding config entry path
+        :return: (Generator((list, str, dict, OrderedDict)), config entries that match the query string
+        :raises: exceptions.ResourceNotFoundError
+        """
         iter_matches = gen_dict_key_matches(query_string, self.config_file_contents, full_path=full_path)
         try:
             return next(iter_matches) if first_found else iter_matches
@@ -119,6 +132,12 @@ class ConfigParse(object):
                                                    (query_string, self.config_file_contents))
 
     def _get_path_entry_from_list(self, query_path):
+        """ Returns the config entry at query path
+
+        :param query_path: list(str), config header path to follow for entry
+        :return: (list, str, dict, OrderedDict), config entry requested
+        :raises: exceptions.ResourceNotFoundError
+        """
         cur_data = self.config_file_contents
         try:
             self.LOG.debug('starting path search from list...' % query_path)
@@ -132,6 +151,11 @@ class ConfigParse(object):
                                                    query_path)
 
     def _default_config(self, return_type):
+        """ Generates a default instance of whatever the type requested was (in case of miss)
+
+        :param return_type: type, type of object requested
+        :return: object, instance of return_type
+        """
         self.LOG.debug('Returning default for type %s -> %s' % (return_type, repr(return_type())))
         if return_type == list:
             return [k for k in self.config_file_contents]
@@ -139,6 +163,12 @@ class ConfigParse(object):
 
     @classmethod
     def validate_config_file(cls, config_filepath):
+        """ Validates the filepath to the config.  Detects whether it is a true YAML file + existance
+
+        :param config_filepath: str, file path to the config file to query
+        :return: None
+        :raises: IOError
+        """
         if not os.path.isfile(config_filepath) and os.path.isabs(config_filepath):
             raise IOError('File path %s is not a valid yml, ini or cfg file or does not exist' % config_filepath)
 
@@ -275,14 +305,14 @@ class IntToListEntryFormatter(BaseFormatter):
 
 class ConfigEntryFormatter(object):
     def format_query_result(self, query_result, query_path, return_type=list, preceding_depth=None):
-        """
-        Args:
-            query_result (dict|str|list): yaml query result
-            query_path [str]: list of strings representing query path
-            return_type (rtype): return type of object user desires
-            preceding_depth (int): the depth to which we want to encapsulate back up config tree
+        """ Formats the query result based on the return type requested.
+
+        :param query_result: (dict or str or list), yaml query result
+        :param query_path: (str, list(str)), representing query path
+        :param return_type: type, return type of object user desires
+        :param preceding_depth: int, the depth to which we want to encapsulate back up config tree
                                     -1 : defaults to entire tree
-        Returns (dict|OrderedDict|str|list): specified return type
+        :return: (dict, OrderedDict, str, list), specified return type
         """
         if type(query_result) != return_type:
             converted_result = self.format_with_handler(query_result, return_type)
@@ -292,7 +322,24 @@ class ConfigEntryFormatter(object):
         converted_result = self.add_preceding_dict(converted_result, query_path, preceding_depth)
         return converted_result
 
-    def get_handler(self, query_result_type, return_type):
+    def format_with_handler(self, query_result, return_type):
+        """ Uses the callable handler to format the query result to the desired return type
+
+        :param query_result: the result value of our query
+        :param return_type: desired return type
+        :return: type, the query value as the return type requested
+        """
+        handler = self.get_handler(type(query_result), return_type)
+        return handler.format_result(query_result)
+
+    @staticmethod
+    def get_handler(query_result_type, return_type):
+        """ Find the appropriate return type handler to convert the query result to the desired return type
+
+        :param query_result_type: type, desired return type
+        :param return_type: type, actual return type
+        :return: callable, function that will handle the conversion
+        """
         try:
             return FormatterRegistry.get_by_take_and_return_type(query_result_type, return_type)
         except AttributeError:
@@ -303,11 +350,15 @@ class ConfigEntryFormatter(object):
                   (query_result_type, return_type)
             raise IndexError(msg)
 
-    def format_with_handler(self, query_result, return_type):
-        handler = self.get_handler(type(query_result), return_type)
-        return handler.format_result(query_result)
+    @staticmethod
+    def add_preceding_dict(config_entry, query_path, preceding_depth):
+        """ Adds the preceeding config keys to the config_entry to simulate the original full path to the config entry
 
-    def add_preceding_dict(self, config_entry, query_path, preceding_depth):
+        :param config_entry: object, the entry that was requested and returned from the config
+        :param query_path: (str, list(str)), the original path to the config_entry
+        :param preceding_depth: int, the depth to which we are recreating the preceding config keys
+        :return: dict, simulated config to n * preceding_depth
+        """
         if preceding_depth is None:
             return config_entry
 

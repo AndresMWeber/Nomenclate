@@ -148,12 +148,13 @@ class Logger(object):
             self._log.addHandler(nuke_hdlr)
 
     def __getattr__(self, attr):
-        '''
-        expose builtin logger attributes.
-        this won't be needed if I could inherit the logger directly.
-        But the logging.getLoggerClass() don't seem to work without jumping
-        through to many hoops to make it worth it.
-        '''
+        """ Expose builtin logger attributes.
+            this won't be needed if I could inherit the logger directly.
+            But the logging.getLoggerClass() don't seem to work without jumping
+            through to many hoops to make it worth it.
+
+        :param attr: attribute to get
+        """
         if hasattr(self._log, attr):
             return getattr(self._log, attr)
         else:

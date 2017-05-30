@@ -1,13 +1,8 @@
-Welcome to Nomenclate's documentation!
-======================================
-
-.. include: ../README
+.. include:: ../README.rst
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
-
-
 
 Indices and tables
 ==================

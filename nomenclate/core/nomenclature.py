@@ -238,8 +238,10 @@ class FormatString(object):
         """ Dissects the format string and gets the order of the tokens as it finds them l->r
             Splits on camel case or periods/underscores
             Modified version from this:
-                http://stackoverflow.com/questions/2277352/python-split-a-string-at-uppercase-letters
-        Returns [string]: list of the matching tokens
+            http://stackoverflow.com/questions/2277352/python-split-a-string-at-uppercase-letters
+
+        :param format_target: str, format string we want to swap to
+        :return: list(str), list of the matching tokens
         """
         self.LOG.debug('Getting format order from target %s' % repr(format_target))
         try:
@@ -402,11 +404,12 @@ class Nomenclate(object):
     def initialize_format_options(self, format_target=''):
         """ First attempts to use format_target as a config path or gets the default format
             if it's invalid or is empty.
-        Args:
-            format_target Union[str, list]: can be either a query path to a format
-                                            or in format of a naming string the sections should be spaced around
-                                              e.g. - this_is_a_naming_string
-        Returns None: raises IOError if failure
+
+        :param format_target: (str, list(str)), can be either a query path to a format
+                                                or in format of a naming string the sections should be spaced around
+                                                e.g. - this_is_a_naming_string
+        :return: None
+        :raises: IOError
         """
         return_type = str
         self.LOG.info('initialize_format_options with format target %r' % format_target)
@@ -446,10 +449,10 @@ class Nomenclate(object):
 
     def get_chain(self, end, start=None, **kwargs):
         """ Returns a list of names based on index values
-        Args:
-            end (int): integer for end of sequence
-            start (int): optional definition of start position
-        Returns (list): generated object names
+
+        :param end: int, integer for end of sequence
+        :param start: (int, optional definition of start position
+        :return: list(str), generated object names
         """
         # TODO: rework this entire function, very dirty function.
         """

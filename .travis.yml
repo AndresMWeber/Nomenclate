@@ -8,6 +8,12 @@ python:
   - "3.5"
 
 before_install:
+  # For PyQt5
+  - sudo apt-add-repository ppa:beineri/opt-qt551 -y
+  - sudo apt-get update
+  - sudo apt-get install qt-latest
+  - source /opt/qt55/bin/qt55-env.sh
+  # For PyQt4
   - sudo mkdir -p /downloads
   - sudo chmod a+rw /downloads
   - curl -L http://sourceforge.net/projects/pyqt/files/sip/sip-4.16.5/sip-4.16.5.tar.gz -o /downloads/sip.tar.gz
@@ -20,13 +26,13 @@ branches:
   except:
     - "/^dev-.+$/"
 
-# Install PyQt4 from: https://stackoverflow.com/questions/35513019/install-pyqt4-with-python3-on-travis-ci
 install:
+  ## Install PyQt4 from: https://stackoverflow.com/questions/35513019/install-pyqt4-with-python3-on-travis-ci
   - export DISPLAY=:99.0
   - sh -e /etc/init.d/xvfb start
   - sudo apt-get install -y libqt4-dev
   - sudo apt-get install -y mesa-common-dev libgl1-mesa-dev libglu1-mesa-dev
-#    - sudo apt-get install -y python3-sip python3-sip-dev python3-pyqt4 cmake
+  #- sudo apt-get install -y python3-sip python3-sip-dev python3-pyqt4 cmake
   # Qt4
   - pushd /builds
   # SIP
@@ -43,9 +49,19 @@ install:
   - make
   - sudo make install
   - popd
+  # Install PyQt5 from: https://stackoverflow.com/questions/35019662/how-can-i-install-python3-and-pyqt5-on-travis
+  - sudo mkdir -p /builds && sudo chmod a+rw /builds
+  - sudo mkdir -p /downloads && sudo chmod a+rw /downloads
+  - curl -L -o /downloads/sip.tar.gz http://sourceforge.net/projects/pyqt/files/sip/sip-4.17/sip-4.17.tar.gz
+  - curl -L -o /downloads/pyqt.tar.gz http://skylink.dl.sourceforge.net/project/pyqt/PyQt5/PyQt-5.5.1/PyQt-gpl-5.5.1.tar.gz
+  - tar xzf /downloads/sip.tar.gz -C /builds --keep-newer-files
+  - tar xzf /downloads/pyqt.tar.gz -C /builds --keep-newer-files
+  - cd /builds/sip-4.17 && python configure.py && sudo make && sudo make install
+  - cd /builds/PyQt-gpl-5.5.1 && python configure.py --confirm-license && sudo make && sudo make install
   # Builds Complete
+  - cd Andresmweber/Nomenclate
   - pip install tox-travis
-  - pip install .[test]
+  - pip install .[tests]
 
 script:
   - tox

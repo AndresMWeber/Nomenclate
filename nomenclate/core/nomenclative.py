@@ -229,9 +229,9 @@ class InputRenderer(type):
     @classmethod
     def cleanup_formatted_string(cls, formatted_string):
         """ Removes unused tokens/removes surrounding and double underscores
-        Args:
-            formatted_string (string): string that has had tokens replaced
-        Returns (string): cleaned up name of object
+
+        :param formatted_string: str, string that has had tokens replaced
+        :return: str, cleaned up name of object
         """
         # TODO: chunk this out to sub-processes for easier error checking, could be own class
         # Remove whitespace
@@ -249,9 +249,9 @@ class InputRenderer(type):
     @staticmethod
     def _get_alphanumeric_index(query_string):
         """ Given an input string of either int or char, returns what index in the alphabet and case it is
-        Args:
-            query_string (str): query string
-        Returns [int, str]: list of the index and type
+
+        :param query_string: str, query string
+        :return: (int, str), list of the index and type
         """
         #TODO: could probably rework this. it works, but it's ugly as hell.
         try:
