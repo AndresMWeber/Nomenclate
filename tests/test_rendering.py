@@ -3,7 +3,7 @@ from __future__ import print_function
 from future.utils import iteritems
 import unittest
 import re
-import nomenclate.core.nomenclative as nm
+import nomenclate.core.rendering as nm
 import nomenclate.core.exceptions as ex
 import nomenclate.core.nomenclature as nc
 

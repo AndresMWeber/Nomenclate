@@ -94,7 +94,7 @@ class TokenMatch(object):
 
 
 class Nomenclative(object):
-    LOG = getLogger(__name__, level=CRITICAL)
+    LOG = getLogger(__name__, level=DEBUG)
 
     def __init__(self, input_str):
         self.str = input_str
@@ -152,7 +152,7 @@ class InputRenderer(type):
     REGEX_BRACKET_TOKEN = r'(\{\w+\})'
     REGEX_TOKEN_SEARCH = r'(?P<token>((?<![a-z]){TOKEN}(?![0-9]))|((?<=[a-z]){TOKEN_CAPITALIZED}(?![0-9])))'
 
-    LOG = getLogger(__name__, level=CRITICAL)
+    LOG = getLogger(__name__, level=DEBUG)
 
     def __new__(mcs, name, bases, dct):
         cls = type.__new__(mcs, name, bases, dct)
@@ -270,7 +270,6 @@ class InputRenderer(type):
 @add_metaclass(InputRenderer)
 class RenderBase(object):
     LOG = getLogger(__name__, level=CRITICAL)
-    #metaclass__ = InputRenderer
     token = None
 
     @classmethod
@@ -335,7 +334,6 @@ class RenderDate(RenderBase):
 
 
 class RenderVar(RenderBase):
-    __metaclass__ = InputRenderer
     token = 'var'
 
     @classmethod
@@ -373,7 +371,6 @@ class RenderVar(RenderBase):
 
 
 class RenderVersion(RenderBase):
-    __metaclass__ = InputRenderer
     token = 'version'
 
     @classmethod
@@ -399,7 +396,6 @@ class RenderType(RenderBase):
 
 
 class RenderSide(RenderBase):
-    __metaclass__ = InputRenderer
     token = 'side'
 
     @classmethod
@@ -414,7 +410,6 @@ class RenderSide(RenderBase):
 
 
 class RenderLocation(RenderBase):
-    __metaclass__ = InputRenderer
     token = 'location'
 
     @classmethod
@@ -429,7 +424,6 @@ class RenderLocation(RenderBase):
 
 
 class RenderDiscipline(RenderBase):
-    __metaclass__ = InputRenderer
     token = 'discipline'
 
     @classmethod

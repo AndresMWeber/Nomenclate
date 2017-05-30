@@ -35,8 +35,12 @@ class TestCreation(TestAcceptanceWorkflowBase):
 
     def test_initialize_with_dict_incomplete_and_swap_format_from_path(self):
         n = nom.Nomenclate({'name': 'test', 'type': 'locator', 'var': 'A', 'side': 'left'})
+        print(n.state)
+        print(n.format)
         self.assertEquals(n.get(), 'l_testA_LOC')
         n.format = ['naming_formats', 'node', 'format_archive']
+        print(n.state)
+        print(n.format)
         self.assertEquals(n.get(), 'l_test_LOC')
         self.fixtures.append(n)
 
@@ -58,14 +62,17 @@ class TestCreation(TestAcceptanceWorkflowBase):
 
     def test_initialize_with_attributes_complete(self):
         n = nom.Nomenclate()
+        print('setting attributes')
         n.name = 'test'
         n.decorator = 'J'
         n.childtype = 'joint'
         n.purpose = 'offset'
+        print('midway through')
         n.var = 'A'
         n.side = 'left'
         n.type = 'locator'
         n.location = 'rear'
+        print(n.state)
         self.assertEquals(n.get(), 'l_rr_testJA_joint_offset_LOC')
         self.fixtures.append(n)
 
@@ -84,7 +91,7 @@ class TestCreation(TestAcceptanceWorkflowBase):
 
     def test_initialize_from_nomenclate_object_and_kwargs(self):
         n_initial = nom.Nomenclate({'name': 'test', 'type': 'locator', 'var': 'A', 'side': 'left', })
-        n_secondary = nom.Nomenclate(n_initial, {'name': 'blah', 'location': 'rear'})
+        n_secondary = nom.Nomenclate(n_initial, **{'name': 'blah', 'location': 'rear'})
         self.assertEquals(n_secondary.get(), 'l_rr_blahA_LOC')
         self.fixtures.extend([n_secondary, n_initial])
 

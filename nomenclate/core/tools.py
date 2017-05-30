@@ -8,7 +8,24 @@ from nomenclate.core.nlog import (
     CRITICAL
 )
 
-LOG = getLogger(__name__, level=CRITICAL)
+LOG = getLogger(__name__, level=INFO)
+
+
+class NomenclateNotifier(object):
+    def __init__(self, observer):
+        self.observers = []
+        self.register_observer(observer)
+
+    def register_observer(self, observer_function):
+        LOG.info('Registering observer function %s' % observer_function)
+        self.observers.append(observer_function)
+
+    def notify_observer(self, *args, **kwargs):
+        for observer_function in self.observers:
+            LOG.info('Notifying %s with args %s and kwargs %s' % (observer_function.__name__,
+                                                                  args,
+                                                                  kwargs))
+            observer_function(*args, **kwargs)
 
 
 def combine_dicts(*args, **kwargs):
@@ -19,7 +36,7 @@ def combine_dicts(*args, **kwargs):
     :return: dict, compiled dictionary
     """
     dicts = [arg for arg in args if isinstance(arg, dict)]
-    LOG.info('dicts are %s' % pformat(dicts))
+    LOG.debug('dicts are %s' % pformat(dicts))
     dicts.append(kwargs)
     super_dict = collections.defaultdict(dict)
 
@@ -27,7 +44,7 @@ def combine_dicts(*args, **kwargs):
         for k, v in iteritems(d):
             if k:
                 super_dict[k] = v
-    LOG.info('super dict is %s' % pformat(dict(super_dict)))
+    LOG.debug('super dict is %s' % pformat(dict(super_dict)))
     return dict(super_dict)
 
 
@@ -69,7 +86,7 @@ def gen_dict_key_matches(key, dictionary, _path=None, full_path=False):
     """
     if _path is None:
         _path = []
-    LOG.info('\nThe main input to the function is:\n %s\n' % pformat(dict(dictionary)))
+    LOG.debug('\nThe main input to the function is:\n %s\n' % pformat(dict(dictionary)))
     for k, v in iteritems(dictionary):
         _path.append(k)
         if k == key:

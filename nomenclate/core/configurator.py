@@ -81,38 +81,43 @@ class ConfigParse(object):
         self.config_file_contents = OrderedDict(sorted(items, key=lambda x: x[0], reverse=True))
         self.config_filepath = config_filepath
 
-    def get(self, query_path, return_type=list, preceding_depth=None):
+    def get(self, query_path=None, return_type=list, preceding_depth=None, throw_null_return_error=False):
         """ Traverses the list of query paths to find the data requested
 
-        :param query_path: list(str), list of query path branches
+        :param query_path: (list(str), str), list of query path branches or query string
+                                             Default behavior: returns list(str) of possible config headers
         :param return_type: (list, str, dict, OrderedDict), desired return type for the data
         :param preceding_depth: int, returns a dictionary containing the data that traces back up the path for x depth
                                      -1: for the full traversal back up the path
                                      None: is default for no traversal
+        :param throw_null_return_error: bool, whether or not to throw an error if we get an empty result but no error
         :return: (list, str, dict, OrderedDict), the type specified from return_type
         :raises: exceptions.ResourceNotFoundError: if the query path is invalid
         """
         function_type_lookup = {str: self._get_path_entry_from_string,
                                 list: self._get_path_entry_from_list}
 
-        self.LOG.debug(
+        self.LOG.info(
             'config.get() - Trying to find %s in config and return_type %s' % (repr(query_path), return_type))
 
-        if not query_path:
+        if query_path is None:
             return self._default_config(return_type)
 
         try:
             config_entry = function_type_lookup[type(query_path)](query_path)
-            self.LOG.debug('Retrieved config entry:\n%s' % pformat(config_entry, depth=1))
+            self.LOG.info('Retrieved config entry:\n%s' % pformat(config_entry, depth=1))
             query_result = self.config_entry_handler.format_query_result(config_entry,
                                                                          query_path,
                                                                          return_type=return_type,
                                                                          preceding_depth=preceding_depth)
-            self.LOG.debug('Converted config entry:\n%s' % pformat(query_result, depth=1))
+            self.LOG.info('Converted config entry:\n%s' % pformat(query_result, depth=1))
+
+            #if not query_result and throw_null_return_error:
+            #    raise exceptions.ResourceNotFoundError
             return query_result
         except IndexError:
-            self.LOG.debug('Not sure why but IndexError was found...defaulting to return: %s = %r' %
-                           (return_type, return_type()))
+            self.LOG.info('Not sure why but IndexError was found...defaulting to return: %s = %r' %
+                          (return_type, return_type()))
             return return_type()
 
     def _get_path_entry_from_string(self, query_string, first_found=True, full_path=False):

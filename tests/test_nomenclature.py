@@ -1,47 +1,36 @@
 # Ensure Python 2/3 compatibility: http://python-future.org/compatible_idioms.html
 from __future__ import print_function
-from future.utils import iteritems
 import unittest
-import re
-from pprint import pprint
 import nomenclate.core.nomenclature as nm
+import nomenclate.core.tokens as tokens
+import nomenclate.core.formatter as formatter
 import nomenclate.core.configurator as config
 import nomenclate.core.exceptions as exceptions
-
-
-class TestBase(unittest.TestCase):
-    def setUp(self):
-        self.fixtures = []
-        print('running testBase setup!')
-
-    def tearDown(self):
-        for fixture in self.fixtures:
-            del fixture
-
-    @staticmethod
-    def checkEqual(L1, L2):
-        return len(L1) == len(L2) and sorted(L1) == sorted(L2)
+from basetest import TestBase
 
 
 class TestTokenAttrBase(TestBase):
     def setUp(self):
         super(TestTokenAttrBase, self).setUp()
-        self.token_attr = nm.TokenAttr('test_label', 'test_token')
+        self.token_attr = tokens.TokenAttr('test_label', 'test_token')
         self.fixtures.append(self.token_attr)
 
 
 class TestTokenAttrInstantiate(TestTokenAttrBase):
     def test_empty_instantiate(self):
-        self.assertEquals(nm.TokenAttr().label, '')
+        self.assertEquals(tokens.TokenAttr().label, '')
 
     def test_valid_instantiate(self):
-        self.fixtures.append(nm.TokenAttr('test', 'test'))
+        self.fixtures.append(tokens.TokenAttr('test', 'test'))
 
-    def test_invalid_instantiate_label(self):
-        self.assertRaises(exceptions.ValidationError, nm.TokenAttr, 'test', [])
+    def test_invalid_instantiate_token_list(self):
+        self.assertRaises(exceptions.ValidationError, tokens.TokenAttr, 'test', [])
 
-    def test_invalid_instantiate_token(self):
-        self.assertRaises(exceptions.ValidationError, nm.TokenAttr, {}, 'test')
+    def test_invalid_instantiate_token_dict(self):
+        self.assertRaises(exceptions.ValidationError, tokens.TokenAttr, 'test', {})
+
+    def test_valid_instantiate_token(self):
+        self.assertEquals(tokens.TokenAttr({}, 'test').label, "")
 
     def test_state(self):
         self.assertEquals(self.token_attr.label, 'test_label')
@@ -51,9 +40,9 @@ class TestTokenAttrInstantiate(TestTokenAttrBase):
 class TestTokenAttrSet(TestTokenAttrBase):
     def test_set_invalid(self):
         with self.assertRaises(exceptions.ValidationError):
-            nm.TokenAttr().label = [1]
+            tokens.TokenAttr().label = [1]
         with self.assertRaises(exceptions.ValidationError):
-            nm.TokenAttr().label = {1: 1}
+            tokens.TokenAttr().label = {1: 1}
 
 
 class TestTokenAttrGet(TestTokenAttrBase):
@@ -61,7 +50,7 @@ class TestTokenAttrGet(TestTokenAttrBase):
         self.assertEquals(self.token_attr.label, 'test_label')
 
     def test_get_empty(self):
-        self.assertEquals(nm.TokenAttr().label, '')
+        self.assertEquals(tokens.TokenAttr().label, '')
 
 
 class TestNomenclateBase(TestBase):
@@ -180,7 +169,7 @@ class TestNomenclateGet(TestNomenclateBase):
 class TestNomenclateGetChain(TestNomenclateBase):
     def test_get_chain(self):
         self.assertRaises(NotImplementedError, self.nom.get_chain, (0, 5))
-        #self.assertIsNone(self.nom.get_chain(0, 5))
+        # self.assertIsNone(self.nom.get_chain(0, 5))
 
 
 class TestNomenclateUpdateTokenAttributes(TestNomenclateBase):
@@ -217,7 +206,7 @@ class TestNomenclateRepr(TestNomenclateBase):
 class TestFormatStringBase(TestBase):
     def setUp(self):
         super(TestFormatStringBase, self).setUp()
-        self.fs = nm.FormatString()
+        self.fs = formatter.FormatString()
         self.fixtures.append(self.fs)
 
 
