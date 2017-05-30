@@ -25,7 +25,7 @@ from nomenclate.core.tools import (
 class Nomenclate(object):
     """This class deals with renaming of objects in an approved pattern
     """
-    LOG = getLogger(__name__, level=INFO)
+    LOG = getLogger(__name__, level=CRITICAL)
     CONFIG_PATH = ['overall_config']
 
     NAMING_FORMAT_PATH = ['naming_formats']

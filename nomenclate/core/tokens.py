@@ -70,7 +70,7 @@ class TokenAttr(object):
 
 
 class TokenAttrDictHandler(object):
-    LOG = getLogger(__name__, level=INFO)
+    LOG = getLogger(__name__, level=CRITICAL)
 
     def __init__(self, nomenclate_object):
         self.nom = nomenclate_object
