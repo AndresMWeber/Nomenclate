@@ -55,7 +55,6 @@ install:
   #- cd /builds/sip-4.17 && python configure.py && sudo make && sudo make install
   #- cd /builds/PyQt5_gpl-5.8.2 && python configure.py --confirm-license && sudo make && sudo make install
   # Builds Complete
-  - cd Andresmweber/Nomenclate
   - pip install tox-travis
   - pip install .[tests]
 
