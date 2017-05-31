@@ -3,6 +3,7 @@
 
 # Module API
 
+
 class NomenclateException(Exception):
     """Base Tabulator exception.
     """

@@ -1,8 +1,8 @@
-import configurator
-import errors
-import formatter
-import nameparser
-import nomenclature
-import rendering
-import tokens
-import tools
+from . import configurator
+from . import errors
+from . import formatter
+from . import nameparser
+from . import nomenclature
+from . import rendering
+from . import tokens
+from . import tools

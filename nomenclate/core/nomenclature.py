@@ -1,21 +1,19 @@
 #!/usr/bin/env python
-# Ensure Python 2/3 compatibility: http://python-future.org/compatible_idioms.html
-from __future__ import print_function
-from future.utils import iteritems
+from six import iteritems
 
 import nomenclate.settings as settings
-import configurator as config
-import errors
-import tokens
-import formatter
-import rendering
-from tools import (
+from . import configurator as config
+from . import errors
+from . import tokens
+from . import formatter
+from . import rendering
+from .tools import (
     combine_dicts,
     NomenclateNotifier
 )
 
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
+MODULE_LOGGER_LEVEL_OVERRIDE = None
 
 
 class Nomenclate(object):
@@ -31,25 +29,28 @@ class Nomenclate(object):
     OPTIONS_PATH = ['options']
     SIDE_PATH = OPTIONS_PATH + ['side']
 
-    def __init__(self, input_dict={}, format='', config_filepath='env.yml', *args, **kwargs):
+    def __init__(self, input_dict=None, format_string='', config_filepath='env.yml', *args, **kwargs):
         """
 
         :param input_dict: dict, In case the user just passes a dictionary as the first arg in the init, we will merge it.
-        :param format: str, input format string
+        :param format_string: str, input format string
         :param config_filepath: str, filepath, full or relative to a config file
         :param args: dict, any amount of dictionaries desired as input
         :param kwargs: str, kwargs to pass to the nomenclate tokens
         """
+        if input_dict is None:
+            input_dict = dict()
+
         self.notifier = NomenclateNotifier(self.__setattr__)
         self.LOG.info('***CREATING NEW NOMENCLATE OBJECT***')
         self.LOG.info('Nomenclate init passed args %s and kwargs %s...processing' % (args, kwargs))
 
         self.cfg = config.ConfigParse(config_filepath=config_filepath)
-        self.format_string_object = formatter.FormatString(format_string=format)
+        self.format_string_object = formatter.FormatString(format_string=format_string)
 
         self.CONFIG_OPTIONS = dict()
 
-        self.reset_from_config(format_target=format)
+        self.reset_from_config(format_target=format_string)
         self.token_dict = tokens.TokenAttrDictHandler(self)
 
         self.merge_dict(input_dict, *args, **kwargs)

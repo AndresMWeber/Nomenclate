@@ -1,20 +1,17 @@
 #!/usr/bin/env python
-# Ensure Python 2/3 compatibility: http://python-future.org/compatible_idioms.html
-from __future__ import print_function
-from future.utils import iteritems
-from six import add_metaclass
+from six import add_metaclass, iteritems
 import re
 import string
 import datetime
 import dateutil.parser as p
-import errors as exceptions
+from . import errors as exceptions
 import nomenclate.settings as settings
-from nomenclate.core.tools import (
+from .tools import (
     gen_dict_key_matches,
     flatten
 )
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
+MODULE_LOGGER_LEVEL_OVERRIDE = None
 
 
 class TokenMatch(object):

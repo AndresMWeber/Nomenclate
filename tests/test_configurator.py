@@ -1,15 +1,11 @@
-# Ensure Python 2/3 compatibility: http://python-future.org/compatible_idioms.html
-from __future__ import print_function
-from imp import reload
-from future.utils import iteritems
+from six import iteritems
 import six
 import nomenclate.core.errors as exceptions
-import unittest
 import mock
-import collections
 from pyfakefs import fake_filesystem
 import nomenclate.core.configurator as config
 from collections import OrderedDict
+from . import basetest
 
 test_data = ('overall_config:\n'
              '  version_padding: 3\n'
@@ -34,13 +30,13 @@ test_data = ('overall_config:\n'
              '    - center\n')
 
 
-class TestConfigurator(unittest.TestCase):
-
+class TestConfigurator(basetest.TestBase):
     def setUp(self):
+        super(TestConfigurator, self).setUp()
         self.maxDiff = 1000
         self.mock_config = MockConfig()
         self.cfg = self.mock_config.parser
-        self.fixtures =[self.cfg, self.mock_config]
+        self.fixtures = [self.cfg, self.mock_config]
 
         # test values
         self.format_title = self.mock_config.format_title
@@ -50,10 +46,6 @@ class TestConfigurator(unittest.TestCase):
         self.discipline_path = self.mock_config.discipline_path
         self.discipline_subsets = self.mock_config.discipline_subsets
         self.discipline_data = self.mock_config.discipline_data
-
-    def tearDown(self):
-        for fixture in self.fixtures:
-            del fixture
 
     @mock.patch('nomenclate.core.configurator.os.path.isfile')
     def test_valid_file_no_file(self, mock_isfile):
@@ -77,11 +69,12 @@ class TestConfigurator(unittest.TestCase):
 
     def test_get_section_ordered_dict(self):
         self.assertEquals(self.cfg.get(self.discipline_path, return_type=OrderedDict),
-                          OrderedDict(sorted(iteritems(self.discipline_data), key=lambda x:x[0])))
+                          OrderedDict(sorted(iteritems(self.discipline_data), key=lambda x: x[0])))
 
     def test_get_section_ordered_dict_full_path(self):
         self.assertEquals(self.cfg.get(self.discipline_path, return_type=OrderedDict, preceding_depth=-1),
-                          {'options':{'discipline': OrderedDict(sorted(iteritems(self.discipline_data), key=lambda x: x[0]))}})
+                          {'options': {
+                              'discipline': OrderedDict(sorted(iteritems(self.discipline_data), key=lambda x: x[0]))}})
 
     def test_get_section_ordered_dict_partial_path(self):
         self.assertEquals(self.cfg.get(self.discipline_path, return_type=OrderedDict, preceding_depth=0),
@@ -116,21 +109,6 @@ class TestConfigurator(unittest.TestCase):
     def test_list_section_options(self):
         self.assertEquals(self.cfg.get(self.format_title, return_type=list),
                           ['node', 'texturing'])
-
-    @staticmethod
-    def checkEqual(L1, L2):
-        return len(L1) == len(L2) and sorted(L1) == sorted(L2)
-
-    def assertDictEqual(self, d1, d2, msg=None):  # assertEqual uses for dicts
-        for k, v1 in iteritems(d1):
-            self.assertIn(k, d2, msg)
-            v2 = d2[k]
-            if (isinstance(v1, collections.Iterable) and
-                    not isinstance(v1, six.string_types)):
-                self.checkEqual(v1, v2)
-            else:
-                self.assertEqual(v1, v2, msg)
-        return True
 
 
 class MockConfig(object):

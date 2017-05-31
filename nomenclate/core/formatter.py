@@ -1,8 +1,6 @@
 #!/usr/bin/env python
-# Ensure Python 2/3 compatibility: http://python-future.org/compatible_idioms.html
-from __future__ import print_function
 import re
-import errors as exceptions
+from . import errors as exceptions
 import nomenclate.settings as settings
 
 MODULE_LOGGER_LEVEL_OVERRIDE = None

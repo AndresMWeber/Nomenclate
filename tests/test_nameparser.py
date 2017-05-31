@@ -1,22 +1,14 @@
-# Ensure Python 2/3 compatibility: http://python-future.org/compatible_idioms.html
-from __future__ import print_function
-from imp import reload
-
-from pprint import pprint
 import unittest
 import itertools
 import datetime
 import nomenclate.core.nameparser as np
-
-reload(np)
-
-__author__ = "Andres Weber"
-__email__ = "andresmweber@gmail.com"
+from . import basetest
 
 
 @unittest.skip
-class TestNameparser(unittest.TestCase):
+class TestNameparser(basetest.TestBase):
     def setUp(self):
+        super(TestNameparser, self).setUp()
         self.fixture = np.NameParser()
         self.test_filenames = ['VGS15_sh004_lgt_v002.ma',
                                'vhcl_chevyTraverse_2018_interior_rig_v06_jf.ma',
@@ -29,22 +21,25 @@ class TestNameparser(unittest.TestCase):
                                '12-09-16_theStuff_photo_post1s_b02.psd']
 
     def tearDown(self):
+        super(TestNameparser, self).tearDown()
         del self.fixture
 
     def test_parse_options(self):
         self.assertEquals(self.fixture.parse_name(self.test_filenames[0])['basename']['match'], 'VGS15_sh_lgt')
         self.assertEquals(self.fixture.parse_name(self.test_filenames[1])['basename']['match'], 'vhcl_chevyTraverse')
-        self.assertEquals(self.fixture.parse_name(self.test_filenames[2])['basename']['match'], 'nurs_enchant_lilies_hi')
+        self.assertEquals(self.fixture.parse_name(self.test_filenames[2])['basename']['match'],
+                          'nurs_enchant_lilies_hi')
         self.assertEquals(self.fixture.parse_name(self.test_filenames[2])['side']['match'], 'cn')
         self.assertEquals(self.fixture.parse_name(self.test_filenames[3])['basename']['match'], 'HKY')
         self.assertEquals(self.fixture.parse_name(self.test_filenames[4])['basename']['match'], 'Will')
-        self.assertEquals(self.fixture.parse_name(self.test_filenames[5])['basename']['match'], 'cdf_lighting_PROPS_FG_RIM_beauty')
+        self.assertEquals(self.fixture.parse_name(self.test_filenames[5])['basename']['match'],
+                          'cdf_lighting_PROPS_FG_RIM_beauty')
         self.assertEquals(self.fixture.parse_name(self.test_filenames[6])['basename']['match'], 'I_HKY')
         self.assertEquals(self.fixture.parse_name(self.test_filenames[7])['basename']['match'], 'us')
-        self.assertEquals(self.fixture.parse_name(self.test_filenames[8])['basename']['match'], 'theStuff_photo_post1s_b')
+        self.assertEquals(self.fixture.parse_name(self.test_filenames[8])['basename']['match'],
+                          'theStuff_photo_post1s_b')
         self.assertEquals(self.fixture.parse_name(self.test_filenames[8])['version']['version'], 2)
         self.assertEquals(self.fixture.parse_name(self.test_filenames[8])['date']['match'], '12-09-16')
-
 
     def test_short_options(self):
         self.assertEqual(self.fixture.get_short('robotsLight8|robotLight2|robotLight2Shape'), 'robotLight2Shape')
@@ -122,7 +117,7 @@ class TestNameparser(unittest.TestCase):
                         if side_results:
                             side_results = [side_results[val] for val in ['side', 'position_full', 'match']]
 
-                        test_index = test_option.find('%s')-1
+                        test_index = test_option.find('%s') - 1
                         if permutation[0].islower() and test_option[test_index].isalpha() and test_index != -1:
                             self.assertIsNone(side_results)
                         else:
@@ -165,8 +160,8 @@ class TestNameparser(unittest.TestCase):
                 if result:
                     result = (result['datetime'], result['format'])
                 self.assertEqual(result,
-                                 (datetime.datetime.strptime(input_time.strftime(test_format), test_format), test_format))
-
+                                 (datetime.datetime.strptime(input_time.strftime(test_format), test_format),
+                                  test_format))
 
     def test_valid_camel(self):
         for test in [('aAaa', True), ('Aaaa', False), ('AAAaaaaa', True), ('AAAAaaaAAA', True),
@@ -192,8 +187,10 @@ class TestNameparser(unittest.TestCase):
                           ['lf', 'Lf', 'lF', 'LF'])
 
     def test_get_abbrs_options(self):
-        self.assertEquals([i for i in self.fixture._get_abbreviations('test', 2)], ['te', 'tes', 'test', 'ts', 'tst', 'tt'])
-        self.assertEquals([i for i in self.fixture._get_abbreviations('test')], ['te', 'tes', 'test', 'ts', 'tst', 'tt', 't'])
+        self.assertEquals([i for i in self.fixture._get_abbreviations('test', 2)],
+                          ['te', 'tes', 'test', 'ts', 'tst', 'tt'])
+        self.assertEquals([i for i in self.fixture._get_abbreviations('test')],
+                          ['te', 'tes', 'test', 'ts', 'tst', 'tt', 't'])
 
     def test_get_base_options(self):
         self.assertEquals(self.fixture.get_base('gus_clothing_v10_aw.ZPR')['match'], 'gus_clothing')
@@ -203,25 +200,29 @@ class TestNameparser(unittest.TestCase):
         self.assertEquals(self.fixture.get_base('clothing_compiled_maya_v01_aw.mb')['match'], 'clothing_compiled_maya')
         self.assertEquals(self.fixture.get_base('QS_296.ZPR')['match'], 'QS')
         self.assertEquals(self.fixture.get_base('char_luchadorA-model1_qt1.mov')['match'], 'char_luchadorA-model_qt')
-        self.assertEquals(self.fixture.get_base('kayJewelersPenguin_5402411_build_penguin_rigPuppet_penguin_v2.ma')['match'],
-                          'kayJewelersPenguin_5402411_build_penguin_rigPuppet_penguin')
+        self.assertEquals(
+            self.fixture.get_base('kayJewelersPenguin_5402411_build_penguin_rigPuppet_penguin_v2.ma')['match'],
+            'kayJewelersPenguin_5402411_build_penguin_rigPuppet_penguin')
         self.assertEquals(self.fixture.get_base('rig_makeGentooPenguin.mel')['match'], 'rig_makeGentooPenguin')
         self.assertEquals(self.fixture.get_base('r_foreLeg.obj')['match'], 'foreLeg')
         self.assertEquals(self.fixture.get_base('samsung_galaxy_s6_rough.stl')['match'], 'samsung_galaxy_s_rough')
         self.assertEquals(self.fixture.get_base('mansur_gavriel_purse_back.stl')['match'], 'mansur_gavriel_purse_back')
-        self.assertEquals(self.fixture.get_base('LSC_sh01_v8_Nesquick_SFX_MS_WIP_v3_032415-540p_Quicktime.mov')['match'],
-                          'LSC_sh')
+        self.assertEquals(
+            self.fixture.get_base('LSC_sh01_v8_Nesquick_SFX_MS_WIP_v3_032415-540p_Quicktime.mov')['match'],
+            'LSC_sh')
         self.assertEquals(self.fixture.get_base('Nesquik_Light_Sign_Anim_Test-1080p_HD_Quicktime.mov')['match'],
                           'Nesquik_Light_Sign_Anim_Test-1080p_HD_Quicktime')
         self.assertEquals(self.fixture.get_base('12302016_004_Nesquik_Light_Sign_Anim_Test.mov')['match'],
                           'Nesquik_Light_Sign_Anim_Test')
-        self.assertEquals(self.fixture.get_base('nesquikQuicky_5402876_build_char_quicky_model_quicky_lodA_v10.ma')['match'],
-                          'nesquikQuicky_5402876_build_char_quicky_model_quicky_lodA')
+        self.assertEquals(
+            self.fixture.get_base('nesquikQuicky_5402876_build_char_quicky_model_quicky_lodA_v10.ma')['match'],
+            'nesquikQuicky_5402876_build_char_quicky_model_quicky_lodA')
         self.assertEquals(self.fixture.get_base('IMG_20160509_140103743.jpg')['match'], 'IMG')
         self.assertEquals(self.fixture.get_base('hippydrome_2014.fbx')['match'], 'hippydrome')
         self.assertEquals(self.fixture.get_base('AM152_FBX.part03.rar')['match'], 'AM152_FBX')
         self.assertEquals(self.fixture.get_base('envelope_RB_v003_weights_groundhog.ma')['match'], 'envelope_RB')
-        self.assertEquals(self.fixture.get_base('envelope_weights_02_unsmoothedJoints.json')['match'], 'envelope_weights')
+        self.assertEquals(self.fixture.get_base('envelope_weights_02_unsmoothedJoints.json')['match'],
+                          'envelope_weights')
         self.assertEquals(self.fixture.get_base('icons_MDL_v006_aw.ma')['match'], 'icons_MDL')
         self.assertEquals(self.fixture.get_base('moleV01.001.jpg')['match'], 'mole')
 
@@ -269,7 +270,7 @@ class TestNameparser(unittest.TestCase):
         tests = [('gus_clothing_v10_aw.ZPR', None),
                  ('jacket_NORM.1004.tif', 1004),
                  ('jacket_NORM1004.tif', 1004),
-                 ('jacket_NORM1004poop.tif', None), # Deemed a shitty case, not handling it.
+                 ('jacket_NORM1004poop.tif', None),  # Deemed a shitty case, not handling it.
                  ('jacket_substance_EXPORT.abc', None),
                  ('27_12_2015', None),
                  ('QS_296.ZPR', None),

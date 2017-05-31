@@ -1,7 +1,6 @@
 #!/usr/bin/env python
-from __future__ import print_function
-from future.utils import iteritems
-import errors as exceptions
+from six import iteritems
+from . import errors as exceptions
 import nomenclate.settings as settings
 
 MODULE_LEVEL_OVERRIDE = None

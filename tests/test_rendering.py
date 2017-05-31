@@ -1,30 +1,14 @@
-# Ensure Python 2/3 compatibility: http://python-future.org/compatible_idioms.html
-from __future__ import print_function
-from future.utils import iteritems
-import unittest
+from six import iteritems
 import re
 import nomenclate.core.rendering as nm
 import nomenclate.core.errors as ex
 import nomenclate.core.nomenclature as nc
-
-class TestBase(unittest.TestCase):
-    def setUp(self):
-        self.fixtures = []
-        print('running testBase setup!')
-
-    def tearDown(self):
-        for fixture in self.fixtures:
-            del fixture
-
-    @staticmethod
-    def checkEqual(L1, L2):
-        return len(L1) == len(L2) and sorted(L1) == sorted(L2)
+from . import basetest
 
 
-class TestNomenclativeBase(TestBase):
+class TestNomenclativeBase(basetest.TestBase):
     def setUp(self):
         super(TestNomenclativeBase, self).setUp()
-
         self.nomenclative_valid = nm.Nomenclative('side_location_nameDecoratorVar_childtype_purpose_type')
         self.nomenclative_valid_short = nm.Nomenclative('side_name_type')
         self.nomenclative_invalid = nm.Nomenclative('test_labelside')
@@ -94,7 +78,7 @@ class TestNomenclativeAddMatch(TestNomenclativeBase):
                           self.nomenclative_invalid.str)
 
 
-class TokenMatchBase(TestBase):
+class TokenMatchBase(basetest.TestBase):
     def setUp(self):
         super(TokenMatchBase, self).setUp()
         self.regex_custom_group_match = next(re.compile(r'(?P<look>test)').finditer('test'))

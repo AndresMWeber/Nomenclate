@@ -1,4 +1,4 @@
-from nlog import (
+from .nlog import (
     getLogger,
     DEBUG,
     INFO,

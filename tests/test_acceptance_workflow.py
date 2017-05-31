@@ -1,20 +1,8 @@
-# Ensure Python 2/3 compatibility: http://python-future.org/compatible_idioms.html
-from __future__ import print_function
-
 import nomenclate.core.nomenclature as nom
-import unittest
+from . import basetest
 
 
-class TestAcceptanceWorkflowBase(unittest.TestCase):
-    def setUp(self):
-        self.fixtures = []
-
-    def tearDown(self):
-        for fixture in self.fixtures:
-            del fixture
-
-
-class TestCreation(TestAcceptanceWorkflowBase):
+class TestCreation(basetest.TestBase):
     def test_initialize_with_dict_only_one(self):
         n = nom.Nomenclate({'name': 'test'})
         n.new = 'default'
@@ -35,12 +23,8 @@ class TestCreation(TestAcceptanceWorkflowBase):
 
     def test_initialize_with_dict_incomplete_and_swap_format_from_path(self):
         n = nom.Nomenclate({'name': 'test', 'type': 'locator', 'var': 'A', 'side': 'left'})
-        print(n.state)
-        print(n.format)
         self.assertEquals(n.get(), 'l_testA_LOC')
         n.format = ['naming_formats', 'node', 'format_archive']
-        print(n.state)
-        print(n.format)
         self.assertEquals(n.get(), 'l_test_LOC')
         self.fixtures.append(n)
 
@@ -112,11 +96,11 @@ class TestCreation(TestAcceptanceWorkflowBase):
         self.fixtures.extend([n_secondary, n_initial])
 
 
-class TestAcceptanceMaya(TestAcceptanceWorkflowBase):
+class TestAcceptanceMaya(basetest.TestBase):
     pass
 
 
-class TestAcceptanceNamingFiletypes(TestAcceptanceWorkflowBase):
+class TestAcceptanceNamingFiletypes(basetest.TestBase):
     def test_saving_maya_file(self):
         n = nom.Nomenclate(name='SH010', var='A', ext='mb', initials='aw', discipline='animation', version=5)
         n.initialize_format_options('working_file')
@@ -150,7 +134,7 @@ class TestAcceptanceNamingFiletypes(TestAcceptanceWorkflowBase):
         self.fixtures.append(n)
 
 
-class TestAcceptanceParsingExisting(TestAcceptanceWorkflowBase):
+class TestAcceptanceParsingExisting(basetest.TestBase):
     def test_normal_maya_node(self):
         pass
 

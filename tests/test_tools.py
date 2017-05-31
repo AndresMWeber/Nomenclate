@@ -1,8 +1,6 @@
-from __future__ import print_function
-import unittest
-from pprint import pprint
 from collections import OrderedDict
 import nomenclate.core.nomenclature as nm
+from . import basetest
 from nomenclate.core.tools import (
     combine_dicts,
     gen_dict_key_matches,
@@ -10,21 +8,7 @@ from nomenclate.core.tools import (
 )
 
 
-class TestBase(unittest.TestCase):
-    def setUp(self):
-        self.fixtures = []
-        print('running testBase setup!')
-
-    def tearDown(self):
-        for fixture in self.fixtures:
-            del fixture
-
-    @staticmethod
-    def checkEqual(L1, L2):
-        return len(L1) == len(L2) and sorted(L1) == sorted(L2)
-    
-
-class TestCombineDicts(TestBase):
+class TestCombineDicts(basetest.TestBase):
     def test_with_dict_with_nomenclate_object(self):
         self.assertDictEqual(combine_dicts({1: 1, 2: 2, 3: 3}, nm.Nomenclate(name='test', purpose='lots').state),
                              {'decorator': '', 1: 1, 2: 2, 3: 3, 'name': 'test', 'type': '', 'side': '',
@@ -55,7 +39,7 @@ class TestCombineDicts(TestBase):
                              {'parse': 'test', 'plush': 5, 1: 1, 2: 2, 3: 3})
 
 
-class TestGenDictKeyMatches(TestBase):
+class TestGenDictKeyMatches(basetest.TestBase):
     def test_with_nested(self):
         self.checkEqual(list(gen_dict_key_matches('name', {1: 1, 2: 2, 3: 3, 'test': {'name': 'mesh',
                                                                                       'test': {'name': 'bah'}},
@@ -118,7 +102,7 @@ class TestGenDictKeyMatches(TestBase):
             ['node', 'texturing'])
 
 
-class TestGetKeysContaining(TestBase):
+class TestGetKeysContaining(basetest.TestBase):
     def test_simple(self):
         self.assertEquals(get_keys_containing('test', {'test': 1}), 1)
 
@@ -126,15 +110,20 @@ class TestGetKeysContaining(TestBase):
         self.assertEquals(get_keys_containing('mest', {'test': 1}), None)
 
     def test_mock_config_find(self):
-        self.checkEqual(list(get_keys_containing('naming_formats', OrderedDict([('overall_config', {'version_padding': 3}),
-                                                                                ('options', {
-                                                                                    'discipline': {'animation': 'AN ANI ANIM ANIMN', 'lighting': 'LT LGT LGHT LIGHT',
-                                                                                                   'compositing': 'CM CMP COMP COMPG', 'rigging': 'RG RIG RIGG RIGNG',
-                                                                                                   'modeling': 'MD MOD MODL MODEL', 'matchmove': 'MM MMV MMOV MMOVE'},
-                                                                                    'side': ['left', 'right', 'center']}),
-                                                                                ('naming_formats', {
-                                                                                    'node': {'default': 'side_location_nameDecoratorVar_childtype_purpose_type',
-                                                                                             'format_archive': 'side_name_space_purpose_decorator_childtype_type',
-                                                                                             'format_lee': 'type_childtype_space_purpose_name_side'},
-                                                                                    'texturing': {'shader': 'side_name_type'}})]))),
-                        ['node', 'texturing'])
+        self.checkEqual(
+            list(get_keys_containing('naming_formats', OrderedDict([('overall_config', {'version_padding': 3}),
+                                                                    ('options', {
+                                                                        'discipline': {'animation': 'AN ANI ANIM ANIMN',
+                                                                                       'lighting': 'LT LGT LGHT LIGHT',
+                                                                                       'compositing': 'CM CMP COMP COMPG',
+                                                                                       'rigging': 'RG RIG RIGG RIGNG',
+                                                                                       'modeling': 'MD MOD MODL MODEL',
+                                                                                       'matchmove': 'MM MMV MMOV MMOVE'},
+                                                                        'side': ['left', 'right', 'center']}),
+                                                                    ('naming_formats', {
+                                                                        'node': {
+                                                                            'default': 'side_location_nameDecoratorVar_childtype_purpose_type',
+                                                                            'format_archive': 'side_name_space_purpose_decorator_childtype_type',
+                                                                            'format_lee': 'type_childtype_space_purpose_name_side'},
+                                                                        'texturing': {'shader': 'side_name_type'}})]))),
+            ['node', 'texturing'])

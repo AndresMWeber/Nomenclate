@@ -6,6 +6,7 @@ from setuptools import setup, find_packages
 __author__ = 'Andres Weber'
 __author_email__ = 'andresmweber@gmail.com'
 __package__ = 'nomenclate'
+__url__ = 'https://github.com/andresmweber/nomenclate'
 
 main_ns = {}
 with open(convert_path('%s/version.py' % __package__)) as ver_file:
@@ -17,24 +18,13 @@ with codecs.open(join(abspath(dirname(__file__)), 'README.rst'), encoding='utf-8
 description = 'A tool for generating strings based on a preset naming convention.',
 
 tests_requires = [
-    'python-mimeparse',
-    'pbr',
-    'mox3',
-    'virtualenv',
-    'traceback2',
     'coverage',
-    'extras',
-    'funcsigs',
-    'linecache2',
-    'pluggy',
-    'py',
     'fixtures',
     'unittest2',
     'mock',
     'nose',
     'pyfakefs',
     'tox >= 1.9, < 3',
-    'testtools',
     'tox',
     'coveralls'
 ]
@@ -43,7 +33,6 @@ dev_requires = ['twine', 'sphinx', 'docutils', 'docopt']
 
 install_requires = [
     'configparser',
-    'future',
     'python-dateutil',
     'PyYAML',
     'six'
@@ -55,7 +44,7 @@ setup(
     packages=find_packages(),
     package_data={'configYML': ['nomenclate/core/*.yml']},
     include_package_data=True,
-    url='https://github.com/andresmweber/nomenclate',
+    url=__url__,
     license='MIT',
     author=__author__,
     author_email=__author_email__,

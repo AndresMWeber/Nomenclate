@@ -1,34 +1,21 @@
-# Ensure Python 2/3 compatibility: http://python-future.org/compatible_idioms.html
-from __future__ import print_function
-
-from future.utils import iteritems
-
-"""
-.. module:: configurator
-    :platform: Win/Linux/Mac
-    :synopsis: This module parses config files and retrieves data
-    :plans: Support beyond 1 level nesting and customization apart from my current setup
-    :changelog:
-        2.0 - Added YAML support
-"""
-
-import yaml
-import os
+from six import iteritems
 from collections import OrderedDict
 from six import add_metaclass
 from pprint import pformat
-import errors as errors
-from tools import (
+import yaml
+import os
+
+import nomenclate.settings as settings
+from . import errors as errors
+from .tools import (
     gen_dict_key_matches
 )
-from nlog import (
-    getLogger,
-    CRITICAL
-)
+
+MODULE_LOGGER_LEVEL_OVERRIDE = None
 
 
 class ConfigParse(object):
-    LOG = getLogger(__name__, level=CRITICAL)
+    LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
 
     def __init__(self, config_filepath='env.yml'):
         """
@@ -110,7 +97,7 @@ class ConfigParse(object):
                                                                          preceding_depth=preceding_depth)
             self.LOG.info('Converted config entry:\n%s' % pformat(query_result, depth=1))
 
-            #if not query_result and throw_null_return_error:
+            # if not query_result and throw_null_return_error:
             #    raise exceptions.ResourceNotFoundError
             return query_result
         except IndexError:
