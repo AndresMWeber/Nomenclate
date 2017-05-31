@@ -18,6 +18,7 @@ class TokenAttr(object):
         self.validate_entries(token)
         self.raw_string = label if label is not None else ""
         self.raw_token = token
+        self.case = None
 
     @property
     def token(self):
@@ -30,7 +31,14 @@ class TokenAttr(object):
 
     @property
     def label(self):
-        return self.raw_string
+        string = None
+        if self.case == 'upper':
+            string = self.raw_string.upper()
+
+        if self.case == 'lower':
+            string = self.raw_string.lower()
+
+        return string or self.raw_string
 
     @label.setter
     def label(self, label):

@@ -163,13 +163,21 @@ class InputRenderer(type):
         for k, v in iteritems(input_dict):
             cls.LOG.info('Checking for unique token on token %s:%r' % (k, v))
             if v:
-                for func in [func for func in list(cls.RENDER_FUNCTIONS)
-                             if k.replace(func, '').isdigit() or k.replace(func, '') == '']:
+                # TODO: Split this into a separate validation function
+                valid_functions = [func for func in list(cls.RENDER_FUNCTIONS)
+                                   if k.replace(func, '').isdigit() or not k.replace(func, '')] or ['default']
+
+                for func in valid_functions:
                     renderer = cls.RENDER_FUNCTIONS.get(func, None)
                     cls.LOG.info(
-                        'Attempting to find token unique render function for token %s with renderer %s' % (k, renderer))
+                        'Finding token specific render function for token %s with renderer %s' %
+                        (k, renderer))
+
+                    if func == 'default':
+                        renderer.token = k
+
                     if 'render' in dir(renderer):
-                        cls.LOG.info('render_unique_tokens() - token %s renderer %s with token settings %s' %
+                        cls.LOG.info('render_unique_tokens() - Rendering token %r with %r, token settings=%s' %
                                      (k, v, nomenclate_object.get_token_settings(k)))
 
                         rendered_token = renderer.render(v, k, nomenclate_object,
@@ -268,11 +276,37 @@ class InputRenderer(type):
 @add_metaclass(InputRenderer)
 class RenderBase(object):
     LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
-    token = None
+    token = 'default'
 
     @classmethod
-    def render(cls, arg, token, nomenclate_object, **kwargs):
-        raise NotImplementedError
+    def render(cls, value, token, nomenclate_object, **kwargs):
+        """ Default renderer for a token.  It checks the config for a match, if not found it uses the value provided.
+
+        :param value: str, value we are trying to match (or config setting for the token)
+        :param token: str, token we are searching for
+        :param nomenclate_object: nomenclate.core.nomenclate.Nomenclate, instance of nomenclate object to query
+        :param kwargs: any config settings that relate to the token as found from the nomenclate instance
+        :return: str, the resulting syntactically rendered string
+        """
+        nomenclate_object.LOG.info('Attempting to default render %s with value %s and kwargs %s' % (token,
+                                                                                                    value,
+                                                                                                    kwargs))
+        result = cls.get_config_match(value,
+                                      cls.token,
+                                      nomenclate_object.OPTIONS_PATH + [token],
+                                      dict,
+                                      nomenclate_object,
+                                      **kwargs) or value
+
+        return cls.handle_casing(result, kwargs.get('%s_case' % token))
+
+    @staticmethod
+    def handle_casing(value, case):
+        if case == 'upper':
+            value.upper()
+        elif case == 'lower':
+            value.lower()
+        return value
 
     @classmethod
     def get_config_match(cls,
@@ -292,12 +326,12 @@ class RenderBase(object):
             options = list(flatten(options))
 
             criteria = kwargs.get('%s_%s' % (cls.token, config_entry_suffix), None)
-            cls.LOG.debug('%s(%s) options: %s criteria: %s' % (token, query_string, options, criteria))
+            cls.LOG.info('%s(%s) options: %s criteria: %s' % (token, query_string, options, criteria))
 
             for option in options:
-                cls.LOG.debug('Running through option %s' % option)
+                cls.LOG.info('Running through option %s' % option)
                 if len(option) == criteria and criteria:
-                    cls.LOG.debug('Found item matching criteria: %s -> %s' % (criteria, option))
+                    cls.LOG.info('Found item matching criteria: %s -> %s' % (criteria, option))
                     return option
 
             try:
@@ -384,13 +418,13 @@ class RenderType(RenderBase):
     token = 'type'
 
     @classmethod
-    def render(cls, ttype, token, nomenclate_object, **kwargs):
-        return cls.get_config_match(ttype,
+    def render(cls, engine_type, token, nomenclate_object, **kwargs):
+        return cls.get_config_match(engine_type,
                                     cls.token,
                                     nomenclate_object.SUFFIXES_PATH,
                                     dict,
                                     nomenclate_object,
-                                    **kwargs) or ttype
+                                    **kwargs) or engine_type
 
 
 class RenderSide(RenderBase):

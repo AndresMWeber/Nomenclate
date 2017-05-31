@@ -131,18 +131,58 @@ class TestNomenclateInitializeFormatOptions(TestNomenclateBase):
                                         ['type', 'childtype', 'space', 'purpose', 'name', 'side']))
 
         self.nom.initialize_format_options(['naming_formats', 'riggers', 'raffaele_fragapane'])
+        self.assertTrue(self.checkEqual(self.nom.format_order,
+                                        ['name', 'height', 'Side', 'Depth', 'purpose']))
+
+        self.nom.initialize_format_options(self.test_format)
+
+
+class TestNomenclateSwapFormats(TestNomenclateBase):
+    def test_switch_multiple_naming_formats_initialize_format_options(self):
+
+        self.nom.initialize_format_options(['naming_formats', 'riggers', 'lee_wolland'])
+
+        self.nom.LOG.info('New Format order: %s' % self.nom.format_order)
+        self.nom.name = 'test'
+        self.nom.side = 'left'
+        self.nom.side_case = 'upper'
+        self.nom.purpose = 'hierarchy'
+        self.assertEquals(self.nom.get(),
+                          'LOC_hierarchy_test_l')
+
+        self.nom.initialize_format_options(['naming_formats', 'riggers', 'raffaele_fragapane'])
+        self.nom.height = 'top'
+        self.nom.height_case = 'upper'
+        self.nom.depth = 'rear'
+        self.nom.depth_case = 'upper'
+
+        self.assertEquals(self.nom.get(),
+                          'test_TLR_hierarchy')
+        self.nom.LOG.info('%r' % self.nom.get())
+        self.nom.LOG.info('New Format order: %s' % self.nom.format_order)
+
+        self.nom.initialize_format_options(self.test_format)
+
+    def test_switch_multiple_naming_formats_set_format(self):
+
+        self.nom.format = ['naming_formats', 'riggers', 'lee_wolland']
+
+        self.nom.LOG.info('New Format order: %s' % self.nom.format_order)
         self.nom.name = 'test'
         self.nom.height = 'top'
         self.nom.side = 'left'
         self.nom.depth = 'rear'
         self.nom.purpose = 'hierarchy'
+        self.assertEquals(self.nom.get(),
+                          'LOC_hierarchy_test_l')
+
+        self.nom.format = ['naming_formats', 'riggers', 'raffaele_fragapane']
+        self.assertEquals(self.nom.get(),
+                          'test_TLR_hierarchy')
         self.nom.LOG.info('%r' % self.nom.get())
-        self.nom.LOG.info(str(self.nom.format_order))
-        self.assertTrue(self.checkEqual(self.nom.format_order,
-                                        ['name', 'height', 'Side', 'depth', 'purpose']))
+        self.nom.LOG.info('New Format order: %s' % self.nom.format_order)
 
         self.nom.initialize_format_options(self.test_format)
-
 
 class TestNomenclateInitializeOptions(TestNomenclateBase):
     def test_options_stored(self):

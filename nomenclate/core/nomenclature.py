@@ -5,17 +5,17 @@ from future.utils import iteritems
 
 import nomenclate.settings as settings
 import configurator as config
-import errors as exceptions
-import tokens as tokens
-import formatter as formatter
-import rendering as rendering
+import errors
+import tokens
+import formatter
+import rendering
 from tools import (
     combine_dicts,
     NomenclateNotifier
 )
 
 
-MODULE_LOGGER_LEVEL_OVERRIDE = None
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
 
 
 class Nomenclate(object):
@@ -101,7 +101,7 @@ class Nomenclate(object):
             self.LOG.info('Looking in config for format target: %r' % format_target)
             format_target = self.cfg.get(format_target, return_type=str, throw_null_return_error=True)
             self.LOG.info('Found entry: %r' % format_target)
-        except exceptions.ResourceNotFoundError:
+        except errors.ResourceNotFoundError:
             pass
 
         self.LOG.info('Format target not found in config, validating as a format string...')
@@ -122,7 +122,7 @@ class Nomenclate(object):
         input_dict = self.cfg.get(self.CONFIG_PATH, return_type=dict) if input_dict is None else input_dict
         for setting, value in iteritems(input_dict):
             setattr(self, setting, value)
-            self.LOG.info('\tNew config value <%s>.%s=%s' % (self.__class__.__name__, setting, getattr(self, setting)))
+            self.LOG.info('\tNew config value <%s>.%s=%r' % (self.__class__.__name__, setting, getattr(self, setting)))
 
     def initialize_format_options(self, format_target=''):
         """ First attempts to use format_target as a config path or gets the default format
@@ -139,8 +139,8 @@ class Nomenclate(object):
                 self.format = format_target
                 self.LOG.info('\t\tSuccessfully set format target.')
             else:
-                raise exceptions.FormatError
-        except exceptions.FormatError:
+                raise errors.FormatError
+        except errors.FormatError:
             format_target = self.cfg.get(self.DEFAULT_FORMAT_PATH, return_type=str)
             self.LOG.info('\t\tFormat not found, replacing with default format from config path %s: %s' %
                           (self.DEFAULT_FORMAT_PATH, format_target))
@@ -318,7 +318,7 @@ class Nomenclate(object):
                     any([f_order.lower() in k for f_order in self.format_order])):
                 try:
                     self.cfg.get(self.CONFIG_PATH + [k])
-                except exceptions.ResourceNotFoundError:
+                except errors.ResourceNotFoundError:
                     pass
                 finally:
                     configs[k] = v
