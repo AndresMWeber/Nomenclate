@@ -1,13 +1,12 @@
 nomenclate\.core package
 ========================
-Module contents
----------------
 
-.. automodule:: nomenclate.core
-    :members:
-    :inherited-members:
-    :undoc-members:
-    :show-inheritance:
+Subpackages
+-----------
+
+.. toctree::
+
+    nomenclate.core
 
 Submodules
 ----------
@@ -85,3 +84,11 @@ nomenclate\.core\.errors module
     :undoc-members:
     :show-inheritance:
 
+Module contents
+---------------
+
+.. automodule:: nomenclate.core
+    :members:
+    :inherited-members:
+    :undoc-members:
+    :show-inheritance:
