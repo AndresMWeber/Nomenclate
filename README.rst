@@ -244,14 +244,6 @@ Further version/var/date specific token notes:
     otherwise specified in the overall_config section under "<naming_token>_length"
     If there is no abbreviation list afterwards then just write it as a list with -
 
-Class Documentation
-===================
-
-.. toctree::
-   :maxdepth: 4
-
-   modules
-
 
 Version Support
 ===============
