@@ -1,6 +1,5 @@
 import os
 import sys
-from nomenclate import __version__
 # -*- coding: utf-8 -*-
 #
 # Nomenclate documentation build configuration file, created by
@@ -22,6 +21,7 @@ from nomenclate import __version__
 sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('..'))
 
+from nomenclate import __version__
 
 # -- General configuration ------------------------------------------------
 
