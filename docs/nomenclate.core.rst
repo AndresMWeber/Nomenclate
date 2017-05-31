@@ -6,7 +6,14 @@ Subpackages
 
 .. toctree::
 
-    nomenclate.core
+    nomenclate.core.nomenclature
+    nomenclate.core.configurator
+    nomenclate.core.nameparser
+    nomenclate.core.rendering
+    nomenclate.core.formatter
+    nomenclate.core.tokens
+    nomenclate.core.tools
+    nomenclate.core.errors
 
 Submodules
 ----------
