@@ -17,6 +17,13 @@ with codecs.open(join(abspath(dirname(__file__)), 'README.rst'), encoding='utf-8
 
 description = 'A tool for generating strings based on a preset naming convention.',
 
+install_requires = [
+    'configparser',
+    'python-dateutil',
+    'pyyaml',
+    'six'
+]
+
 tests_requires = [
     'coverage',
     'fixtures',
@@ -30,12 +37,6 @@ tests_requires = [
 
 dev_requires = ['twine', 'sphinx', 'docutils', 'docopt']
 
-install_requires = [
-    'configparser',
-    'python-dateutil',
-    'PyYAML',
-    'six'
-]
 
 setup(
     name=__package__,
