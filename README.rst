@@ -20,6 +20,9 @@ Nomenclate: A tool set for automating and generating strings based on arbitrary 
    :target: https://landscape.io/github/AndresMWeber/Nomenclate/master
    :alt: Code Health
 
+.. image:: https://img.shields.io/pypi/pyversions/nomenclate.svg
+   :target: https://pypi.python.org/pypi/nomenclate
+
 .. contents::
 
 .. section-numbering::
@@ -247,7 +250,7 @@ Class Documentation
 .. toctree::
    :maxdepth: 4
 
-   docs/modules
+   modules
 
 
 Version Support

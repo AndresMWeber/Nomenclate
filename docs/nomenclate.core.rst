@@ -1,22 +1,30 @@
 nomenclate\.core package
 ========================
+Module contents
+---------------
 
-Submodules
-----------
-
-nomenclate\.core\.configurator module
--------------------------------------
-
-.. automodule:: nomenclate.core.configurator
+.. automodule:: nomenclate.core
     :members:
     :inherited-members:
     :undoc-members:
     :show-inheritance:
 
-nomenclate\.core\.exceptions module
------------------------------------
+Submodules
+----------
 
-.. automodule:: nomenclate.core.exceptions
+nomenclate\.core\.nomenclature module
+-------------------------------------
+
+.. automodule:: nomenclate.core.nomenclature
+    :members:
+    :inherited-members:
+    :undoc-members:
+    :show-inheritance:
+
+nomenclate\.core\.configurator module
+-------------------------------------
+
+.. automodule:: nomenclate.core.configurator
     :members:
     :inherited-members:
     :undoc-members:
@@ -31,23 +39,33 @@ nomenclate\.core\.nameparser module
     :undoc-members:
     :show-inheritance:
 
-nomenclate\.core\.nomenclative module
--------------------------------------
+nomenclate\.core\.rendering module
+----------------------------------
 
-.. automodule:: nomenclate.core.nomenclative
+.. automodule:: nomenclate.core.rendering
     :members:
     :inherited-members:
     :undoc-members:
     :show-inheritance:
 
-nomenclate\.core\.nomenclature module
--------------------------------------
+nomenclate\.core\.formatter module
+----------------------------------
 
-.. automodule:: nomenclate.core.nomenclature
+.. automodule:: nomenclate.core.formatter
     :members:
     :inherited-members:
     :undoc-members:
     :show-inheritance:
+
+nomenclate\.core\.tokens module
+-------------------------------
+
+.. automodule:: nomenclate.core.tokens
+    :members:
+    :inherited-members:
+    :undoc-members:
+    :show-inheritance:
+
 
 nomenclate\.core\.tools module
 ------------------------------
@@ -58,12 +76,12 @@ nomenclate\.core\.tools module
     :undoc-members:
     :show-inheritance:
 
+nomenclate\.core\.errors module
+-------------------------------
 
-Module contents
----------------
-
-.. automodule:: nomenclate.core
+.. automodule:: nomenclate.core.errors
     :members:
     :inherited-members:
     :undoc-members:
     :show-inheritance:
+
