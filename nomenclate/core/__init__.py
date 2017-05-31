@@ -1,3 +1,6 @@
+""" The core suite of modules for nomenclate's operation
+
+"""
 from . import configurator
 from . import errors
 from . import formatter
