@@ -1,12 +1,13 @@
 .. include:: ../README.rst
 
-Class Documentation
-===================
+API Reference
+=============
 
-.. toctree::
-   :maxdepth: 4
+.. autosummary::
+   :toctree: _autosummary
 
-   modules
+    nomenclate
+    nomenclate.core
 
 .. toctree::
    :maxdepth: 2
