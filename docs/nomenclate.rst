@@ -1,15 +1,12 @@
 nomenclate package
 ==================
 
-Subpackages
------------
+Submodules
+----------
 
 .. toctree::
 
     nomenclate.core
-
-Submodules
-----------
 
 nomenclate\.app module
 ----------------------
