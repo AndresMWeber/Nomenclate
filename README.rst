@@ -189,7 +189,7 @@ To properly enter a naming format string:
     If you want a static string to always be present in a format string just enclose it with parenthesis (for now only alphanumeric characters are accepted), for example a version:
         ``(v)version``
         in format string:
-        ``side_name_(v)version_(static_text_example)
+        ``side_name_(v)version_(static_text_example)``
 
         Example:
             If version is 3 and your version padding config is set to 2
