@@ -62,8 +62,11 @@ install:
 script:
   - tox
 
+# Now run coveralls for main supported python version only once.
 after_success:
-  - coveralls
+    - if [[ $ENV == python=2.7* ]]; then
+          coveralls;
+      fi
 
 deploy:
   provider: pypi
