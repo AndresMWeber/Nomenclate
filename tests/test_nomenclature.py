@@ -1,8 +1,6 @@
 import unittest
-import nomenclate.core.nomenclature as nm
-import nomenclate.core.formatter as formatter
+import nomenclate as nm
 import nomenclate.core.configurator as config
-import nomenclate.core.errors as exceptions
 from . import basetest
 
 
@@ -13,7 +11,7 @@ class TestNomenclateBase(basetest.TestBase):
         self.test_format = 'side_location_nameDecoratorVar_childtype_purpose_type'
         self.test_format_b = 'location_nameDecoratorVar_childtype_purpose_type_side'
 
-        self.nom = nm.Nomenclate()
+        self.nom = nm.Nom()
 
         # Inject our fake config
         self.nom.cfg = self.cfg
@@ -23,9 +21,41 @@ class TestNomenclateBase(basetest.TestBase):
         self.nom.var.set('A')
         self.fixtures = [self.cfg, self.nom, self.test_format_b, self.test_format]
 
+    @property
+    def fill_vars(self):
+        return {'childtype': 'token',
+                'purpose': 'filler',
+                'side': 'left',
+                'var': 'A',
+                'location': 'top',
+                'type': 'locator',
+                'name': 'testObject',
+                'decorator': 'joint'}
 
-class TestNomenclateTokens(TestNomenclateBase):
-    pass
+    @property
+    def empty_vars(self):
+        return {'var': '',
+                'type': '',
+                'name': '',
+                'location': '',
+                'decorator': '',
+                'side': '',
+                'purpose': '',
+                'childtype': ''}
+
+    @property
+    def partial_vars(self):
+        return {'side': 'left',
+                'var': 'A',
+                'type': 'locator',
+                'name': 'testObject'}
+
+    @property
+    def missing_partials(self):
+        return {'location': '',
+                'decorator': '',
+                'purpose': '',
+                'childtype': ''}
 
 
 class TestNomenclateState(TestNomenclateBase):
@@ -91,47 +121,67 @@ class TestNomenclateInitializeFormatOptions(TestNomenclateBase):
 
 
 class TestNomenclateSwapFormats(TestNomenclateBase):
-    def test_switch_multiple_naming_formats_initialize_format_options(self):
+    lee_path = ['naming_formats', 'riggers', 'lee_wolland']
+    raf_path = ['naming_formats', 'riggers', 'raffaele_fragapane']
+
+    def test_format_switch_same_format(self):
+        nom = nm.Nom()
+        nom_b = nm.Nom()
+        self.assertEquals(nom.tokens, nom_b.tokens)
+        nom.format = 'side_location_nameDecoratorVar_childtype_purpose_type'
+        self.assertEquals(nom.tokens, nom_b.tokens)
+
+    def test_format_switch_same_tokens(self):
+        nom = nm.Nom()
+        nom_b = nm.Nom()
+        self.assertEquals(nom.tokens, nom_b.tokens)
+        nom.format = 'type_purpose_name_childtype_decorator_var_location_side'
+        self.assertEquals(nom.tokens, nom_b.tokens)
+
+    def test_switch_multiple_naming_formats_use_initialize_format_options(self):
         # TODO: Finalize and re-implement
-        self.nom.initialize_format_options(['naming_formats', 'riggers', 'lee_wolland'])
+        self.nom.initialize_format_options(self.lee_path)
 
         self.nom.LOG.info('New Format order: %s' % self.nom.format_order)
-        self.nom.name = 'test'
-        self.nom.side = 'left'
-        self.nom.side_case = 'upper'
-        self.nom.purpose = 'hierarchy'
-        # self.assertEquals(self.nom.get(), 'LOC_hierarchy_test_l')
+        self.set_values()
+        self.assertEquals(self.nom.get(), 'LOC_hierarchy_test_l')
 
-        self.nom.initialize_format_options(['naming_formats', 'riggers', 'raffaele_fragapane'])
-        self.nom.height = 'top'
-        self.nom.height_case = 'upper'
-        self.nom.depth = 'rear'
-        self.nom.depth_case = 'upper'
+        self.nom.initialize_format_options(self.raf_path)
 
-        # self.assertEquals(self.nom.get(), 'test_TLR_hierarchy')
+        self.assertEquals(self.nom.get(), 'test_TLR_hierarchy')
         self.nom.LOG.info('%r' % self.nom.get())
         self.nom.LOG.info('New Format order: %s' % self.nom.format_order)
 
         self.nom.initialize_format_options(self.test_format)
 
     def test_switch_multiple_naming_formats_set_format(self):
-        # TODO: Finalize and re-implement
-        self.nom.format = ['naming_formats', 'riggers', 'lee_wolland']
-
+        self.nom.format = self.lee_path
         self.nom.LOG.info('New Format order: %s' % self.nom.format_order)
+
+        self.set_values()
+        self.assertEquals(self.nom.get(), 'LOC_hrc_test_l')
+
+        self.nom.format = self.raf_path
+        self.nom.LOG.info('New Format order: %s' % self.nom.format_order)
+
+        self.set_raf_values()
+        self.assertEquals(self.nom.get(), 'test_TLR_hierarchy')
+        self.nom.LOG.info('%r' % self.nom.get())
+
+        self.nom.initialize_format_options(self.test_format)
+
+    def set_values(self):
         self.nom.name = 'test'
         self.nom.height = 'top'
         self.nom.side = 'left'
         self.nom.depth = 'rear'
         self.nom.purpose = 'hierarchy'
-        # self.assertEquals(self.nom.get(), 'LOC_hrc_test_l')
 
-        self.nom.format = ['naming_formats', 'riggers', 'raffaele_fragapane']
-        # self.assertEquals(self.nom.get(), 'test_TLR_hierarchy')
-        self.nom.LOG.info('%r' % self.nom.get())
-        self.nom.LOG.info('New Format order: %s' % self.nom.format_order)
-
-        self.nom.initialize_format_options(self.test_format)
+    def set_raf_values(self):
+        self.nom.height = 'top'
+        self.nom.height_case = 'upper'
+        self.nom.depth = 'rear'
+        self.nom.depth_case = 'upper'
 
 
 class TestNomenclateInitializeOptions(TestNomenclateBase):
@@ -147,7 +197,20 @@ class TestNomenclateInitializeUiOptions(TestNomenclateBase):
 
 
 class TestNomenclateMergeDict(TestNomenclateBase):
-    pass
+    def test_partial_merge(self):
+        nom = nm.Nom()
+        nom.merge_dict(self.partial_vars)
+        _ = {}
+        _.update(self.partial_vars)
+        _.update(self.missing_partials)
+        self.assertDictEqual(nom.state, _)
+
+    def test_not_Found_in_format_merge(self):
+        nom = nm.Nom()
+        random = {'weird': 'nope', 'not_here': 'haha', 'foo': 'bar'}
+        nom.merge_dict(random)
+        random.update(self.empty_vars)
+        self.assertDictEqual(nom.state, random)
 
 
 class TestNomenclateGetFormatOrderFromFormatString(TestNomenclateBase):
@@ -173,26 +236,18 @@ class TestNomenclateGetChain(TestNomenclateBase):
         # self.assertIsNone(self.nom.get_chain(0, 5))
 
 
-class TestNomenclateUpdateTokenAttributes(TestNomenclateBase):
-    pass
-
-
-class TestNomenclateComposeName(TestNomenclateBase):
-    pass
-
-
 class TestNomenclateEq(TestNomenclateBase):
     def test_equal(self):
-        other = nm.Nomenclate(self.nom)
+        other = nm.Nom(self.nom)
         self.assertTrue(other == self.nom)
 
     def test_inequal_one_diff(self):
-        other = nm.Nomenclate(self.nom.state)
+        other = nm.Nom(self.nom.state)
         other.name = 'ronald'
         self.assertFalse(other == self.nom)
 
     def test_inequal_multi_diff(self):
-        other = nm.Nomenclate(self.nom.state)
+        other = nm.Nom(self.nom.state)
         other.name = 'ronald'
         other.var = 'C'
         other.type = 'joint'
@@ -203,3 +258,58 @@ class TestNomenclateRepr(TestNomenclateBase):
     def test__str__(self):
         self.assertEquals(str(self.nom), 'l_testObjectA_LOC')
 
+
+class TestNomenclateUnset(TestNomenclateBase):
+    def test_non_full(self):
+        nom = nm.Nom(self.partial_vars)
+
+        _ = {}
+        _.update(self.partial_vars)
+        _.update(self.missing_partials)
+
+        self.assertDictEqual(nom.state, _)
+        self.assertDictEqual(nom.empty_tokens, self.missing_partials)
+
+    def test_create_empty(self):
+        nom = nm.Nom()
+        self.assertDictEqual(nom.state, self.empty_vars)
+        self.assertDictEqual(nom.empty_tokens, self.empty_vars)
+
+    def test_full(self):
+        nom = nm.Nom(self.fill_vars)
+        self.assertDictEqual(nom.state, self.fill_vars)
+        self.assertDictEqual(nom.empty_tokens, {})
+
+
+class TestNomenclateTokens(TestNomenclateBase):
+    def test_non_full(self):
+        nom = nm.Nom()
+        self.checkEqual(nom.tokens, list(self.empty_vars))
+
+    def test_partial(self):
+        nom = nm.Nom(self.partial_vars)
+        self.checkEqual(nom.tokens, list(self.empty_vars))
+
+    def test_full(self):
+        nom = nm.Nom(self.fill_vars)
+        self.checkEqual(nom.tokens, list(self.empty_vars))
+
+
+class TestNomenclateDir(TestNomenclateBase):
+    def test_default(self):
+        nom = nm.Nom()
+        for item in nom.tokens:
+            self.assertIn(item, dir(nom))
+
+    def test_merge_dict(self):
+        nom = nm.Nom()
+        random = {'weird': 'nope', 'not_here': 'haha', 'foo': 'bar'}
+        nom.merge_dict(random)
+        for item in list(random):
+            self.assertIn(item, dir(nom))
+
+    def test_swap_format(self):
+        nom = nm.Nom()
+        nom.format = ['format', 'riggers', 'raffaele_fragapane']
+        for item in nom.tokens:
+            self.assertIn(item, dir(nom))

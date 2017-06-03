@@ -6,7 +6,7 @@ from collections import Iterable
 class TestBase(unittest.TestCase):
     def setUp(self):
         super(TestBase, self).setUp()
-        print('Running <%s>.setUp()' % self.__class__.__name__)
+        print('Unnittests: running <%s>.setUp()' % self.__class__.__name__)
         self.fixtures = []
 
     def tearDown(self):

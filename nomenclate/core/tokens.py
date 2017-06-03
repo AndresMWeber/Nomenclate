@@ -79,6 +79,10 @@ class TokenAttrDictHandler(object):
         self.set_token_attrs(self.empty_state)
 
     @property
+    def tokens(self):
+        return [token.token for token in self.token_attrs]
+
+    @property
     def token_attrs(self):
         return self.gen_object_token_attributes(self)
 
@@ -142,7 +146,9 @@ class TokenAttrDictHandler(object):
     def get_token_attr(self, token):
         token_attr = getattr(self, token.lower())
         if token_attr is None:
-            self.LOG.error(exceptions.SourceError('Instance has no %s token attribute set.' % token), exc_info=True)
+            msg = 'Instance has no %s token attribute set.' % token
+            self.LOG.warn(msg)
+            raise exceptions.SourceError(msg)
         else:
             return token_attr
 
@@ -150,12 +156,15 @@ class TokenAttrDictHandler(object):
         self.LOG.debug('_create_token_attr(%s:%s)' % (token, repr(value)))
         self.__dict__[token.lower()] = TokenAttr(label=value, token=token)
 
-    def purge_tokens(self, token_attrs):
+    def purge_tokens(self, token_attrs=None):
         """ Removes tokens not found in the format order
         """
-        for token_attr in [_ for _ in token_attrs if _ in list(self.token_attrs)]:
-            self.LOG.info('Deleting TokenAttr %s' % token_attr.token)
-            delattr(self, token_attr.token)
+        if token_attrs is None:
+            token_attrs = self.tokens
+        self.LOG.info('Starting purge for target tokens %s' % token_attrs)
+        for token_attr in [_ for _ in token_attrs if _ in self.tokens]:
+            self.LOG.info('Deleting TokenAttr %s' % token_attr)
+            delattr(self, token_attr)
 
     @staticmethod
     def gen_object_token_attributes(obj):
@@ -184,3 +193,7 @@ class TokenAttrDictHandler(object):
 
     def __str__(self):
         return ' '.join(['%s:%s' % (token_attr.token, token_attr.label) for token_attr in self.token_attrs])
+
+    def __repr__(self):
+        return '<%s %s>' % (self.__class__.__name__,
+                            ' '.join(['%s:%s' % (_.token, _.label) for _ in self.token_attrs]))

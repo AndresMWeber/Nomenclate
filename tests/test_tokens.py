@@ -45,3 +45,76 @@ class TestTokenAttrGet(TestTokenAttrBase):
 
     def test_get_empty(self):
         self.assertEquals(tokens.TokenAttr().label, '')
+
+
+class TestTokenStr(TestTokenAttrBase):
+    def test_label_valid(self):
+        token_attr = tokens.TokenAttr('bob', 'name')
+        self.assertEquals(str(token_attr), 'bob')
+
+    def test_label_empty(self):
+        token_attr = tokens.TokenAttr('', 'name')
+        self.assertEquals(str(token_attr), '')
+
+
+class TestTokenRepr(TestTokenAttrBase):
+    @staticmethod
+    def build_repr(token_attr):
+        return '<%s %s(%s):%r>' % (token_attr.__class__.__name__,
+                                   token_attr.token,
+                                   token_attr.raw_token,
+                                   token_attr.label)
+
+    def test_label_valid(self):
+        token_attr = tokens.TokenAttr('bob', 'name')
+        self.assertEquals(repr(token_attr), self.build_repr(token_attr))
+
+    def test_label_empty(self):
+        token_attr = tokens.TokenAttr('', 'name')
+        self.assertEquals(repr(token_attr), self.build_repr(token_attr))
+
+
+class TestTokenToken(TestTokenAttrBase):
+    def test_token_valid(self):
+        token_attr = tokens.TokenAttr('bob', 'name')
+        self.assertEquals(token_attr.token, 'name')
+
+    def test_token_empty(self):
+        token_attr = tokens.TokenAttr('bob', '')
+        self.assertEquals(token_attr.token, '')
+
+    def test_token_set(self):
+        token_attr = tokens.TokenAttr('bob', '')
+        self.assertEquals(token_attr.token, '')
+        token_attr.token = 'name'
+        self.assertEquals(token_attr.token, 'name')
+
+
+class TestTokenLabel(TestTokenAttrBase):
+    def test_normal_get(self):
+        token_attr = tokens.TokenAttr('Bob', 'name')
+        self.assertEquals(token_attr.label, 'Bob')
+
+    def test_upper_get(self):
+        token_attr = tokens.TokenAttr('Bob', 'name')
+        token_attr.case = 'upper'
+        self.assertEquals(token_attr.label, 'BOB')
+
+    def test_lower_get(self):
+        token_attr = tokens.TokenAttr('Bob', 'name')
+        token_attr.case = 'lower'
+        self.assertEquals(token_attr.label, 'bob')
+
+
+class TestTokenEq(TestTokenAttrBase):
+    def test_equal(self):
+        self.assertTrue(tokens.TokenAttr('Bob', 'name') == tokens.TokenAttr('Bob', 'name'))
+
+    def test_not_equal_label(self):
+        self.assertFalse(tokens.TokenAttr('Bob', 'name') == tokens.TokenAttr('Fob', 'name'))
+
+    def test_not_equal_token(self):
+        self.assertFalse(tokens.TokenAttr('Bob', 'name') == tokens.TokenAttr('Bob', 'fame'))
+
+    def test_non_token(self):
+        self.assertFalse(tokens.TokenAttr('Bob', 'name') == '<TokenAttr name(name):\'Bob\'>')

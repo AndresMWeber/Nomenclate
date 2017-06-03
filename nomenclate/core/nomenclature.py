@@ -58,7 +58,7 @@ class Nomenclate(object):
 
     @property
     def empty_tokens(self):
-        return self.token_dict.unset_token_attrs
+        return {token.token: token.label for token in self.token_dict.unset_token_attrs}
 
     @property
     def tokens(self):
@@ -358,17 +358,12 @@ class Nomenclate(object):
         """
 
         def get_attrs(obj):
-            if not hasattr(obj, '__dict__'):
-                return []  # slots only
             return obj.__dict__.keys()
 
         def dir_augment(obj):
             attrs = set()
             if not hasattr(obj, '__bases__'):
                 # obj is an instance
-                if not hasattr(obj, '__class__'):
-                    # slots
-                    return sorted(get_attrs(obj))
                 instance_class = obj.__class__
                 attrs.update(get_attrs(instance_class))
             else:
@@ -381,4 +376,4 @@ class Nomenclate(object):
             attrs.update(get_attrs(obj))
             return list(attrs)
 
-        return dir_augment(self) + self.tokens
+        return dir_augment(self)
