@@ -120,7 +120,6 @@ class TestGetHandler(TestConfiguratorBase):
         self.assertRaises(IndexError, config.ConfigEntryFormatter.get_handler, int, str)
 
 
-
 class MockConfig(object):
     test_data = ('overall_config:\n'
                  '  version_padding: 3\n'
