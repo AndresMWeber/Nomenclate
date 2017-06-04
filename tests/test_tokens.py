@@ -1,3 +1,4 @@
+import nomenclate
 import nomenclate.core.tokens as tokens
 import nomenclate.core.errors as exceptions
 from . import basetest

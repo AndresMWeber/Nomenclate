@@ -1,10 +1,14 @@
-from six import iteritems
-import six
-import nomenclate.core.errors as exceptions
+from six import iteritems, assertCountEqual
 import mock
+import os
+import json
+from tempfile import mkstemp
 from pyfakefs import fake_filesystem
-import nomenclate.core.configurator as config
 from collections import OrderedDict
+from os.path import expanduser
+
+import nomenclate.core.configurator as config
+import nomenclate.core.errors as exceptions
 from . import basetest
 
 
@@ -35,8 +39,8 @@ class TestValidateConfigFile(TestConfiguratorBase):
 
 class TestGet(TestConfiguratorBase):
     def test_get_default_as_string(self):
-        self.assertEquals(self.cfg.get([self.format_title, self.default_format], return_type=str),
-                          ' '.join(self.discipline_subsets))
+        self.assertEquals(self.cfg.get([self.format_title, 'node', self.default_format], return_type=str),
+                          'side_location_nameDecoratorVar_childtype_purpose_type')
 
     def test_get_options(self):
         self.assertTrue(self.checkEqual(self.cfg.get([self.format_title], return_type=list),
@@ -81,16 +85,40 @@ class TestGet(TestConfiguratorBase):
         self.assertTrue(self.checkEqual(self.cfg.get(self.discipline_path, return_type=dict), self.discipline_subsets))
 
     def test_list_sections(self):
-        six.assertCountEqual(self,
-                             self.cfg.get([], return_type=list),
-                             ['overall_config', 'options', 'naming_formats'])
+        assertCountEqual(self,
+                         self.cfg.get([], return_type=list),
+                         ['overall_config', 'options', 'naming_formats'])
 
     def test_list_section_options(self):
         self.assertEquals(self.cfg.get(self.format_title, return_type=list),
                           ['node', 'texturing'])
 
-        # class TestConfigurator(TestConfiguratorBase):
-        # os.chdir(path)
+
+class TestGetDefaultConfigFile(TestConfiguratorBase):
+    def test_existing(self):
+        config.ConfigParse()
+
+    def test_custom(self):
+        json.dumps({'name': 'john', 'location': 'top'})
+        fd, temp_path = mkstemp()
+        os.write(fd, json.dumps({'name': 'john', 'location': 'top'}))
+        custom_config = config.ConfigParse(temp_path)
+        self.assertDictEqual(custom_config.config_file_contents, OrderedDict([('name', 'john'), ('location', 'top')]))
+        os.close(fd)
+
+    @mock.patch('nomenclate.core.configurator.ConfigParse.validate_config_file')
+    def test_no_valid_config_file(self, mock_validate_config_file):
+        mock_validate_config_file.side_effect = IOError('mock: config file not found')
+        self.assertRaises(exceptions.SourceError, config.ConfigParse)
+
+
+class TestGetHandler(TestConfiguratorBase):
+    def test_existing(self):
+        config.ConfigEntryFormatter.get_handler(str, list)
+
+    def test_not_existing(self):
+        self.assertRaises(IndexError, config.ConfigEntryFormatter.get_handler, int, str)
+
 
 
 class MockConfig(object):
@@ -121,7 +149,7 @@ class MockConfig(object):
 
     @mock.patch('nomenclate.core.configurator.os.path.getsize')
     @mock.patch('nomenclate.core.configurator.os.path.isfile')
-    @mock.patch('nomenclate.core.configurator.open', mock.mock_open(read_data=self.test_data))
+    @mock.patch('nomenclate.core.configurator.open', mock.mock_open(read_data=test_data))
     def build_test_config(self, mock_isfile, mock_getsize):
         mock_isfile.return_value = True
         mock_getsize.return_value = 700

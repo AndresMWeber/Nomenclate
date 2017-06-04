@@ -182,7 +182,8 @@ class TokenAttrDictHandler(object):
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return all(map(lambda x: x[0] == x[1], zip(self.token_attrs, other.token_attrs)))
+            return all(map(lambda x: x[0] == x[1], zip(sorted(self.token_attrs, key=lambda x: x.token),
+                                                       sorted(other.token_attrs, key=lambda x: x.token))))
         return False
 
     def __getattr__(self, name):
@@ -192,7 +193,7 @@ class TokenAttrDictHandler(object):
             object.__getattribute__(self.__dict__, name)
 
     def __str__(self):
-        return ' '.join(['%s:%s' % (token_attr.token, token_attr.label) for token_attr in self.token_attrs])
+        return ' '.join(['%s:%r' % (token_attr.token, token_attr.label) for token_attr in self.token_attrs])
 
     def __repr__(self):
         return '<%s %s>' % (self.__class__.__name__,

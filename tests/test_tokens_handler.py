@@ -67,7 +67,9 @@ class TestValidateNameInFormatOrder(TestTokenAttrBase):
 
 class TestEq(TestTokenAttrBase):
     def test_not_equal(self):
-        self.assertFalse(self.token_attr_dict_handler == tokens.TokenAttrDictHandler(nm.Nom(name='bob')))
+        other_token_dict_handler = tokens.TokenAttrDictHandler(nm.Nom())
+        other_token_dict_handler.set_token_attrs({'name': 'bob'})
+        self.assertFalse(self.token_attr_dict_handler == other_token_dict_handler)
 
     def test_equal(self):
         self.assertTrue(self.token_attr_dict_handler == tokens.TokenAttrDictHandler(nm.Nom()))
@@ -78,4 +80,6 @@ class TestEq(TestTokenAttrBase):
 
 class TestStr(TestTokenAttrBase):
     def test_str(self):
-        self.assertEquals(str(self.token_attr_dict_handler), '')
+        tokens = ['name', 'decorator', 'purpose', 'childtype', 'type', 'location', 'side', 'var']
+        for token in tokens:
+            self.assertIn(token, str(self.token_attr_dict_handler))
