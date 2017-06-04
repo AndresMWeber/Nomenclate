@@ -138,6 +138,7 @@ class TestNomenclateSwapFormats(TestNomenclateBase):
         nom.format = 'type_purpose_name_childtype_decorator_var_location_side'
         self.assertEquals(nom.tokens, nom_b.tokens)
 
+    @unittest.skip
     def test_switch_multiple_naming_formats_use_initialize_format_options(self):
         # TODO: Finalize and re-implement
         self.nom.initialize_format_options(self.lee_path)
@@ -154,6 +155,7 @@ class TestNomenclateSwapFormats(TestNomenclateBase):
 
         self.nom.initialize_format_options(self.test_format)
 
+    @unittest.skip
     def test_switch_multiple_naming_formats_set_format(self):
         self.nom.format = self.lee_path
         self.nom.LOG.info('New Format order: %s' % self.nom.format_order)

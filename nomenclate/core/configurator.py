@@ -53,7 +53,7 @@ class ConfigEntryFormatter(object):
         """
         try:
             return FormatterRegistry.get_by_take_and_return_type(query_result_type, return_type)
-        except (IndexError, AttributeError):
+        except (IndexError, AttributeError, KeyError):
             msg = 'Could not find function in conversion list for input type %s and return type %s' % \
                   (query_result_type, return_type)
             raise IndexError(msg)
