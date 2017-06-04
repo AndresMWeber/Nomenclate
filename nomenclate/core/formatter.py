@@ -30,7 +30,8 @@ class FormatString(object):
                                                                                         self.format_order))
         except exceptions.FormatError as e:
             msg = "Could not validate input format target %s"
-            self.LOG.error('%s, %s' % (msg, e.message))
+            self.LOG.error(msg)
+            exceptions.FormatError(msg)
 
     def parse_format_order(self, format_target):
         """ Dissects the format string and gets the order of the tokens as it finds them l->r

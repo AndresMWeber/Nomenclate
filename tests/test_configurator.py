@@ -93,18 +93,43 @@ class TestGet(TestConfiguratorBase):
         self.assertEquals(self.cfg.get(self.format_title, return_type=list),
                           ['node', 'texturing'])
 
+    def test_default_get(self):
+        self.assertEquals(self.cfg.get(return_type=str),
+                          "")
+
+    def test_default_get_no_return_type(self):
+        self.assertEquals(self.cfg.get(),
+                          ['overall_config', 'options', 'naming_formats'])
+
 
 class TestGetDefaultConfigFile(TestConfiguratorBase):
     def test_existing(self):
         config.ConfigParse()
 
     def test_custom(self):
-        json.dumps({'name': 'john', 'location': 'top'})
         fd, temp_path = mkstemp()
-        os.write(fd, json.dumps({'name': 'john', 'location': 'top'}))
+        f = open(temp_path, 'w')
+        f.write(json.dumps({'name': 'john', 'location': 'top'}))
+        f.close()
         custom_config = config.ConfigParse(temp_path)
         self.assertDictEqual(custom_config.config_file_contents, OrderedDict([('name', 'john'), ('location', 'top')]))
         os.close(fd)
+        os.remove(temp_path)
+
+    def test_custom_empty(self):
+        fd, temp_path = mkstemp()
+        self.assertRaises(IOError, config.ConfigParse.validate_config_file, temp_path)
+        os.close(fd)
+        os.remove(temp_path)
+
+    def test_custom_no_yaml_data(self):
+        fd, temp_path = mkstemp()
+        f = open(temp_path, 'w')
+        f.write('#Empty YAML File')
+        f.close()
+        self.assertRaises(IOError, config.ConfigParse.validate_config_file, temp_path)
+        os.close(fd)
+        os.remove(temp_path)
 
     @mock.patch('nomenclate.core.configurator.ConfigParse.validate_config_file')
     def test_no_valid_config_file(self, mock_validate_config_file):
@@ -173,3 +198,24 @@ class MockConfig(object):
                                 'matchmove': 'MM MMV MMOV MMOVE',
                                 'modeling': 'MD MOD MODL MODEL',
                                 'rigging': 'RG RIG RIGG RIGNG'}
+
+
+class TestFormatters(TestConfiguratorBase):
+    def test_base_formatter_init(self):
+        self.assertRaises(NotImplementedError, config.BaseFormatter.format_result, '')
+
+    def test_dict_to_ordered_dict(self):
+        self.assertEquals(config.DictToOrderedDict.format_result({}),
+                          OrderedDict())
+
+    def test_none_to_dict(self):
+        self.assertEquals(config.NoneToDict.format_result(None),
+                          {})
+
+    def test_int_to_list(self):
+        self.assertEquals(config.IntToList.format_result(1),
+                          [1])
+
+    def test_list_to_str(self):
+        self.assertEquals(config.ListToString.format_result(['john', 'kate']),
+                          'john kate')

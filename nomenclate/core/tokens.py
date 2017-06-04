@@ -63,11 +63,27 @@ class TokenAttr(object):
         else:
             return False
 
+    def __ne__(self, other):
+        return ((self.token, self.label) != (other.token, other.label))
+
+    def __lt__(self, other):
+        return ((self.token, self.label) < (other.token, other.label))
+
+    def __le__(self, other):
+        return ((self.token, self.label) <= (other.token, other.label))
+
+    def __gt__(self, other):
+        return ((self.token, self.label) > (other.token, other.label))
+
+    def __ge__(self, other):
+        return ((self.token, self.label) >= (other.token, other.label))
+    
     def __str__(self):
         return str(self.label)
 
     def __repr__(self):
         return '<%s %s(%s):%r>' % (self.__class__.__name__, self.token, self.raw_token, self.label)
+
 
 
 class TokenAttrDictHandler(object):

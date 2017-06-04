@@ -167,8 +167,6 @@ class ConfigParse(object):
                                                                          preceding_depth=preceding_depth)
             self.LOG.info('Converted config entry:\n%s' % pformat(query_result, depth=1))
 
-            # if not query_result and throw_null_return_error:
-            #    raise exceptions.ResourceNotFoundError
             return query_result
         except IndexError:
             self.LOG.info('Not sure why but IndexError was found...defaulting to return: %s = %r' %
@@ -271,15 +269,12 @@ class BaseFormatter(object):
     converts = {'accepted_input_type': None,
                 'accepted_return_type': None}
 
-    def __init__(self, parent):
-        self.parent = parent
-
     @staticmethod
     def format_result(input):
         raise NotImplementedError
 
 
-class StringToListEntryFormatter(BaseFormatter):
+class StringToList(BaseFormatter):
     converts = {'accepted_input_type': str,
                 'accepted_return_type': list}
 
@@ -288,7 +283,7 @@ class StringToListEntryFormatter(BaseFormatter):
         return input.split()
 
 
-class DictToStringEntryFormatter(BaseFormatter):
+class DictToString(BaseFormatter):
     converts = {'accepted_input_type': dict,
                 'accepted_return_type': str}
 
@@ -297,7 +292,7 @@ class DictToStringEntryFormatter(BaseFormatter):
         return ' '.join(list(input))
 
 
-class DictToListEntryFormatter(BaseFormatter):
+class DictToList(BaseFormatter):
     converts = {'accepted_input_type': dict,
                 'accepted_return_type': list}
 
@@ -310,7 +305,7 @@ class DictToListEntryFormatter(BaseFormatter):
         return keys
 
 
-class DictToOrderedDictEntryFormatter(BaseFormatter):
+class DictToOrderedDict(BaseFormatter):
     converts = {'accepted_input_type': dict,
                 'accepted_return_type': OrderedDict}
 
@@ -318,14 +313,11 @@ class DictToOrderedDictEntryFormatter(BaseFormatter):
     def format_result(input):
         """From: http://stackoverflow.com/questions/13062300/convert-a-dict-to-sorted-dict-in-python
         """
-        try:
-            items = list(iteritems(input))
-        except AttributeError:
-            items = list(input.items())
+        items = list(iteritems(input))
         return OrderedDict(sorted(items, key=lambda x: x[0]))
 
 
-class OrderedDictToListEntryFormatter(BaseFormatter):
+class OrderedDictToList(BaseFormatter):
     converts = {'accepted_input_type': OrderedDict,
                 'accepted_return_type': list}
 
@@ -336,7 +328,7 @@ class OrderedDictToListEntryFormatter(BaseFormatter):
         return list(input)
 
 
-class NoneToDictEntryFormatter(BaseFormatter):
+class NoneToDict(BaseFormatter):
     converts = {'accepted_input_type': type(None),
                 'accepted_return_type': dict}
 
@@ -347,7 +339,7 @@ class NoneToDictEntryFormatter(BaseFormatter):
         return {}
 
 
-class ListToStringEntryFormatter(BaseFormatter):
+class ListToString(BaseFormatter):
     converts = {'accepted_input_type': list,
                 'accepted_return_type': str}
 
@@ -356,7 +348,7 @@ class ListToStringEntryFormatter(BaseFormatter):
         return ' '.join(input)
 
 
-class IntToListEntryFormatter(BaseFormatter):
+class IntToList(BaseFormatter):
     converts = {'accepted_input_type': int,
                 'accepted_return_type': list}
 
