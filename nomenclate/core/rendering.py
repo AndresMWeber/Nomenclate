@@ -6,6 +6,12 @@ import datetime
 import dateutil.parser as p
 from . import errors as exceptions
 import nomenclate.settings as settings
+
+try:
+    import __builtin__
+except ImportError:
+    import builtins as __builtin__
+
 from .tools import (
     gen_dict_key_matches,
     flatten
@@ -172,13 +178,13 @@ class InputRenderer(type):
             cls.LOG.info('Checking for unique token on token %s:%r' % (token, value))
             for func in cls.get_valid_render_functions(token):
                 renderer = cls.RENDER_FUNCTIONS.get(func, None)
-                cls.LOG.info('Finding token specific render function for token %s with renderer %s' % (token, renderer))
+                cls.LOG.info('Finding token specific render function for token %r with renderer %s' % (token, renderer))
 
                 if func == 'default':
                     renderer.token = token
 
                 if callable(getattr(renderer, 'render')):
-                    cls.LOG.info('render_unique_tokens() - Rendering token %r with %r, token settings=%s' %
+                    cls.LOG.info('render_unique_tokens() - Rendering token %r: %r, token settings=%s' %
                                  (token, value, nomenclate_object.get_token_settings(token)))
 
                     rendered_token = renderer.render(value, token, nomenclate_object,
@@ -284,33 +290,59 @@ class RenderBase(object):
     token = 'default'
 
     @classmethod
-    def render(cls, value, token, nomenclate_object, **kwargs):
+    def render(cls,
+               value,
+               token,
+               nomenclate_object,
+               config_query_path=None,
+               return_type=list,
+               use_value_in_query_path=True,
+               **filter_kwargs):
         """ Default renderer for a token.  It checks the config for a match, if not found it uses the value provided.
 
         :param value: str, value we are trying to match (or config setting for the token)
         :param token: str, token we are searching for
         :param nomenclate_object: nomenclate.core.nomenclate.Nomenclate, instance of nomenclate object to query
-        :param kwargs: any config settings that relate to the token as found from the nomenclate instance
+        :param filter_kwargs: any config settings that relate to the token as found from the nomenclate instance
         :return: str, the resulting syntactically rendered string
         """
-        nomenclate_object.LOG.info('Attempting to default render %s with value %s and kwargs %s' % (token,
-                                                                                                    value,
-                                                                                                    kwargs))
-        result = cls.get_config_match(value,
-                                      cls.token,
-                                      nomenclate_object.OPTIONS_PATH + [token],
-                                      dict,
-                                      nomenclate_object,
-                                      **kwargs) or value
+        if config_query_path == None:
+            config_query_path = nomenclate_object.OPTIONS_PATH + [token]
+            if use_value_in_query_path:
+                config_query_path += [value]
 
-        return cls.handle_casing(result, kwargs.get('%s_case' % token))
+        cls.LOG.info('Attempting to default render %s with value %s and kwargs %s' % (token, value, filter_kwargs))
+        config_matches = cls.get_config_match(value,
+                                              token,
+                                              config_query_path,
+                                              return_type,
+                                              nomenclate_object,
+                                              **filter_kwargs)
 
-    @staticmethod
-    def handle_casing(value, case):
-        if case == 'upper':
-            value = value.upper()
-        elif case == 'lower':
-            value = value.lower()
+        options = cls.flatten_input(config_matches, value)
+        option = cls.process_criteria(token, options, **filter_kwargs) if options else value
+        return cls.process_token_augmentations(option, token_attr=getattr(nomenclate_object, token))
+
+    @classmethod
+    def process_token_augmentations(cls, value, token_attr):
+        """ Uses any found augmentations from the TokenAttr to augment the final rendered value.  Currently
+            this only processes the augmentations:
+                TokenAttr().case
+                TokenAttr().prefix
+                TokenAttr().suffix
+
+        :param value: str, the resulting rendered string from the TokenAttr
+        :param token_attr: nomenclate.core.tokens.TokenAttr, the processed TokenAttr to be used to query settings.
+        :return: str, final augmented string
+        """
+        cls.LOG.info('Processing augmentations for token attr %r and applying to value %r' % (token_attr, value))
+        value = str(value)
+        case_value = getattr(token_attr, 'case')
+
+        value = getattr(value, case_value, str)() or value
+        value = getattr(token_attr, 'prefix') + value
+        value = value + getattr(token_attr, 'suffix')
+
         return value
 
     @classmethod
@@ -320,44 +352,85 @@ class RenderBase(object):
                          entry_path,
                          return_type,
                          nomenclate_object,
-                         config_entry_suffix='length',
-                         **kwargs):
+                         **filter_kwargs):
+        """ Queries the nomenclate's config data for corresponding entries and filters against the incoming
+            filter_kwargs as detailed in cls.process_criteria
 
+        :param query_string: str, string to look for once we find a match in the config
+        :param token: str, the given token to search for
+        :param entry_path: list(str), the query path to the subsection we are looking for to get a match in the config
+        :param return_type: type, the type of return value we want (usually should be <type str>)
+        :param nomenclate_object: nomenclate.core.nomenclature.Nomenclate, instance to query against (has config data)
+        :return: object, whatever return type was specified
+        """
         try:
-            options = nomenclate_object.cfg.get(entry_path, return_type=return_type)
-
-            if type(options) == dict:
-                options = list(gen_dict_key_matches(query_string, options))
-            options = list(flatten(options))
-
-            criteria = kwargs.get('%s_%s' % (cls.token, config_entry_suffix), None)
-            cls.LOG.info('%s(%s) options: %s criteria: %s' % (token, query_string, options, criteria))
-
-            for option in options:
-                cls.LOG.info('Running through option %s' % option)
-                if len(option) == criteria and criteria:
-                    cls.LOG.info('Found item matching criteria: %s -> %s' % (criteria, option))
-                    return option
-
-            try:
-                result_option = next(options)
-            except (StopIteration, TypeError):
-                result_option = options
-
-            cls.LOG.debug('Best match is: %s' % result_option)
-            return result_option
-
+            return nomenclate_object.cfg.get(entry_path, return_type=return_type)
         except exceptions.ResourceNotFoundError:
-            cls.LOG.warning('No entry for token %s - defaulting to current: %s' % (token,
-                                                                                   query_string))
+            cls.LOG.warning('No entry for token %s - defaulting to current: %s' % (token, query_string))
             return query_string
+
+    @classmethod
+    def flatten_input(cls, options, query_string):
+        """ Takes a list, dict or str of options and outputs a filtered list
+            Behavior list:
+                dict: flattens/filters the dict to only key matches based on query_string
+                list: just flattens a list just in case it's nested.
+                str: returns a list with the string in it
+
+        :param options: list, dict, str, input options to flatten/filter
+        :param query_string: str, string we are looking for if the input is a dictionary
+        :return: list, flattened list.
+        """
+        cls.LOG.info('Flattening input %s for matches with %s' % (options, query_string))
+        if not isinstance(options, (dict, list)):
+            options = [options]
+        else:
+            if isinstance(options, dict):
+                options = list(gen_dict_key_matches(query_string, options))
+
+            options = list(flatten(options))
+        cls.LOG.info('Flattened to %s' % options)
+        return options
+
+    @classmethod
+    def process_criteria(cls, token, options, **filter_kwargs):
+        """ Each kwarg passed is considered a filter.  The kwarg is in format <token>_<filter function> and if the
+            filter function is found in __builtins__ it uses the filter function and checks the result against
+            the kwarg's value.  If it passes the check it is filtered out of the current list of options
+
+        :param token: str, token we are querying
+        :param options: list(str), the options to filter with kwargs
+        :param filter_kwargs: dict(str: str), dictionary of {<token>_<__builtin__ function>: compare value}
+        :return:
+        """
+        options = [options] if isinstance(options, str) else options
+        criteria_matches = list(options)
+        print(options)
+
+        for token_criteria, criteria_value in iteritems(filter_kwargs):
+            builtin_func = token_criteria.replace('%s_' % token, '')
+            try:
+                builtin_func = getattr(__builtin__, builtin_func)
+                cls.LOG.info('Filtering options: %s with criteria: %s' % (options, token_criteria))
+
+                for option in options:
+                    cls.LOG.info('Running through option %s' % option)
+                    if token_criteria and criteria_value:
+                        if not builtin_func(option) == criteria_value:
+                            cls.LOG.info('Non criteria match for %s(%s)=%s' % (builtin_func, option, criteria_value))
+                            criteria_matches.remove(option)
+            except AttributeError:
+                cls.LOG.warning('Criteria function %r is invalid...skipping' % builtin_func)
+        cls.LOG.info('Found criteria matches: %s ...returning first' % criteria_matches)
+
+        return criteria_matches[0]
 
 
 class RenderDate(RenderBase):
     token = 'date'
 
     @classmethod
-    def render(cls, date, token, nomenclate_object, **kwargs):
+    def render(cls, date, token, nomenclate_object, **filter_kwargs):
         if date == 'now':
             d = datetime.datetime.now()
         else:
@@ -373,9 +446,9 @@ class RenderVar(RenderBase):
     token = 'var'
 
     @classmethod
-    def render(cls, var, token, nomenclate_object, **kwargs):
+    def render(cls, var, token, nomenclate_object, **filter_kwargs):
         if var:
-            var_index = kwargs.get('%s_index' % cls.token, 0)
+            var_index = filter_kwargs.get('%s_index' % cls.token, 0)
             return cls._get_variation_id(var_index, var.isupper())
         else:
             return var
@@ -410,9 +483,9 @@ class RenderVersion(RenderBase):
     token = 'version'
 
     @classmethod
-    def render(cls, version, token, nomenclate_object, **kwargs):
-        padding = kwargs.get('%s_padding' % token, 4)
-        format = kwargs.get('%s_format' % token, '#')
+    def render(cls, version, token, nomenclate_object, **filter_kwargs):
+        padding = filter_kwargs.get('%s_padding' % token, 4)
+        format = filter_kwargs.get('%s_format' % token, '#')
         version_string = format.replace('#', '%0{0}d')
         return version_string.format(padding) % version
 
@@ -422,49 +495,10 @@ class RenderType(RenderBase):
     token = 'type'
 
     @classmethod
-    def render(cls, engine_type, token, nomenclate_object, **kwargs):
-        return cls.get_config_match(engine_type,
-                                    cls.token,
-                                    nomenclate_object.SUFFIXES_PATH,
-                                    dict,
-                                    nomenclate_object,
-                                    **kwargs) or engine_type
-
-
-class RenderSide(RenderBase):
-    token = 'side'
-
-    @classmethod
-    def render(cls, side, token, nomenclate_object, **kwargs):
-        return cls.get_config_match(side,
-                                    cls.token,
-                                    nomenclate_object.OPTIONS_PATH + [cls.token, side],
-                                    list,
-                                    nomenclate_object,
-                                    **kwargs)
-
-
-class RenderLocation(RenderBase):
-    token = 'location'
-
-    @classmethod
-    def render(cls, location, token, nomenclate_object, **kwargs):
-        return cls.get_config_match(location,
-                                    cls.token,
-                                    nomenclate_object.OPTIONS_PATH + [cls.token, location],
-                                    list,
-                                    nomenclate_object,
-                                    **kwargs)
-
-
-class RenderDiscipline(RenderBase):
-    token = 'discipline'
-
-    @classmethod
-    def render(cls, discipline, token, nomenclate_object, **kwargs):
-        return cls.get_config_match(discipline,
-                                    cls.token,
-                                    nomenclate_object.OPTIONS_PATH + [cls.token, discipline],
-                                    list,
-                                    nomenclate_object,
-                                    **kwargs)
+    def render(cls, engine_type, token, nomenclate_object, **filter_kwargs):
+        return super(RenderType, cls).render(engine_type,
+                                             cls.token,
+                                             nomenclate_object,
+                                             config_query_path=nomenclate_object.SUFFIXES_PATH,
+                                             return_type=dict,
+                                             **filter_kwargs)

@@ -1,6 +1,7 @@
 from six import iteritems
 import re
 import nomenclate.core.rendering as rendering
+import nomenclate.core.tokens as tokens
 import nomenclate.core.errors as exceptions
 import nomenclate.core.nomenclature as nom
 from . import basetest
@@ -40,7 +41,6 @@ class TestNomenclativeProcessMatches(TestNomenclativeBase):
     def test_valid_short(self):
         test_dict = self.token_test_dict.copy()
         rendering.InputRenderer._prepend_token_match_objects(test_dict, self.nomenclative_valid_short.str)
-        print(test_dict)
         for token, value in iteritems(test_dict):
             if isinstance(value, str):
                 pass
@@ -66,7 +66,6 @@ class TestNomenclativeAddMatch(TestNomenclativeBase):
     def test_short_valid(self):
         test_dict = self.token_test_dict.copy()
         rendering.InputRenderer._prepend_token_match_objects(test_dict, self.nomenclative_valid_short.str)
-        print(test_dict)
         for token, value in iteritems(test_dict):
             if not isinstance(value, str):
                 self.nomenclative_valid_short.add_match(*value)
@@ -214,28 +213,45 @@ class TestInputRendererBase(TestNomenclativeBase):
         self.fixtures.append([self.ir, self.nom])
 
 
-class TestInputRendererHandleCasing(TestInputRendererBase):
+class TestInputRendererProcessTokenAugmentations(TestInputRendererBase):
     def test_from_nomenclate_upper(self):
         self.nom.side.case = 'upper'
         self.assertEquals(self.nom.get(),
-                          'LEFT_testObjectA_LOC')
+                          'L_testObjectA_LOC')
 
     def test_from_nomenclate_lower(self):
         self.nom.side.case = 'lower'
         self.assertEquals(self.nom.get(),
                           'l_testObjectA_LOC')
 
-    def test_from_classmethod_upper(self):
-        self.assertEquals(rendering.RenderBase.handle_casing('test', 'upper'),
+    def test_from_upper(self):
+        token_attr = tokens.TokenAttr('test', 'name')
+        token_attr.case = 'upper'
+        self.assertEquals(rendering.RenderBase.process_token_augmentations('test', token_attr),
                           'TEST')
 
-    def test_from_classmethod_lower(self):
-        self.assertEquals(rendering.RenderBase.handle_casing('Test', 'lower'),
+    def test_from_lower(self):
+        token_attr = tokens.TokenAttr('test', 'name')
+        token_attr.case = 'lower'
+        self.assertEquals(rendering.RenderBase.process_token_augmentations('Test', token_attr),
                           'test')
 
-    def test_from_classmethod_none(self):
-        self.assertEquals(rendering.RenderBase.handle_casing('Test', ''),
+    def test_from_none(self):
+        token_attr = tokens.TokenAttr('test', 'name')
+        self.assertEquals(rendering.RenderBase.process_token_augmentations('Test', token_attr),
                           'Test')
+
+    def test_from_prefix(self):
+        token_attr = tokens.TokenAttr('test', 'name')
+        token_attr.prefix = 'v'
+        self.assertEquals(rendering.RenderBase.process_token_augmentations('Test', token_attr),
+                          'vTest')
+
+    def test_from_suffix(self):
+        token_attr = tokens.TokenAttr('test', 'name')
+        token_attr.suffix = '_r'
+        self.assertEquals(rendering.RenderBase.process_token_augmentations('test', token_attr),
+                          'test_r')
 
 
 class TestInputRendererGetAlphanumericIndex(TestInputRendererBase):
@@ -310,8 +326,8 @@ class TestInputRendererRenderUniqueTokens(TestInputRendererBase):
                            'type': 'LOC',
                            'side': 'l',
                            'version': 'v005',
-                           'john':'six',
-                           'purpose':'hrc'})
+                           'john': 'six',
+                           'purpose': 'hrc'})
 
     def test_empty(self):
         test_values = {}
@@ -321,6 +337,8 @@ class TestInputRendererRenderUniqueTokens(TestInputRendererBase):
 
     def test_none_replaced(self):
         test_values = {'name': 'test', 'blah': 'marg', 'not_me': 'haha', 'la': 5}
+        self.nom.merge_dict(test_values)
         test_values_unchanged = test_values.copy()
+        test_values_unchanged['la'] = '5'
         self.ir.render_unique_tokens(self.nom, test_values)
         self.assertEquals(test_values, test_values_unchanged)

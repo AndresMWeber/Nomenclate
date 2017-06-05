@@ -138,36 +138,34 @@ class TestNomenclateSwapFormats(TestNomenclateBase):
         nom.format = 'type_purpose_name_childtype_decorator_var_location_side'
         self.assertEquals(nom.tokens, nom_b.tokens)
 
-    @unittest.skip
     def test_switch_multiple_naming_formats_use_initialize_format_options(self):
-        # TODO: Finalize and re-implement
         self.nom.initialize_format_options(self.lee_path)
 
-        self.nom.LOG.info('New Format order: %s' % self.nom.format_order)
+        self.nom.LOG.info('(lee) New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
         self.set_values()
-        self.assertEquals(self.nom.get(), 'LOC_hierarchy_test_l')
+        self.assertEquals(self.nom.get(), 'LOC_hrc_test_l')
 
         self.nom.initialize_format_options(self.raf_path)
 
-        self.assertEquals(self.nom.get(), 'test_TLR_hierarchy')
+        self.set_raf_values()
+        self.assertEquals(self.nom.get(), 'test_TLR_hrc')
         self.nom.LOG.info('%r' % self.nom.get())
-        self.nom.LOG.info('New Format order: %s' % self.nom.format_order)
+        self.nom.LOG.info('(raf) New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
 
         self.nom.initialize_format_options(self.test_format)
 
-    @unittest.skip
     def test_switch_multiple_naming_formats_set_format(self):
         self.nom.format = self.lee_path
-        self.nom.LOG.info('New Format order: %s' % self.nom.format_order)
+        self.nom.LOG.info('(lee) New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
 
         self.set_values()
         self.assertEquals(self.nom.get(), 'LOC_hrc_test_l')
 
         self.nom.format = self.raf_path
-        self.nom.LOG.info('New Format order: %s' % self.nom.format_order)
+        self.nom.LOG.info('(raf) New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
 
         self.set_raf_values()
-        self.assertEquals(self.nom.get(), 'test_TLR_hierarchy')
+        self.assertEquals(self.nom.get(), 'test_TLR_hrc')
         self.nom.LOG.info('%r' % self.nom.get())
 
         self.nom.initialize_format_options(self.test_format)
@@ -181,9 +179,10 @@ class TestNomenclateSwapFormats(TestNomenclateBase):
 
     def set_raf_values(self):
         self.nom.height = 'top'
-        self.nom.height_case = 'upper'
+        self.nom.height.case = 'upper'
         self.nom.depth = 'rear'
-        self.nom.depth_case = 'upper'
+        self.nom.depth.case = 'upper'
+        self.nom.side.case = 'upper'
 
 
 class TestNomenclateInitializeOptions(TestNomenclateBase):

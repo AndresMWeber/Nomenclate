@@ -96,16 +96,6 @@ class TestTokenLabel(TestTokenAttrBase):
         token_attr = tokens.TokenAttr('Bob', 'name')
         self.assertEquals(token_attr.label, 'Bob')
 
-    def test_upper_get(self):
-        token_attr = tokens.TokenAttr('Bob', 'name')
-        token_attr.case = 'upper'
-        self.assertEquals(token_attr.label, 'BOB')
-
-    def test_lower_get(self):
-        token_attr = tokens.TokenAttr('Bob', 'name')
-        token_attr.case = 'lower'
-        self.assertEquals(token_attr.label, 'bob')
-
 
 class TestTokenEq(TestTokenAttrBase):
     def test_equal(self):

@@ -12,7 +12,6 @@ from .tools import (
     NomenclateNotifier
 )
 
-
 MODULE_LOGGER_LEVEL_OVERRIDE = None
 
 
@@ -268,6 +267,8 @@ class Nomenclate(object):
 
     def _update_tokens_from_swap_format(self, original_format, original_format_order, remove_obsolete_tokens=True):
         """ Updates tokens based on a swap format call that will maintain synchronicity between token_dict and attrs
+            If there was an accidental setting already set to one of the attrs that should now be a token attr due
+            to the format swap, we wipe it and add a new TokenAttr to the Nomenclate attribute.
 
         :param original_format: str, original format string to compare to
         :param original_format_order: list(str), the original format order to compare to
@@ -284,7 +285,7 @@ class Nomenclate(object):
                           if hasattr(self, token)]
 
             new_tokens = [token for token in set(new_format_order) - set(old_format_order)
-                          if not hasattr(self, token)]
+                          if not hasattr(self, token) or isinstance(getattr(self, token, ''), str)]
 
             self.LOG.info('\nToken Status:\n\tObselete tokens: %s\n\tNew tokens: %s' % (old_tokens, new_tokens))
 
@@ -340,12 +341,15 @@ class Nomenclate(object):
         """ Custom setattr to detect whether they are trying to set a token, then updating the token_dict
 
         """
-        attr = getattr(self, key, None)
-        self.LOG.debug('Trying to set preexisting attribute: %s = %r -> %r' % (key, attr, value))
-        if isinstance(attr, tokens.TokenAttr):
-            self.LOG.debug('User setting TokenAttr %r = %r -> %r' % (attr, attr.label, value))
-            attr.label = value.label if isinstance(value, tokens.TokenAttr) else value
-            object.__setattr__(self, key, attr)
+        self.LOG.info('<%s>.__setattr__(%r, %r)' % (self.__class__.__name__, key, value))
+        token_dict_attr = getattr(getattr(self, 'token_dict', None), key, None)
+        is_not_value_token_attr = not isinstance(value, tokens.TokenAttr)
+        is_token_dict_attr_token_attr = isinstance(token_dict_attr, tokens.TokenAttr)
+
+        if all([hasattr(self, 'token_dict'), is_not_value_token_attr, is_token_dict_attr_token_attr]):
+            self.LOG.debug('User setting TokenAttr %r -> %r' % (token_dict_attr, value))
+            self.token_dict.set_token_attr(key, value)
+            # object.__setattr__(self, key, token_dict_attr)
         else:
             self.LOG.debug('User setting attribute %s to %r' % (key, value))
             object.__setattr__(self, key, value)
@@ -353,7 +357,6 @@ class Nomenclate(object):
     def __dir__(self):
         """ Taken from:
             http://techqa.info/programming/question/15507848/the-correct-way-to-override-the-__dir__-method-in-python
-
 
         """
 

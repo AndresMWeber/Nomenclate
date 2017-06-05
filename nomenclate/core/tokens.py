@@ -7,9 +7,26 @@ MODULE_LEVEL_OVERRIDE = None
 
 
 class TokenAttr(object):
+    """ A TokenAttr represents a string token that we want to replace in a given nomenclate.core.formatter.FormatString
+        It has 3 augmentation properties:
+
+            TokenAttr().case
+            TokenAttr().prefix
+            TokenAttr().suffix
+
+        These three settings enforce that after final rendering (finding matches in the config for the current
+        token's label and any custom rendering syntax the user added) we will upper case the result and add
+        either the given prefix or suffix no matter what.
+
+    """
     LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LEVEL_OVERRIDE)
 
     def __init__(self, label=None, token=None):
+        """
+
+        :param label:
+        :param token:
+        """
         try:
             self.validate_entries(label)
         except exceptions.ValidationError:
@@ -17,10 +34,17 @@ class TokenAttr(object):
         self.validate_entries(token)
         self.raw_string = label if label is not None else ""
         self.raw_token = token
-        self.case = None
+        self.case_setting = ""
+        self.prefix_setting = ""
+        self.suffix_setting = ""
 
     @property
     def token(self):
+        """ Get or set the current token. Setting the token to a new value means it will be validated and then
+            added as the internal "raw_token" which will be used to look up any given config value or be used if
+            no config value is found.
+
+        """
         return self.raw_token.lower()
 
     @token.setter
@@ -30,14 +54,12 @@ class TokenAttr(object):
 
     @property
     def label(self):
-        string = None
-        if self.case == 'upper':
-            string = self.raw_string.upper()
+        """ Get or set the current token's "label" or value. Setting the label to a new value means it will be added
+            as the internal "raw_string" which will be used to look up any given config value or be used if no config
+            value is found.
 
-        if self.case == 'lower':
-            string = self.raw_string.lower()
-
-        return string or self.raw_string
+        """
+        return self.raw_string
 
     @label.setter
     def label(self, label):
@@ -45,6 +67,38 @@ class TokenAttr(object):
         self.LOG.debug('Setting token attr %s -> %r' % (str(self), label))
         self.raw_string = label
         self.LOG.debug('%r and the raw_string is %s' % (self, self.raw_string))
+
+    @property
+    def case(self):
+        """ Get or set the current TokenAttr's case. Setting the case to either 'upper' or 'lower' means it will be validated and then
+            added as the internal "raw_token" which will be used to look up any given config value or be used if
+            no config value is found.
+
+        """
+        return self.case_setting
+
+    @case.setter
+    def case(self, case):
+        if case in ['upper', 'lower']:
+            self.case_setting = case
+
+    @property
+    def prefix(self):
+        return self.prefix_setting
+
+    @prefix.setter
+    def prefix(self, prefix):
+        if isinstance(prefix, str):
+            self.prefix_setting = prefix
+
+    @property
+    def suffix(self):
+        return self.suffix_setting
+
+    @suffix.setter
+    def suffix(self, suffix):
+        if isinstance(suffix, str):
+            self.suffix_setting = suffix
 
     def set(self, value):
         self.label = value
