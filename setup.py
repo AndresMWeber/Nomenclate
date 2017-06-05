@@ -37,7 +37,6 @@ tests_requires = [
 
 dev_requires = ['twine', 'sphinx', 'docutils', 'docopt']
 
-
 setup(
     name=__package__,
     version=main_ns['__version__'],
@@ -57,12 +56,17 @@ setup(
         ]
     },
     classifiers=[
-        'Development Status :: 3 - Alpha',
-        'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
+        'Development Status :: 4 - Beta',
+        'Natural Language :: English',
+        'Operating System :: MacOS :: MacOS X',
+        'Operating System :: Microsoft :: Windows',
+        'Operating System :: POSIX :: Linux',
+        'Operating System :: Unix',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Topic :: Documentation :: Sphinx',
         'Topic :: Multimedia :: Graphics :: 3D Modeling',
     ],
     install_requires=install_requires,
