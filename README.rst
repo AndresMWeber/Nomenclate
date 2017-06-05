@@ -247,4 +247,4 @@ Further version/var/date specific token notes:
 
 Version Support
 ===============
-This package supports the Maya 2015, 2016 and 2017 so far so please be aware.
+Currently this package supports Python 2.7, 3.5 and 3.6
