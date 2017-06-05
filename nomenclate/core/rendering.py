@@ -167,7 +167,6 @@ class InputRenderer(type):
         cls.LOG.info('Current list of render functions: %s' % list(cls.RENDER_FUNCTIONS))
         cls.LOG.info('Checking against input dictionary %s' % input_dict)
         non_empty_token_entries = {_k: _v for _k, _v in iteritems(input_dict) if _v}
-        cls.LOG.info('Non empties filtered: input dictionary %s' % input_dict)
 
         for token, value in iteritems(non_empty_token_entries):
             cls.LOG.info('Checking for unique token on token %s:%r' % (token, value))
