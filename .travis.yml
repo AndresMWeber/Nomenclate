@@ -64,9 +64,7 @@ script:
 
 # Now run coveralls for main supported python version only once.
 after_success:
-    - if [[ $ENV == python=2.7* ]]; then
-          coveralls;
-      fi
+    - if [[ $ENV == python=2.7* ]]; then coveralls; fi
 
 deploy:
   provider: pypi
