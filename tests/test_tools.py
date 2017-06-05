@@ -1,5 +1,5 @@
 from collections import OrderedDict
-import nomenclate.core.nomenclature as nm
+import nomenclate as nm
 from . import basetest
 from nomenclate.core.tools import (
     combine_dicts,
@@ -10,7 +10,7 @@ from nomenclate.core.tools import (
 
 class TestCombineDicts(basetest.TestBase):
     def test_with_dict_with_nomenclate_object(self):
-        self.assertDictEqual(combine_dicts({1: 1, 2: 2, 3: 3}, nm.Nomenclate(name='test', purpose='lots').state),
+        self.assertDictEqual(combine_dicts({1: 1, 2: 2, 3: 3}, nm.Nom(name='test', purpose='lots').state),
                              {'decorator': '', 1: 1, 2: 2, 3: 3, 'name': 'test', 'type': '', 'side': '',
                               'childtype': '', 'var': '', 'location': '', 'purpose': 'lots'})
 

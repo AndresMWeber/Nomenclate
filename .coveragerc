@@ -12,3 +12,4 @@ omit =
     nomenclate/version.py
     nomenclate/ui/*
     nomenclate/core/errors.py
+    nomenclate/core/nameparser.py

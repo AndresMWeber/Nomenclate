@@ -63,11 +63,27 @@ class TokenAttr(object):
         else:
             return False
 
+    def __ne__(self, other):
+        return ((self.token, self.label) != (other.token, other.label))
+
+    def __lt__(self, other):
+        return ((self.token, self.label) < (other.token, other.label))
+
+    def __le__(self, other):
+        return ((self.token, self.label) <= (other.token, other.label))
+
+    def __gt__(self, other):
+        return ((self.token, self.label) > (other.token, other.label))
+
+    def __ge__(self, other):
+        return ((self.token, self.label) >= (other.token, other.label))
+    
     def __str__(self):
         return str(self.label)
 
     def __repr__(self):
         return '<%s %s(%s):%r>' % (self.__class__.__name__, self.token, self.raw_token, self.label)
+
 
 
 class TokenAttrDictHandler(object):
@@ -77,6 +93,10 @@ class TokenAttrDictHandler(object):
         self.nom = nomenclate_object
         self.LOG.info('Initializing TokenAttrDictHandler with default values %s' % self.empty_state)
         self.set_token_attrs(self.empty_state)
+
+    @property
+    def tokens(self):
+        return [token.token for token in self.token_attrs]
 
     @property
     def token_attrs(self):
@@ -142,7 +162,9 @@ class TokenAttrDictHandler(object):
     def get_token_attr(self, token):
         token_attr = getattr(self, token.lower())
         if token_attr is None:
-            self.LOG.error(exceptions.SourceError('Instance has no %s token attribute set.' % token), exc_info=True)
+            msg = 'Instance has no %s token attribute set.' % token
+            self.LOG.warn(msg)
+            raise exceptions.SourceError(msg)
         else:
             return token_attr
 
@@ -150,12 +172,15 @@ class TokenAttrDictHandler(object):
         self.LOG.debug('_create_token_attr(%s:%s)' % (token, repr(value)))
         self.__dict__[token.lower()] = TokenAttr(label=value, token=token)
 
-    def purge_tokens(self, token_attrs):
+    def purge_tokens(self, token_attrs=None):
         """ Removes tokens not found in the format order
         """
-        for token_attr in [_ for _ in token_attrs if _ in list(self.token_attrs)]:
-            self.LOG.info('Deleting TokenAttr %s' % token_attr.token)
-            delattr(self, token_attr.token)
+        if token_attrs is None:
+            token_attrs = self.tokens
+        self.LOG.info('Starting purge for target tokens %s' % token_attrs)
+        for token_attr in [_ for _ in token_attrs if _ in self.tokens]:
+            self.LOG.info('Deleting TokenAttr %s' % token_attr)
+            delattr(self, token_attr)
 
     @staticmethod
     def gen_object_token_attributes(obj):
@@ -173,7 +198,8 @@ class TokenAttrDictHandler(object):
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return all(map(lambda x: x[0] == x[1], zip(self.token_attrs, other.token_attrs)))
+            return all(map(lambda x: x[0] == x[1], zip(sorted(self.token_attrs, key=lambda x: x.token),
+                                                       sorted(other.token_attrs, key=lambda x: x.token))))
         return False
 
     def __getattr__(self, name):
@@ -183,4 +209,8 @@ class TokenAttrDictHandler(object):
             object.__getattribute__(self.__dict__, name)
 
     def __str__(self):
-        return ' '.join(['%s:%s' % (token_attr.token, token_attr.label) for token_attr in self.token_attrs])
+        return ' '.join(['%s:%r' % (token_attr.token, token_attr.label) for token_attr in self.token_attrs])
+
+    def __repr__(self):
+        return '<%s %s>' % (self.__class__.__name__,
+                            ' '.join(['%s:%s' % (_.token, _.label) for _ in self.token_attrs]))

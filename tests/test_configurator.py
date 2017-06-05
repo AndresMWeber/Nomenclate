@@ -1,38 +1,20 @@
-from six import iteritems
-import six
-import nomenclate.core.errors as exceptions
+from six import iteritems, assertCountEqual
 import mock
+import os
+import json
+from tempfile import mkstemp
 from pyfakefs import fake_filesystem
-import nomenclate.core.configurator as config
 from collections import OrderedDict
+from os.path import expanduser
+
+import nomenclate.core.configurator as config
+import nomenclate.core.errors as exceptions
 from . import basetest
 
-test_data = ('overall_config:\n'
-             '  version_padding: 3\n'
-             'naming_formats:\n'
-             '  node:\n'
-             '    default: side_location_nameDecoratorVar_childtype_purpose_type\n'
-             '    format_archive: side_name_space_purpose_decorator_childtype_type\n'
-             '    format_lee: type_childtype_space_purpose_name_side\n'
-             '  texturing:\n'
-             '    shader: side_name_type\n'
-             'options:\n'
-             '  discipline:\n'
-             '    animation: AN ANI ANIM ANIMN\n'
-             '    lighting: LT LGT LGHT LIGHT\n'
-             '    rigging: RG RIG RIGG RIGNG\n'
-             '    matchmove: MM MMV MMOV MMOVE\n'
-             '    compositing: CM CMP COMP COMPG\n'
-             '    modeling: MD MOD MODL MODEL\n'
-             '  side:\n'
-             '    - left\n'
-             '    - right\n'
-             '    - center\n')
 
-
-class TestConfigurator(basetest.TestBase):
+class TestConfiguratorBase(basetest.TestBase):
     def setUp(self):
-        super(TestConfigurator, self).setUp()
+        super(TestConfiguratorBase, self).setUp()
         self.maxDiff = 1000
         self.mock_config = MockConfig()
         self.cfg = self.mock_config.parser
@@ -47,15 +29,18 @@ class TestConfigurator(basetest.TestBase):
         self.discipline_subsets = self.mock_config.discipline_subsets
         self.discipline_data = self.mock_config.discipline_data
 
+
+class TestValidateConfigFile(TestConfiguratorBase):
     @mock.patch('nomenclate.core.configurator.os.path.isfile')
     def test_valid_file_no_file(self, mock_isfile):
         mock_isfile.return_value = False
         self.assertRaises(IOError, self.cfg.validate_config_file, '/mock/config.yml')
 
-    def test_get_as_string(self):
-        print(self.cfg.get([self.format_title, self.default_format], return_type=str))
-        self.assertEquals(self.cfg.get([self.format_title, self.default_format], return_type=str),
-                          ' '.join(self.discipline_subsets))
+
+class TestGet(TestConfiguratorBase):
+    def test_get_default_as_string(self):
+        self.assertEquals(self.cfg.get([self.format_title, 'node', self.default_format], return_type=str),
+                          'side_location_nameDecoratorVar_childtype_purpose_type')
 
     def test_get_options(self):
         self.assertTrue(self.checkEqual(self.cfg.get([self.format_title], return_type=list),
@@ -80,8 +65,7 @@ class TestConfigurator(basetest.TestBase):
         self.assertEquals(self.cfg.get(self.discipline_path, return_type=OrderedDict, preceding_depth=0),
                           {'discipline': OrderedDict(sorted(iteritems(self.discipline_data), key=lambda x: x[0]))})
 
-    def test_get_as_string(self):
-        print(self.cfg.get(self.discipline_path, return_type=str).split())
+    def test_get_disciplines_as_string(self):
         self.assertTrue(self.checkEqual(self.cfg.get(self.discipline_path, return_type=str).split(),
                                         self.discipline_subsets))
 
@@ -90,7 +74,6 @@ class TestConfigurator(basetest.TestBase):
                                         'AN ANI ANIM ANIMN'))
 
     def test_get_as_dict(self):
-        print(self.cfg.get(self.discipline_path, return_type=list, preceding_depth=-1))
         self.assertEquals(self.cfg.get(self.discipline_path, return_type=list, preceding_depth=-1),
                           {self.discipline_path[0]: {self.discipline_path[1]: self.discipline_subsets}})
 
@@ -102,16 +85,89 @@ class TestConfigurator(basetest.TestBase):
         self.assertTrue(self.checkEqual(self.cfg.get(self.discipline_path, return_type=dict), self.discipline_subsets))
 
     def test_list_sections(self):
-        six.assertCountEqual(self,
-                             self.cfg.get([], return_type=list),
-                             ['overall_config', 'options', 'naming_formats'])
+        assertCountEqual(self,
+                         self.cfg.get([], return_type=list),
+                         ['overall_config', 'options', 'naming_formats'])
 
     def test_list_section_options(self):
         self.assertEquals(self.cfg.get(self.format_title, return_type=list),
                           ['node', 'texturing'])
 
+    def test_default_get(self):
+        self.assertEquals(self.cfg.get(return_type=str),
+                          "")
+
+    def test_default_get_no_return_type(self):
+        self.assertEquals(self.cfg.get(),
+                          ['overall_config', 'options', 'naming_formats'])
+
+
+class TestGetDefaultConfigFile(TestConfiguratorBase):
+    def test_existing(self):
+        config.ConfigParse()
+
+    def test_custom(self):
+        fd, temp_path = mkstemp()
+        f = open(temp_path, 'w')
+        f.write(json.dumps({'name': 'john', 'location': 'top'}))
+        f.close()
+        custom_config = config.ConfigParse(temp_path)
+        self.assertDictEqual(custom_config.config_file_contents, OrderedDict([('name', 'john'), ('location', 'top')]))
+        os.close(fd)
+        os.remove(temp_path)
+
+    def test_custom_empty(self):
+        fd, temp_path = mkstemp()
+        self.assertRaises(IOError, config.ConfigParse.validate_config_file, temp_path)
+        os.close(fd)
+        os.remove(temp_path)
+
+    def test_custom_no_yaml_data(self):
+        fd, temp_path = mkstemp()
+        f = open(temp_path, 'w')
+        f.write('#Empty YAML File')
+        f.close()
+        self.assertRaises(IOError, config.ConfigParse.validate_config_file, temp_path)
+        os.close(fd)
+        os.remove(temp_path)
+
+    @mock.patch('nomenclate.core.configurator.ConfigParse.validate_config_file')
+    def test_no_valid_config_file(self, mock_validate_config_file):
+        mock_validate_config_file.side_effect = IOError('mock: config file not found')
+        self.assertRaises(exceptions.SourceError, config.ConfigParse)
+
+
+class TestGetHandler(TestConfiguratorBase):
+    def test_existing(self):
+        config.ConfigEntryFormatter.get_handler(str, list)
+
+    def test_not_existing(self):
+        self.assertRaises(IndexError, config.ConfigEntryFormatter.get_handler, int, str)
+
 
 class MockConfig(object):
+    test_data = ('overall_config:\n'
+                 '  version_padding: 3\n'
+                 'naming_formats:\n'
+                 '  node:\n'
+                 '    default: side_location_nameDecoratorVar_childtype_purpose_type\n'
+                 '    format_archive: side_name_space_purpose_decorator_childtype_type\n'
+                 '    format_lee: type_childtype_space_purpose_name_side\n'
+                 '  texturing:\n'
+                 '    shader: side_name_type\n'
+                 'options:\n'
+                 '  discipline:\n'
+                 '    animation: AN ANI ANIM ANIMN\n'
+                 '    lighting: LT LGT LGHT LIGHT\n'
+                 '    rigging: RG RIG RIGG RIGNG\n'
+                 '    matchmove: MM MMV MMOV MMOVE\n'
+                 '    compositing: CM CMP COMP COMPG\n'
+                 '    modeling: MD MOD MODL MODEL\n'
+                 '  side:\n'
+                 '    - left\n'
+                 '    - right\n'
+                 '    - center\n')
+
     def __init__(self):
         self.build_test_config()
 
@@ -125,7 +181,7 @@ class MockConfig(object):
         self.fakefs = fake_filesystem.FakeFilesystem()
 
         self.fake_file_path = '/var/env/foobar.yml'
-        self.fake_file = self.fakefs.CreateFile(self.fake_file_path, contents=test_data)
+        self.fake_file = self.fakefs.CreateFile(self.fake_file_path, contents=self.test_data)
         fake_filesystem.FakeFile(self.fakefs)
         self.parser.rebuild_config_cache(self.fake_file_path)
 
@@ -142,3 +198,24 @@ class MockConfig(object):
                                 'matchmove': 'MM MMV MMOV MMOVE',
                                 'modeling': 'MD MOD MODL MODEL',
                                 'rigging': 'RG RIG RIGG RIGNG'}
+
+
+class TestFormatters(TestConfiguratorBase):
+    def test_base_formatter_init(self):
+        self.assertRaises(NotImplementedError, config.BaseFormatter.format_result, '')
+
+    def test_dict_to_ordered_dict(self):
+        self.assertEquals(config.DictToOrderedDict.format_result({}),
+                          OrderedDict())
+
+    def test_none_to_dict(self):
+        self.assertEquals(config.NoneToDict.format_result(None),
+                          {})
+
+    def test_int_to_list(self):
+        self.assertEquals(config.IntToList.format_result(1),
+                          [1])
+
+    def test_list_to_str(self):
+        self.assertEquals(config.ListToString.format_result(['john', 'kate']),
+                          'john kate')
