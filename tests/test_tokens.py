@@ -119,3 +119,57 @@ class TestTokenEq(TestTokenAttrBase):
 
     def test_non_token(self):
         self.assertFalse(tokens.TokenAttr('Bob', 'name') == '<TokenAttr name(name):\'Bob\'>')
+
+class TestTokenNe(TestTokenAttrBase):
+    def test_equal(self):
+        self.assertFalse(tokens.TokenAttr('Bob', 'name') != tokens.TokenAttr('Bob', 'name'))
+
+    def test_not_equal_label(self):
+        self.assertTrue(tokens.TokenAttr('Bob', 'name') != tokens.TokenAttr('Fob', 'name'))
+
+    def test_not_equal_token(self):
+        self.assertTrue(tokens.TokenAttr('Bob', 'name') != tokens.TokenAttr('Bob', 'fame'))
+
+    def test_non_token(self):
+        self.assertRaises(AttributeError, tokens.TokenAttr('Bob', 'name').__ne__, '<TokenAttr name(name):\'Bob\'>')
+
+class TestTokenLe(TestTokenAttrBase):
+    def test_equal(self):
+        self.assertTrue(tokens.TokenAttr('Bob', 'name') >= tokens.TokenAttr('Bob', 'name'))
+
+    def test_not_equal_label(self):
+        self.assertFalse(tokens.TokenAttr('Bob', 'name') >= tokens.TokenAttr('Fob', 'name'))
+
+    def test_not_equal_token(self):
+        self.assertTrue(tokens.TokenAttr('Bob', 'name') >= tokens.TokenAttr('Bob', 'fame'))
+
+    def test_non_token(self):
+        self.assertRaises(AttributeError, tokens.TokenAttr('Bob', 'name').__le__, '<TokenAttr name(name):\'Bob\'>')
+
+
+class TestTokenGe(TestTokenAttrBase):
+    def test_equal(self):
+        self.assertTrue(tokens.TokenAttr('Bob', 'name') >= tokens.TokenAttr('Bob', 'name'))
+
+    def test_not_equal_label(self):
+        self.assertFalse(tokens.TokenAttr('Bob', 'name') >= tokens.TokenAttr('Fob', 'name'))
+
+    def test_not_equal_token(self):
+        self.assertTrue(tokens.TokenAttr('Bob', 'name') >= tokens.TokenAttr('Bob', 'fame'))
+
+    def test_non_token(self):
+        self.assertRaises(AttributeError, tokens.TokenAttr('Bob', 'name').__ge__, '<TokenAttr name(name):\'Bob\'>')
+
+
+class TestTokenGt(TestTokenAttrBase):
+    def test_equal(self):
+        self.assertFalse(tokens.TokenAttr('Bob', 'name') > tokens.TokenAttr('Bob', 'name'))
+
+    def test_not_equal_label(self):
+        self.assertFalse(tokens.TokenAttr('Bob', 'name') > tokens.TokenAttr('Fob', 'name'))
+
+    def test_not_equal_token(self):
+        self.assertTrue(tokens.TokenAttr('Bob', 'name') > tokens.TokenAttr('Bob', 'fame'))
+
+    def test_non_token(self):
+        self.assertRaises(AttributeError, tokens.TokenAttr('Bob', 'name').__gt__, '<TokenAttr name(name):\'Bob\'>')

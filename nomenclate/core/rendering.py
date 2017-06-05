@@ -60,7 +60,7 @@ class TokenMatch(object):
             return self.start < other.start < self.end or self.start < other.end < self.end
         except:
             raise NotImplementedError(
-                '{C} objects do not handle in syntax for non class objects'.format(C=self.__class__.__name__))
+                '<%s>.__contains__ does not handle <%s>' % (self.__class__.__name__, type(other)))
 
     def __eq__(self, other):
         try:
@@ -68,7 +68,7 @@ class TokenMatch(object):
                     self.match == other.match and self.sub == other.sub)
         except:
             raise NotImplementedError(
-                '{C} objects do not handle == syntax for non class objects'.format(C=self.__class__.__name__))
+                '<%s>.__eq__ does not handle <%s>' % (self.__class__.__name__, type(other)))
 
     def __lt__(self, other):
         if isinstance(other, self.__class__):
@@ -82,8 +82,12 @@ class TokenMatch(object):
         else:
             raise NotImplementedError
 
+    def __repr__(self):
+        return '<%s %s (%d)- [%d:%d] - replacement = %s>' % (self.__class__.__name__,
+                                                             self.match, self.span, self.start, self.end, self.sub)
+
     def __str__(self):
-        return '%s (%d)- [%d:%d] - replacement = %s' % (self.match, self.span, self.start, self.end, self.sub)
+        return '%s:%s' % (self.match, self.sub)
 
 
 class Nomenclative(object):
@@ -122,15 +126,19 @@ class Nomenclative(object):
             self.validate_match(token_match)
             self.token_matches.append(token_match)
             self.LOG.info('Added match %s' % self.token_matches[-1])
-        except IndexError:
-            self.LOG.warning('Not adding match %s as it conflicts with a preexisting match' % token_match)
+        except (IndexError, exceptions.OverlapError):
+            msg = 'Not adding match %s as it conflicts with a preexisting match' % token_match
+            self.LOG.warning(msg)
+            raise exceptions.OverlapError(msg)
 
     def validate_match(self, token_match_candidate):
         for token_match in self.token_matches:
             try:
                 token_match.overlaps(token_match_candidate)
-            except exceptions.OverlapError as e:
-                self.LOG.error(e.message)
+            except exceptions.OverlapError:
+                msg = "Cannot add match %s due to overlap with %s" % (token_match, token_match_candidate)
+                self.LOG.error(msg)
+                raise exceptions.OverlapError(msg)
 
     def __str__(self):
         matches = '' if not self.token_matches else '\n'.join(map(str, self.token_matches))
@@ -156,32 +164,40 @@ class InputRenderer(type):
 
     @classmethod
     def render_unique_tokens(cls, nomenclate_object, input_dict):
-        cls.LOG.info('current list of render functions: %s' % list(cls.RENDER_FUNCTIONS))
-        for k, v in iteritems(input_dict):
-            cls.LOG.info('Checking for unique token on token %s:%r' % (k, v))
-            if v:
-                # TODO: Split this into a separate validation function
-                valid_functions = [func for func in list(cls.RENDER_FUNCTIONS)
-                                   if k.replace(func, '').isdigit() or not k.replace(func, '')] or ['default']
+        cls.LOG.info('Current list of render functions: %s' % list(cls.RENDER_FUNCTIONS))
+        cls.LOG.info('Checking against input dictionary %s' % input_dict)
+        non_empty_token_entries = {_k: _v for _k, _v in iteritems(input_dict) if _v}
+        cls.LOG.info('Non empties filtered: input dictionary %s' % input_dict)
 
-                for func in valid_functions:
-                    renderer = cls.RENDER_FUNCTIONS.get(func, None)
-                    cls.LOG.info(
-                        'Finding token specific render function for token %s with renderer %s' %
-                        (k, renderer))
+        for token, value in iteritems(non_empty_token_entries):
+            cls.LOG.info('Checking for unique token on token %s:%r' % (token, value))
+            for func in cls.get_valid_render_functions(token):
+                renderer = cls.RENDER_FUNCTIONS.get(func, None)
+                cls.LOG.info('Finding token specific render function for token %s with renderer %s' % (token, renderer))
 
-                    if func == 'default':
-                        renderer.token = k
+                if func == 'default':
+                    renderer.token = token
 
-                    if 'render' in dir(renderer):
-                        cls.LOG.info('render_unique_tokens() - Rendering token %r with %r, token settings=%s' %
-                                     (k, v, nomenclate_object.get_token_settings(k)))
+                if callable(getattr(renderer, 'render')):
+                    cls.LOG.info('render_unique_tokens() - Rendering token %r with %r, token settings=%s' %
+                                 (token, value, nomenclate_object.get_token_settings(token)))
 
-                        rendered_token = renderer.render(v, k, nomenclate_object,
-                                                         **nomenclate_object.get_token_settings(k))
-                        cls.LOG.info('Unique token %s rendered as: %s' % (k, rendered_token))
+                    rendered_token = renderer.render(value, token, nomenclate_object,
+                                                     **nomenclate_object.get_token_settings(token))
+                    cls.LOG.info('Unique token %s rendered as: %s' % (token, rendered_token))
 
-                        input_dict[k] = rendered_token
+                    input_dict[token] = rendered_token
+
+    @classmethod
+    def get_valid_render_functions(cls, token_name):
+        render_functions = []
+        for func in list(cls.RENDER_FUNCTIONS):
+            is_sub_token = token_name.replace(func, '').isdigit()
+            is_token_renderer = not token_name.replace(func, '')
+            if is_sub_token or is_token_renderer:
+                render_functions.append(func)
+        cls.LOG.info('Found valid render functions for token %s: %s' % (token_name, render_functions))
+        return render_functions or ['default']
 
     @classmethod
     def render_nomenclative(cls, nomenclate_object):
@@ -223,12 +239,6 @@ class InputRenderer(type):
         for delete in to_delete:
             token_values.pop(delete)
 
-    @staticmethod
-    def _render_replacements(replacements_dict, incomplete_nomenclative):
-        for token, match_value in iteritems(replacements_dict):
-            match, value = match_value
-            incomplete_nomenclative = incomplete_nomenclative.replace(match, value)
-
     @classmethod
     def cleanup_formatted_string(cls, formatted_string):
         """ Removes unused tokens/removes surrounding and double underscores
@@ -267,7 +277,6 @@ class InputRenderer(type):
                     return [string.ascii_lowercase.index(query_string), 'char_lo']
             else:
                 raise IOError('The input is a string longer than one character')
-        return [0, 'char_hi']
 
 
 @add_metaclass(InputRenderer)
@@ -300,9 +309,9 @@ class RenderBase(object):
     @staticmethod
     def handle_casing(value, case):
         if case == 'upper':
-            value.upper()
+            value = value.upper()
         elif case == 'lower':
-            value.lower()
+            value = value.lower()
         return value
 
     @classmethod
@@ -358,7 +367,6 @@ class RenderDate(RenderBase):
             except ValueError:
                 return ''
         date_format = getattr(nomenclate_object, '%s_format' % cls.token, '%Y-%m-%d')
-        # return d.strftime(get_keys_containing('format', nomenclate_object.__dict__, '%Y-%m-%d'))
         return d.strftime(date_format)
 
 
