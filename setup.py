@@ -18,24 +18,23 @@ with codecs.open(join(abspath(dirname(__file__)), 'README.rst'), encoding='utf-8
 description = 'A tool for generating strings based on a preset naming convention.',
 
 install_requires = [
-    'configparser',
     'python-dateutil',
-    'pyyaml',
+    'PyYAML',
     'six'
 ]
 
 tests_requires = [
     'coverage',
+    'coveralls',
     'fixtures',
     'unittest2',
     'mock',
     'nose',
     'pyfakefs',
-    'tox',
-    'coveralls'
+    'tox'
 ]
 
-dev_requires = ['twine', 'sphinx', 'docutils', 'docopt']
+dev_requires = ['twine', 'Sphinx', 'docutils', 'docopt']
 
 setup(
     name=__package__,
