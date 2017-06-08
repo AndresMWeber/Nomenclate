@@ -60,10 +60,8 @@ class NameParser(object):
         for side in cls.CONFIG_SIDES:
             """ Tried using a regex, however it would've taken too long to debug
             side_regex = cls._build_abbreviation_regex(side)
-            print ('side regex for side %s is %s'%(side, side_regex))
             result = cls._generic_search(name, side_regex, metadata={'side': side}, ignore=ignore)
             if result:
-                print ('found a result, coming back.')
                 return result
             """
             for permutations in cls.get_string_camel_patterns(side):

@@ -405,7 +405,6 @@ class RenderBase(object):
         """
         options = [options] if isinstance(options, str) else options
         criteria_matches = list(options)
-        print(options)
 
         for token_criteria, criteria_value in iteritems(filter_kwargs):
             builtin_func = token_criteria.replace('%s_' % token, '')
