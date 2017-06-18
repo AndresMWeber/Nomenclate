@@ -150,8 +150,11 @@ class RenderBase(object):
             except AttributeError:
                 cls.LOG.warning('Criteria function %r is invalid...skipping' % builtin_func)
         cls.LOG.info('Found criteria matches: %s ...returning first' % criteria_matches)
-
-        return criteria_matches[0]
+        try:
+            return criteria_matches[0]
+        except IndexError:
+            cls.LOG.warning('Nothing from options %s matched the criteria...returning first option' % options)
+            return options[0]
 
 
 class RenderDate(RenderBase):

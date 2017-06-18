@@ -34,11 +34,12 @@ class InputRenderer(type):
         for token, value in iteritems(non_empty_token_entries):
             cls.LOG.info('Checking for unique token on token %s:%r' % (token, value))
             for func in cls.get_valid_render_functions(token):
+                cls.LOG.info('Finding render function for token %s in functions: %s' % (func, list(cls.RENDER_FUNCTIONS)))
                 renderer = cls.RENDER_FUNCTIONS.get(func, None)
-                cls.LOG.info('Finding token specific render function for token %r with renderer %s' % (token, renderer))
-
                 if func == 'default':
                     renderer.token = token
+                cls.LOG.info('Finding token specific render function for token %r with renderer %s' % (token, renderer))
+
 
                 if callable(getattr(renderer, 'render')):
                     cls.LOG.info('render_unique_tokens() - Rendering token %r: %r, token settings=%s' %
@@ -58,8 +59,9 @@ class InputRenderer(type):
             is_token_renderer = not token_name.replace(func, '')
             if is_sub_token or is_token_renderer:
                 render_functions.append(func)
+        render_functions = render_functions or ['default']
         cls.LOG.info('Found valid render functions for token %s: %s' % (token_name, render_functions))
-        return render_functions or ['default']
+        return render_functions
 
     @classmethod
     def render_nomenclative(cls, nomenclate_object):
