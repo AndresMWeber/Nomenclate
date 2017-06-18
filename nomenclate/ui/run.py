@@ -1,4 +1,5 @@
 import sys
+
 sys.path.append('C:\\Users\\andre\\Envs\\nomenclate\\Lib\\site-packages')
 from PyQt5 import QtWidgets
 from main import MainDialog
@@ -7,6 +8,7 @@ MODULE_LOGGER_LEVEL_OVERRIDE = None
 
 APPLICATIONS = ['Maya-2017', 'Maya-2016', 'Maya-2015', 'Nuke']
 WINDOW_INSTANCE = None
+
 
 def create():
     global WINDOW_INSTANCE

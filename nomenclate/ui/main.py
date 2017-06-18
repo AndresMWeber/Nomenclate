@@ -37,7 +37,7 @@ class MainDialog(QtWidgets.QDialog):
         self.setAcceptDrops(True)
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         self.setWindowTitle(self.NAME)
-        #self.setFixedSize(285, 320)
+        # self.setFixedSize(285, 320)
 
         self.layout_main.setContentsMargins(5, 5, 5, 5)
         self.layout_main.setSpacing(0)

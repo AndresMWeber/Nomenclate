@@ -1,5 +1,5 @@
 from default import DefaultWidget
-from PyQt5 import QtWidgets, QtGui, QtCore
+from PyQt5 import QtWidgets, QtCore
 import nomenclate
 from six import iteritems
 
@@ -12,6 +12,7 @@ class FormatTextEdit(QtWidgets.QTextEdit):
             self.return_pressed.emit()
         else:
             super(FormatTextEdit, self).keyPressEvent(QKeyEvent)
+
 
 class TokenWidget(QtWidgets.QWidget):
     changed = QtCore.pyqtSignal(str, str)
@@ -37,7 +38,6 @@ class TokenWidget(QtWidgets.QWidget):
         self.layout_main.addWidget(self.label)
         self.layout_main.addWidget(self.inner_frame)
         self.layout_main.addWidget(self.value)
-
 
         self.value.textChanged.connect(self.on_change)
 
@@ -70,7 +70,6 @@ class InstanceHandlerWidget(DefaultWidget):
         self.layout_main.addWidget(self.output_name)
         self.input_format.return_pressed.connect(self.set_format)
 
-
     def update_tokens(self):
         self.clear_tokens()
         for token, value in iteritems(self.NOM.state):
@@ -82,7 +81,6 @@ class InstanceHandlerWidget(DefaultWidget):
                 if token_widget.label.text() == token:
                     token_widget.changed.connect(self.update_instance)
                     self.token_layout.addWidget(token_widget)
-
 
     def clear_tokens(self):
         for i in reversed(range(self.token_layout.count())):
