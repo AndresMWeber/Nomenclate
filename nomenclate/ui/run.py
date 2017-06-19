@@ -1,7 +1,7 @@
 import sys
 
 sys.path.append('C:\\Users\\andre\\Envs\\nomenclate\\Lib\\site-packages')
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 from main import MainDialog
 
 MODULE_LOGGER_LEVEL_OVERRIDE = None

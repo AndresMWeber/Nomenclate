@@ -48,7 +48,7 @@ class FileListWidget(DefaultWidget):
         self.proxy_list = QtCore.QSortFilterProxyModel()
         self.btn_widget = QtWidgets.QWidget()
         self.btn_layout = QtWidgets.QHBoxLayout()
-        self.wgt_filter_list = QtWidgets.QLineEdit()
+        self.wgt_filter_list = QtWidgets.QLineEdit(placeholderText='filter...')
         self.btn_clear = QtWidgets.QPushButton('Clear')
         self.btn_remove = QtWidgets.QPushButton('Remove')
         self.btn_full = QtWidgets.QPushButton('Full Path')
@@ -97,7 +97,6 @@ class FileListWidget(DefaultWidget):
 
         for persistent_row_index in remove_rows:
             self.list.removeRow(persistent_row_index.row())
-
 
     def clear_model(self):
         self.list.clear()

@@ -1,7 +1,7 @@
 from PyQt5 import QtWidgets
 
 
-class DefaultWidget(QtWidgets.QWidget):
+class DefaultWidget(QtWidgets.QFrame):
     TITLE = 'Default Widget'
     TOP = 10
     LEFT = 10

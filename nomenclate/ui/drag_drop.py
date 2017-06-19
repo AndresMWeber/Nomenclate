@@ -16,19 +16,32 @@ class DragDropItemModel(QtGui.QStandardItemModel):
 class DragDropWidget(DefaultWidget):
     TITLE = 'Drag and Drop'
     dropped = QtCore.pyqtSignal(list)
+    browse = QtCore.pyqtSignal()
 
     def create_controls(self):
         self.layout_main = QtWidgets.QVBoxLayout()
+        self.btn_browse = QtWidgets.QPushButton('Browse...')
+        self.text = QtWidgets.QLabel('Drag and Drop Files\nOr Click to Browse')
         self.label = QtWidgets.QLabel()
         self.pixmap = QtGui.QPixmap(os.path.normpath(os.path.abspath('.\\resource\\drag-and-drop-icon.png')))
 
     def initialize_controls(self):
         self.setAcceptDrops(True)
+        self.setFixedSize(320, 320)
+        self.label.setFixedSize(250, 250)
+        self.label.setObjectName('DragLabel')
 
     def connect_controls(self):
         self.setLayout(self.layout_main)
         self.label.setPixmap(self.pixmap.scaled(self.label.size(), QtCore.Qt.KeepAspectRatio))
-        self.layout_main.addWidget(self.label)
+        self.layout_main.addWidget(self.label, 0, QtCore.Qt.AlignCenter)
+        self.layout_main.addWidget(self.text, 0, QtCore.Qt.AlignCenter)
+        self.layout_main.addWidget(self.btn_browse, 0, QtCore.Qt.AlignCenter)
+
+        self.btn_browse.clicked.connect(self.browser)
+
+    def browser(self):
+        print('browsing')
 
     def resizeEvent(self, QResizeEvent):
         self.label.setPixmap(self.pixmap.scaled(self.label.size(), QtCore.Qt.KeepAspectRatio))
@@ -59,3 +72,7 @@ class DragDropWidget(DefaultWidget):
             self.dropped.emit([str(url.toLocalFile()) for url in event.mimeData().urls()])
         else:
             event.ignore()
+
+    def focusOutEvent(self, *args, **kwargs):
+        super(DragDropWidget, self).focusOutEvent(*args, **kwargs)
+        self.clear_model()

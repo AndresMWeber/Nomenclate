@@ -218,7 +218,7 @@ class RenderVersion(RenderBase):
         padding = filter_kwargs.get('%s_padding' % token, 4)
         format = filter_kwargs.get('%s_format' % token, '#')
         version_string = format.replace('#', '%0{0}d')
-        return version_string.format(padding) % version
+        return version_string.format(padding) % int(version)
 
 
 class RenderType(RenderBase):
