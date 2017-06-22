@@ -13,7 +13,7 @@ class MainDialog(QtWidgets.QDialog):
     NAME = 'Nomenclate'
     LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
     WIDTH = 800
-    HEIGHT = 800
+    HEIGHT = 600
 
     def __init__(self):
         super(MainDialog, self).__init__()
@@ -46,12 +46,12 @@ class MainDialog(QtWidgets.QDialog):
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         self.setWindowTitle(self.NAME)
         self.setObjectName('MainFrame')
-        self.wgt_header.setObjectName('Header')
+        self.wgt_header.setObjectName('HeaderWidget')
         self.header_label.setObjectName('HeaderLabel')
         self.header_label.setText(self.NAME.upper())
-        self.layout_main.setContentsMargins(5, 5, 5, 5)
+        self.layout_main.setContentsMargins(0, 0, 0, 0)
         self.layout_main.setSpacing(0)
-        self.setFixedSize(self.WIDTH, self.HEIGHT)
+        self.setBaseSize(self.WIDTH, self.HEIGHT)
         self.layout_main.setAlignment(QtCore.Qt.AlignTop)
         self.load_stylesheet()
 

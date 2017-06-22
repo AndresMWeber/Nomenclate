@@ -1,7 +1,7 @@
 from PyQt5 import QtWidgets
 
 
-class DefaultWidget(QtWidgets.QFrame):
+class Default(object):
     TITLE = 'Default Widget'
     TOP = 10
     LEFT = 10
@@ -9,7 +9,7 @@ class DefaultWidget(QtWidgets.QFrame):
     HEIGHT = 480
 
     def __init__(self):
-        super(DefaultWidget, self).__init__()
+        super(Default, self).__init__()
         self.title = self.TITLE
         self.setup()
 
@@ -26,3 +26,17 @@ class DefaultWidget(QtWidgets.QFrame):
 
     def connect_controls(self):
         raise NotImplementedError
+
+
+class DefaultWidget(QtWidgets.QWidget, Default):
+    pass
+
+
+class DefaultFrame(QtWidgets.QFrame, Default):
+    pass
+
+
+class DefaultDialog(QtWidgets.QDialog, Default):
+    pass
+
+class QCollapsableTree(QtWidgets.QTreeView):

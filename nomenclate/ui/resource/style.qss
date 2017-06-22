@@ -1,11 +1,16 @@
 
 
-QTextEdit, QLineEdit, QLabel, QListView {
+QTextEdit, QLineEdit, QLabel, QListView, QWidget {
     padding: 1px;
     color: rgb(200, 200, 200);
     font-family: "Lato";
     background: rgba(1,1,1,.2);
     border-radius: 0;
+}
+
+QListView {
+    alternate-background-color: rgba(200,200,200,.1);
+    background-color: rgba(200,200,200,.05);
 }
 
 QTextEdit, QLineEdit {
@@ -38,13 +43,14 @@ QLabel#DragLabel {
 }
 
 QWidget#OutputWidget {
-    background: #468189;
+    background: rgba(200, 200, 200, .1);
+    min-height: 75;
+    max-height: 75;
 }
 
 QLabel#OutputTitle {
     background: transparent;
     font-weight: 800;
-    font-size: 10pt;
     qproperty-alignment: AlignCenter;
 }
 
@@ -52,7 +58,6 @@ QLabel#OutputLabel {
     color: #FFA552;
     background: transparent;
     font-weight: 400;
-    font-size: 7pt;
     qproperty-alignment: AlignCenter;
 }
 
@@ -63,6 +68,11 @@ QDialog{
 QFrame{
     background: rgba(1,1,1,.1);
     border: 0px;
+}
+
+QFrame#InstanceHandler{
+    min-height: 300;
+    max-height: 300;
 }
 
 QPushButton, QCheckBox {

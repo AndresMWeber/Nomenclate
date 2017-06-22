@@ -55,6 +55,7 @@ class FileListWidget(DefaultWidget):
 
     def initialize_controls(self):
         self.setAcceptDrops(True)
+        self.wgt_list_view.setAlternatingRowColors(True)
         self.wgt_list_view.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
 
     def connect_controls(self):

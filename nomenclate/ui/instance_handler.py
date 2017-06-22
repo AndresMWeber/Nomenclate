@@ -1,4 +1,4 @@
-from default import DefaultWidget
+from default import DefaultFrame
 from PyQt5 import QtWidgets, QtCore, QtGui
 import nomenclate
 from six import iteritems
@@ -16,57 +16,66 @@ class FormatTextEdit(QtWidgets.QTextEdit):
             super(FormatTextEdit, self).keyPressEvent(QKeyEvent)
 
 
-class TokenWidget(QtWidgets.QFrame):
+class TokenWidget(DefaultFrame):
     changed = QtCore.pyqtSignal(str, str)
 
     def __init__(self, token, value):
-        super(TokenWidget, self).__init__()
         self.token = token
+        self.value = value
+        super(TokenWidget, self).__init__()
 
-        self.setFrameShape(QtWidgets.QFrame.Box)
-        self.setFrameShadow(QtWidgets.QFrame.Sunken)
-
-        self.layout_main = QtWidgets.QVBoxLayout()
-        self.setLayout(self.layout_main)
-
-        self.layout_main.setContentsMargins(1, 0, 1, 0)
-        self.layout_main.setSpacing(0)
-
+    def create_controls(self):
+        self.layout_main = QtWidgets.QVBoxLayout(self)
         self.label = QtWidgets.QLabel(self.token.capitalize())
-        self.label.setObjectName('TokenLabel')
+        self.inner_frame = QtWidgets.QFrame()
+        self.inner_layout = QtWidgets.QVBoxLayout(self.inner_frame)
 
         self.capital = QtWidgets.QCheckBox('capitalized')
         self.prefix = QtWidgets.QLineEdit(placeholderText='prefix')
         self.suffix = QtWidgets.QLineEdit(placeholderText='suffix')
-        self.value = QtWidgets.QLineEdit(value)
+        self.value_widget = QtWidgets.QLineEdit(self.value)
 
-        self.prefix.setValidator(ALPHANUMERIC_VALIDATOR)
-        self.suffix.setValidator(ALPHANUMERIC_VALIDATOR)
-        self.value.setValidator(ALPHANUMERIC_VALIDATOR)
+        self.options = QtWidgets.QToolBox()
+        self.options_widget = QtWidgets.QWidget()
+        self.options_layout = QtWidgets.QVBoxLayout(self.options_widget)
 
-        self.inner_frame = QtWidgets.QFrame()
+    def initialize_controls(self):
+        self.label.setObjectName('TokenLabel')
+
+        self.setFrameShape(QtWidgets.QFrame.Box)
+        self.setFrameShadow(QtWidgets.QFrame.Sunken)
+
+        self.layout_main.setContentsMargins(1, 0, 1, 0)
+        self.layout_main.setSpacing(0)
+
         self.inner_frame.setFixedHeight(95)
         self.inner_frame.setFrameShape(QtWidgets.QFrame.Box)
         self.inner_frame.setFrameShadow(QtWidgets.QFrame.Sunken)
 
-        self.inner_layout = QtWidgets.QVBoxLayout()
-        self.inner_layout.addWidget(self.capital)
-        self.inner_layout.addWidget(self.prefix)
-        self.inner_layout.addWidget(self.suffix)
-        self.inner_frame.setLayout(self.inner_layout)
+        self.prefix.setValidator(ALPHANUMERIC_VALIDATOR)
+        self.suffix.setValidator(ALPHANUMERIC_VALIDATOR)
+        self.value_widget.setValidator(ALPHANUMERIC_VALIDATOR)
+
+    def connect_controls(self):
+        self.value_widget.textChanged.connect(self.on_change)
 
         self.layout_main.addWidget(self.label)
         self.layout_main.addWidget(self.inner_frame)
-        self.layout_main.addWidget(self.value)
+        self.layout_main.addWidget(self.value_widget)
 
-        self.value.textChanged.connect(self.on_change)
+        self.options.addItem(self.options_widget, 'Token Options')
+        self.options_layout.addWidget(self.capital)
+        self.options_layout.addWidget(self.prefix)
+        self.options_layout.addWidget(self.suffix)
+
+        self.inner_layout.addWidget(self.options)
 
     def on_change(self):
-        value = self.value.text()
-        self.changed.emit(self.token, value)
+        self.value = self.value_widget.text()
+        self.changed.emit(self.token, self.value)
 
 
-class InstanceHandlerWidget(DefaultWidget, QtWidgets.QFrame):
+class InstanceHandlerWidget(DefaultFrame):
     TITLE = 'File List View'
     NOM = nomenclate.Nom()
 
@@ -85,7 +94,8 @@ class InstanceHandlerWidget(DefaultWidget, QtWidgets.QFrame):
 
     def initialize_controls(self):
         self.update_tokens()
-        self.output_title.setObjectName('OutputWidget')
+        self.setObjectName('InstanceHandler')
+        self.wgt_output.setObjectName('OutputWidget')
         self.output_title.setObjectName('OutputTitle')
         self.output_name.setObjectName('OutputLabel')
 
