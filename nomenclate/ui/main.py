@@ -8,6 +8,7 @@ import nomenclate.ui.file_list as file_list
 
 MODULE_LOGGER_LEVEL_OVERRIDE = None
 
+clicked = 0
 
 class MainDialog(QtWidgets.QDialog):
     NAME = 'Nomenclate'
@@ -19,6 +20,8 @@ class MainDialog(QtWidgets.QDialog):
         super(MainDialog, self).__init__()
         self.add_fonts()
         self.setup()
+        #self.setFocus()
+        QtWidgets.QApplication.instance().installEventFilter(self)
 
     def setup(self):
         self.create_controls()
@@ -43,9 +46,10 @@ class MainDialog(QtWidgets.QDialog):
 
     def initialize_controls(self):
         self.setAcceptDrops(True)
-        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        #self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         self.setWindowTitle(self.NAME)
         self.setObjectName('MainFrame')
+        self.setFocusPolicy(QtCore.Qt.NoFocus)
         self.wgt_header.setObjectName('HeaderWidget')
         self.header_label.setObjectName('HeaderLabel')
         self.header_label.setText(self.NAME.upper())
@@ -54,11 +58,6 @@ class MainDialog(QtWidgets.QDialog):
         self.setBaseSize(self.WIDTH, self.HEIGHT)
         self.layout_main.setAlignment(QtCore.Qt.AlignTop)
         self.load_stylesheet()
-
-    def load_stylesheet(self, btn_event=None, stylesheet='style.qss'):
-        stylesheet_file = os.path.normpath(os.path.abspath('.\\resource\\%s' % stylesheet))
-        qss_data = open(stylesheet_file).read()
-        self.setStyleSheet(qss_data)
 
     def connect_controls(self):
         self.setLayout(self.layout_main)
@@ -79,6 +78,11 @@ class MainDialog(QtWidgets.QDialog):
         self.drag_drop_view.dropped.connect(self.file_list_view.update_file_paths)
         self.filesystem_view.send_files.connect(self.file_list_view.update_file_paths)
 
+    def load_stylesheet(self, btn_event=None, stylesheet='style.qss'):
+        stylesheet_file = os.path.normpath(os.path.abspath('.\\resource\\%s' % stylesheet))
+        qss_data = open(stylesheet_file).read()
+        self.setStyleSheet(qss_data)
+
     def add_fonts(self):
         font_dir = os.path.join(os.path.abspath('.'), 'resource', 'fonts')
         for font_file in os.listdir(font_dir):
@@ -98,3 +102,15 @@ class MainDialog(QtWidgets.QDialog):
             self.wgt_stack.setCurrentIndex(0)
         else:
             event.ignore()
+
+    def eventFilter(self, source, event):
+        global clicked
+        if event.type() == QtCore.QEvent.KeyPress:
+            if event.key() == QtCore.Qt.Key_Tab:
+                #QtWidgets.QApplication.focusChanged()
+
+                print('Active window: ', QtWidgets.QApplication.activeWindow())
+                print('Tab Detected: %s [%r]' % (event.key(), source))
+                print('Has Run %d times' % clicked)
+                clicked += 1
+        return super(MainDialog, self).eventFilter(source, event)

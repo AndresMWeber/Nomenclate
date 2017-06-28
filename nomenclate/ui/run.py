@@ -21,6 +21,7 @@ def create():
     if WINDOW_INSTANCE is None:
         WINDOW_INSTANCE = MainDialog()
     WINDOW_INSTANCE.show()
+    WINDOW_INSTANCE.raise_()
 
     if not application.applicationName() in APPLICATIONS:
         try:
@@ -28,6 +29,9 @@ def create():
             sys.exit(application.exec_())
         except SystemExit:
             pass
+    else:
+        WINDOW_INSTANCE.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+
     WINDOW_INSTANCE.LOG.info('%s running on %s' % (application.applicationName(), application.platformName()))
 
 

@@ -6,8 +6,12 @@ from six import iteritems
 ALPHANUMERIC_VALIDATOR = QtGui.QRegExpValidator(QtCore.QRegExp('[A-Za-z0-9_]*'))
 
 
-class FormatTextEdit(QtWidgets.QTextEdit):
+class FormatTextEdit(QtWidgets.QLineEdit):
     return_pressed = QtCore.pyqtSignal()
+
+    def __init__(self, *args, **kwargs):
+        super(FormatTextEdit, self).__init__(*args, **kwargs)
+        self.setValidator(ALPHANUMERIC_VALIDATOR)
 
     def keyPressEvent(self, QKeyEvent):
         if QKeyEvent.key() == QtCore.Qt.Key_Return:
@@ -56,6 +60,18 @@ class TokenWidget(DefaultFrame):
         self.suffix.setValidator(ALPHANUMERIC_VALIDATOR)
         self.value_widget.setValidator(ALPHANUMERIC_VALIDATOR)
 
+        self.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.label.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.inner_frame.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.options_widget.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.options.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.capital.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.prefix.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.suffix.setFocusPolicy(QtCore.Qt.NoFocus)
+
+        self.value_widget.setFocusPolicy(QtCore.Qt.StrongFocus)
+        self.setFocusProxy(self.value_widget)
+
     def connect_controls(self):
         self.value_widget.textChanged.connect(self.on_change)
 
@@ -69,10 +85,17 @@ class TokenWidget(DefaultFrame):
         self.options_layout.addWidget(self.suffix)
 
         self.inner_layout.addWidget(self.options)
+        print(self.children())
 
     def on_change(self):
         self.value = self.value_widget.text()
         self.changed.emit(self.token, self.value)
+
+    def is_selected(self):
+        return self.value_widget.hasFocus()
+
+    def __repr__(self):
+        return super(TokenWidget, self).__repr__().replace('>', ' %r>' % self.token.lower())
 
 
 class InstanceHandlerWidget(DefaultFrame):
@@ -80,20 +103,21 @@ class InstanceHandlerWidget(DefaultFrame):
     NOM = nomenclate.Nom()
 
     def create_controls(self):
-        self.layout_main = QtWidgets.QVBoxLayout()
-        self.token_frame = QtWidgets.QFrame()
+        self.layout_main = QtWidgets.QVBoxLayout(self)
         self.wgt_output = QtWidgets.QWidget()
-        self.output_layout = QtWidgets.QVBoxLayout()
+        self.output_layout = QtWidgets.QVBoxLayout(self.wgt_output)
         self.output_title = QtWidgets.QLabel('Output Base Name')
         self.output_name = QtWidgets.QLabel()
-        self.input_format = FormatTextEdit(placeholderText='Override Format String - Current =   %s' % self.NOM.format)
-        self.token_layout = QtWidgets.QHBoxLayout()
+        self.input_format = QtWidgets.QLineEdit(placeholderText='Override Format String - Current =   %s' %
+                                                                self.NOM.format)
+        self.token_frame = QtWidgets.QFrame()
+        self.token_layout = QtWidgets.QHBoxLayout(self.token_frame)
         self.token_layout.setContentsMargins(0, 0, 0, 0)
         self.token_layout.setSpacing(0)
-        self.token_widgets = []
+        self.token_widgets = {}
 
     def initialize_controls(self):
-        self.update_tokens()
+        self.refresh_tokens()
         self.setObjectName('InstanceHandler')
         self.wgt_output.setObjectName('OutputWidget')
         self.output_title.setObjectName('OutputTitle')
@@ -101,41 +125,36 @@ class InstanceHandlerWidget(DefaultFrame):
 
         self.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.setFrameShape(QtWidgets.QFrame.StyledPanel)
-        self.input_format.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
 
     def connect_controls(self):
-        self.setLayout(self.layout_main)
-
-        self.wgt_output.setLayout(self.output_layout)
         self.output_layout.addWidget(self.output_title)
         self.output_layout.addWidget(self.output_name)
 
-        self.token_frame.setLayout(self.token_layout)
         self.layout_main.addWidget(self.input_format)
         self.layout_main.addWidget(self.token_frame)
         self.layout_main.addWidget(self.wgt_output)
-        self.input_format.return_pressed.connect(self.set_format)
+        self.input_format.returnPressed.connect(self.set_format)
 
-    def update_tokens(self):
+    def refresh_tokens(self):
         self.clear_tokens()
         for token, value in iteritems(self.NOM.state):
-            self.token_widgets.append(TokenWidget(token, value))
+            token_widget = TokenWidget(token, value)
+            self.token_widgets[token] = (token_widget)
 
         # Add in order based on format order
         for token in self.NOM.format_order:
-            for token_widget in self.token_widgets:
-                if token_widget.token == token:
-                    token_widget.changed.connect(self.update_instance)
-                    self.token_layout.addWidget(token_widget)
+            token_widget = self.token_widgets[token.lower()]
+            token_widget.changed.connect(self.update_instance)
+            self.token_layout.addWidget(token_widget)
 
     def clear_tokens(self):
         for i in reversed(range(self.token_layout.count())):
-            self.token_layout.itemAt(i).widget().setParent(None)
-        self.token_widgets = []
+            self.token_layout.itemAt(i).widget().deleteLater()
+        self.token_widgets = {}
 
     def set_format(self):
         self.NOM.format = self.input_format.toPlainText().encode('utf-8')
-        self.update_tokens()
+        self.refresh_tokens()
         self.update_instance('', '')
 
     def update_instance(self, token, value):
@@ -147,3 +166,12 @@ class InstanceHandlerWidget(DefaultFrame):
                         "margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:20pt;\">{NAME}</p>"
                         "</body></html>")
         self.output_name.setText(formatted.format(NAME=self.NOM.get()))
+
+    def select_next_token_line_edit(self):
+        for token, next_token in zip(self.NOM.format_order, self.NOM.format_order[1:] + [self.NOM.format_order[0]]):
+            token_widget = self.token_widgets[token.lower()]
+            if token_widget.is_selected():
+                next_widget = self.token_widgets[next_token.lower()]
+                print('selecting from widget %r to next widget %r %s' % (token_widget, next_widget, next_token))
+                next_widget.value_widget.setFocus()
+                return

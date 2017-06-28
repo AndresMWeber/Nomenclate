@@ -39,4 +39,6 @@ class DefaultFrame(QtWidgets.QFrame, Default):
 class DefaultDialog(QtWidgets.QDialog, Default):
     pass
 
+
 class QCollapsableTree(QtWidgets.QTreeView):
+    pass

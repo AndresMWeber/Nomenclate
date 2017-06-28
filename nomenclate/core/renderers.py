@@ -142,11 +142,18 @@ class RenderBase(object):
                 cls.LOG.info('Filtering options: %s with criteria: %s' % (options, token_criteria))
 
                 for option in options:
-                    cls.LOG.info('Running through option %s' % option)
+                    cls.LOG.info('Running through criteria: %s: %s(%s) == %s' %
+                                 (token_criteria, builtin_func, option, criteria_value))
                     if token_criteria and criteria_value:
-                        if not builtin_func(option) == criteria_value:
-                            cls.LOG.info('Non criteria match for %s(%s)=%s' % (builtin_func, option, criteria_value))
-                            criteria_matches.remove(option)
+                        try:
+                            if not builtin_func(option) == criteria_value:
+                                cls.LOG.info(
+                                    'Non criteria match for %s(%s)=%s' % (builtin_func, option, criteria_value))
+                                criteria_matches.remove(option)
+                        except ValueError:
+                            cls.LOG.warning(
+                                'Criteria option %s caused function %s to error...ignoring' % (option, builtin_func))
+
             except AttributeError:
                 cls.LOG.warning('Criteria function %r is invalid...skipping' % builtin_func)
         cls.LOG.info('Found criteria matches: %s ...returning first' % criteria_matches)
