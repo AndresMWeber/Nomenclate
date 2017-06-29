@@ -20,6 +20,7 @@ def create():
 
     if WINDOW_INSTANCE is None:
         WINDOW_INSTANCE = MainDialog()
+    WINDOW_INSTANCE.LOG.info('%s running on %s' % (application.applicationName(), application.platformName()))
     WINDOW_INSTANCE.show()
     WINDOW_INSTANCE.raise_()
 
@@ -32,7 +33,6 @@ def create():
     else:
         WINDOW_INSTANCE.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
 
-    WINDOW_INSTANCE.LOG.info('%s running on %s' % (application.applicationName(), application.platformName()))
 
 
 def delete():

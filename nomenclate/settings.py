@@ -16,7 +16,7 @@ DEBUG = DEBUG
 WARNING = WARNING
 ERROR = ERROR
 FATAL = FATAL
-
+QUIET = None
 
 def get_module_logger(module_name, module_override_level=None):
     module_logger_level = module_override_level or PACKAGE_LOGGER_LEVEL

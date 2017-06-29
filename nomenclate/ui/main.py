@@ -6,9 +6,10 @@ import nomenclate.ui.instance_handler as instance_handler
 import nomenclate.ui.drag_drop as drag_drop
 import nomenclate.ui.file_list as file_list
 
-MODULE_LOGGER_LEVEL_OVERRIDE = None
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 clicked = 0
+
 
 class MainDialog(QtWidgets.QDialog):
     NAME = 'Nomenclate'
@@ -20,7 +21,6 @@ class MainDialog(QtWidgets.QDialog):
         super(MainDialog, self).__init__()
         self.add_fonts()
         self.setup()
-        #self.setFocus()
         QtWidgets.QApplication.instance().installEventFilter(self)
 
     def setup(self):
@@ -46,7 +46,7 @@ class MainDialog(QtWidgets.QDialog):
 
     def initialize_controls(self):
         self.setAcceptDrops(True)
-        #self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        # self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         self.setWindowTitle(self.NAME)
         self.setObjectName('MainFrame')
         self.setFocusPolicy(QtCore.Qt.NoFocus)
@@ -104,13 +104,23 @@ class MainDialog(QtWidgets.QDialog):
             event.ignore()
 
     def eventFilter(self, source, event):
-        global clicked
         if event.type() == QtCore.QEvent.KeyPress:
             if event.key() == QtCore.Qt.Key_Tab:
-                #QtWidgets.QApplication.focusChanged()
+                focused_widget = QtWidgets.QApplication.focusWidget()
+                self.LOG.debug('Focus event %s moved to widget: %s with parent %s, from widget %s' % (event,
+                                                                                                      focused_widget,
+                                                                                                      focused_widget.parent(),
+                                                                                                      source))
+                if focused_widget.parent() in self.instance_handler.token_widgets:
+                    if self.instance_handler.select_next_token_line_edit():
+                        return True
 
-                print('Active window: ', QtWidgets.QApplication.activeWindow())
-                print('Tab Detected: %s [%r]' % (event.key(), source))
-                print('Has Run %d times' % clicked)
-                clicked += 1
+
         return super(MainDialog, self).eventFilter(source, event)
+
+    def closeEvent(self, e):
+        '''
+        Make sure the eventFilter is removed
+        '''
+        QtWidgets.QApplication.instance().removeEventFilter(self)
+        return super(MainDialog, self).closeEvent(e)

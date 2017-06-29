@@ -1,9 +1,11 @@
 from default import DefaultFrame
+import nomenclate.settings as settings
 from PyQt5 import QtWidgets, QtCore, QtGui
 import nomenclate
 from six import iteritems
 
 ALPHANUMERIC_VALIDATOR = QtGui.QRegExpValidator(QtCore.QRegExp('[A-Za-z0-9_]*'))
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
 class FormatTextEdit(QtWidgets.QLineEdit):
@@ -85,7 +87,6 @@ class TokenWidget(DefaultFrame):
         self.options_layout.addWidget(self.suffix)
 
         self.inner_layout.addWidget(self.options)
-        print(self.children())
 
     def on_change(self):
         self.value = self.value_widget.text()
@@ -101,6 +102,7 @@ class TokenWidget(DefaultFrame):
 class InstanceHandlerWidget(DefaultFrame):
     TITLE = 'File List View'
     NOM = nomenclate.Nom()
+    LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
 
     def create_controls(self):
         self.layout_main = QtWidgets.QVBoxLayout(self)
@@ -114,7 +116,11 @@ class InstanceHandlerWidget(DefaultFrame):
         self.token_layout = QtWidgets.QHBoxLayout(self.token_frame)
         self.token_layout.setContentsMargins(0, 0, 0, 0)
         self.token_layout.setSpacing(0)
-        self.token_widgets = {}
+        self.token_widget_lookup = {}
+
+    @property
+    def token_widgets(self):
+        return [self.token_widget_lookup[token] for token in list(self.token_widget_lookup)]
 
     def initialize_controls(self):
         self.refresh_tokens()
@@ -139,18 +145,18 @@ class InstanceHandlerWidget(DefaultFrame):
         self.clear_tokens()
         for token, value in iteritems(self.NOM.state):
             token_widget = TokenWidget(token, value)
-            self.token_widgets[token] = (token_widget)
+            self.token_widget_lookup[token] = (token_widget)
 
         # Add in order based on format order
         for token in self.NOM.format_order:
-            token_widget = self.token_widgets[token.lower()]
+            token_widget = self.token_widget_lookup[token.lower()]
             token_widget.changed.connect(self.update_instance)
             self.token_layout.addWidget(token_widget)
 
     def clear_tokens(self):
         for i in reversed(range(self.token_layout.count())):
             self.token_layout.itemAt(i).widget().deleteLater()
-        self.token_widgets = {}
+        self.token_widget_lookup = {}
 
     def set_format(self):
         self.NOM.format = self.input_format.toPlainText().encode('utf-8')
@@ -169,9 +175,11 @@ class InstanceHandlerWidget(DefaultFrame):
 
     def select_next_token_line_edit(self):
         for token, next_token in zip(self.NOM.format_order, self.NOM.format_order[1:] + [self.NOM.format_order[0]]):
-            token_widget = self.token_widgets[token.lower()]
-            if token_widget.is_selected():
-                next_widget = self.token_widgets[next_token.lower()]
-                print('selecting from widget %r to next widget %r %s' % (token_widget, next_widget, next_token))
+            token_widget = self.token_widget_lookup[token.lower()]
+            if token_widget.is_selected() and next_token != self.NOM.format_order[0]:
+                next_widget = self.token_widget_lookup[next_token.lower()]
+                self.LOG.debug(
+                    'Selecting from widget %r to next token widget (%s): %r' % (token_widget, next_token, next_widget))
                 next_widget.value_widget.setFocus()
-                return
+                return True
+        return False
