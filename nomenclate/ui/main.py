@@ -8,8 +8,6 @@ import nomenclate.ui.file_list as file_list
 
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
-clicked = 0
-
 
 class MainDialog(QtWidgets.QDialog):
     NAME = 'Nomenclate'
@@ -21,6 +19,7 @@ class MainDialog(QtWidgets.QDialog):
         super(MainDialog, self).__init__()
         self.add_fonts()
         self.setup()
+        self.setup_menubar()
         QtWidgets.QApplication.instance().installEventFilter(self)
 
     def setup(self):
@@ -28,8 +27,26 @@ class MainDialog(QtWidgets.QDialog):
         self.initialize_controls()
         self.connect_controls()
 
+    def setup_menubar(self):
+        self.file_menu = self.menu_bar.addMenu('File')
+        self.edit_menu = self.menu_bar.addMenu('Edit')
+        self.settings_menu = self.menu_bar.addMenu('Settings')
+        exit_action = self.edit_menu.addAction('Exit')
+        exit_action.triggered.connect(self.close)
+        self.file_menu.addAction(exit_action)
+        redo_action = self.edit_menu.addAction('Redo')
+        # redo_action.triggered.connect()
+
+        style_menu = self.settings_menu.addMenu('Set Style')
+        default_action = style_menu.addAction('Default')
+        ridiculous_action = style_menu.addAction('Ridiculous')
+        default_action.triggered.connect(lambda: self.load_stylesheet(stylesheet=""))
+        ridiculous_action.triggered.connect(lambda: self.load_stylesheet(stylesheet="style.qss"))
+
     def create_controls(self):
         self.layout_main = QtWidgets.QVBoxLayout()
+
+        self.menu_bar = QtWidgets.QMenuBar()
 
         self.wgt_header = QtWidgets.QWidget()
         self.wgt_files = QtWidgets.QFrame()
@@ -46,7 +63,6 @@ class MainDialog(QtWidgets.QDialog):
 
     def initialize_controls(self):
         self.setAcceptDrops(True)
-        # self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         self.setWindowTitle(self.NAME)
         self.setObjectName('MainFrame')
         self.setFocusPolicy(QtCore.Qt.NoFocus)
@@ -61,9 +77,11 @@ class MainDialog(QtWidgets.QDialog):
 
     def connect_controls(self):
         self.setLayout(self.layout_main)
+
         self.wgt_header.setLayout(self.header_layout)
         self.header_layout.addWidget(self.header_label)
 
+        self.layout_main.addWidget(self.menu_bar)
         self.layout_main.addWidget(self.wgt_header)
         self.layout_main.addWidget(self.instance_handler)
         self.layout_main.addWidget(self.wgt_files)
@@ -80,7 +98,12 @@ class MainDialog(QtWidgets.QDialog):
 
     def load_stylesheet(self, btn_event=None, stylesheet='style.qss'):
         stylesheet_file = os.path.normpath(os.path.abspath('.\\resource\\%s' % stylesheet))
-        qss_data = open(stylesheet_file).read()
+        if os.path.isfile(stylesheet_file):
+            qss_data = open(stylesheet_file).read()
+        else:
+            self.LOG.warning('Invalid stylesheet file specified %s...defaulting to none' % stylesheet_file)
+            self.setStyleSheet("")
+            return
         self.setStyleSheet(qss_data)
 
     def add_fonts(self):
@@ -115,12 +138,8 @@ class MainDialog(QtWidgets.QDialog):
                     if self.instance_handler.select_next_token_line_edit():
                         return True
 
-
         return super(MainDialog, self).eventFilter(source, event)
 
     def closeEvent(self, e):
-        '''
-        Make sure the eventFilter is removed
-        '''
         QtWidgets.QApplication.instance().removeEventFilter(self)
         return super(MainDialog, self).closeEvent(e)

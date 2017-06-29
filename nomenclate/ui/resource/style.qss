@@ -31,6 +31,13 @@ QLabel#HeaderLabel {
     font-size: 20pt;
 }
 
+QMenuBar, QMenuBar::item, QMenu, QMenu::item {
+    background-color: #656D78;
+}
+QMenu::item:selected {
+    background-color: #263238;
+}
+
 QLabel#TokenLabel {
     color: #0288d1;
     font-weight: 400;
@@ -69,6 +76,7 @@ QFrame{
     background: rgba(1,1,1,.1);
     border: 0px;
 }
+
 
 QFrame#InstanceHandler{
     min-height: 300;

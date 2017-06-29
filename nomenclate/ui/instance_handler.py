@@ -3,6 +3,7 @@ import nomenclate.settings as settings
 from PyQt5 import QtWidgets, QtCore, QtGui
 import nomenclate
 from six import iteritems
+import nomenclate.ui.accordion_tree as accordion_tree
 
 ALPHANUMERIC_VALIDATOR = QtGui.QRegExpValidator(QtCore.QRegExp('[A-Za-z0-9_]*'))
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
@@ -41,6 +42,9 @@ class TokenWidget(DefaultFrame):
         self.suffix = QtWidgets.QLineEdit(placeholderText='suffix')
         self.value_widget = QtWidgets.QLineEdit(self.value)
 
+        self.accordion_tree = accordion_tree.QAccordionTreeWidget()
+        self.accordion_tree.add_category('test')
+
         self.options = QtWidgets.QToolBox()
         self.options_widget = QtWidgets.QWidget()
         self.options_layout = QtWidgets.QVBoxLayout(self.options_widget)
@@ -54,9 +58,9 @@ class TokenWidget(DefaultFrame):
         self.layout_main.setContentsMargins(1, 0, 1, 0)
         self.layout_main.setSpacing(0)
 
-        self.inner_frame.setFixedHeight(95)
-        self.inner_frame.setFrameShape(QtWidgets.QFrame.Box)
-        self.inner_frame.setFrameShadow(QtWidgets.QFrame.Sunken)
+        #self.inner_frame.setFixedHeight(95)
+        #self.inner_frame.setFrameShape(QtWidgets.QFrame.Box)
+        #self.inner_frame.setFrameShadow(QtWidgets.QFrame.Sunken)
 
         self.prefix.setValidator(ALPHANUMERIC_VALIDATOR)
         self.suffix.setValidator(ALPHANUMERIC_VALIDATOR)
@@ -86,7 +90,7 @@ class TokenWidget(DefaultFrame):
         self.options_layout.addWidget(self.prefix)
         self.options_layout.addWidget(self.suffix)
 
-        self.inner_layout.addWidget(self.options)
+        self.inner_layout.addWidget(self.accordion_tree)
 
     def on_change(self):
         self.value = self.value_widget.text()
@@ -110,7 +114,7 @@ class InstanceHandlerWidget(DefaultFrame):
         self.output_layout = QtWidgets.QVBoxLayout(self.wgt_output)
         self.output_title = QtWidgets.QLabel('Output Base Name')
         self.output_name = QtWidgets.QLabel()
-        self.input_format = QtWidgets.QLineEdit(placeholderText='Override Format String - Current =   %s' %
+        self.input_format = QtWidgets.QLineEdit(placeholderText='Override Format String from current =   %s' %
                                                                 self.NOM.format)
         self.token_frame = QtWidgets.QFrame()
         self.token_layout = QtWidgets.QHBoxLayout(self.token_frame)
