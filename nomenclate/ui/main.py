@@ -31,9 +31,8 @@ class MainDialog(QtWidgets.QDialog):
         self.file_menu = self.menu_bar.addMenu('File')
         self.edit_menu = self.menu_bar.addMenu('Edit')
         self.settings_menu = self.menu_bar.addMenu('Settings')
-        exit_action = self.edit_menu.addAction('Exit')
+        exit_action = self.file_menu.addAction('Exit')
         exit_action.triggered.connect(self.close)
-        self.file_menu.addAction(exit_action)
         redo_action = self.edit_menu.addAction('Redo')
         # redo_action.triggered.connect()
 
@@ -138,8 +137,37 @@ class MainDialog(QtWidgets.QDialog):
                     if self.instance_handler.select_next_token_line_edit():
                         return True
 
+        if event.type() == QtCore.QEvent.MouseButtonPress:
+            self.LOG.debug('Widgets under cursor: %s' % ' -> '.join(reversed(widgets_at(QtGui.QCursor.pos()))))
+            event.ignore()
+            return False
+
         return super(MainDialog, self).eventFilter(source, event)
 
     def closeEvent(self, e):
         QtWidgets.QApplication.instance().removeEventFilter(self)
         return super(MainDialog, self).closeEvent(e)
+
+
+def widgets_at(pos):
+    """ Debugging function for getting all widgets at cursor position
+    :arg pos: QtCore.QPoint, Position at which to get widgets
+    :return: list(QtWidgets.QWidget), all widgets at mouse cursor
+    """
+    widgets = []
+    widget_at = QtWidgets.QApplication.widgetAt(pos)
+
+    while widget_at:
+        widgets.append(widget_at)
+
+        # Make widget invisible to further enquiries
+        widget_at.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents)
+        widget_at = QtWidgets.QApplication.widgetAt(pos)
+
+    # Restore attribute
+    for index, widget in enumerate(widgets):
+        widget.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents, False)
+        widget_name = widget.objectName()
+        widget = widget if 'qt_scrollarea_viewport' != widget_name else widget.parent()
+        widgets[index] = str(widget).split('.')[-1].split(' ')[0]
+    return widgets

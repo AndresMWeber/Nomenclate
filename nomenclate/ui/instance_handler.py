@@ -33,9 +33,6 @@ class TokenWidget(DefaultFrame):
 
     def create_controls(self):
         self.layout_main = QtWidgets.QVBoxLayout(self)
-        self.label = QtWidgets.QLabel(self.token.capitalize())
-        self.inner_frame = QtWidgets.QFrame()
-        self.inner_layout = QtWidgets.QVBoxLayout(self.inner_frame)
 
         self.capital = QtWidgets.QCheckBox('capitalized')
         self.prefix = QtWidgets.QLineEdit(placeholderText='prefix')
@@ -43,21 +40,15 @@ class TokenWidget(DefaultFrame):
         self.value_widget = QtWidgets.QLineEdit(self.value)
 
         self.accordion_tree = accordion_tree.QAccordionTreeWidget()
-        self.accordion_tree.add_category('test')
-
-        self.options = QtWidgets.QToolBox()
-        self.options_widget = QtWidgets.QWidget()
-        self.options_layout = QtWidgets.QVBoxLayout(self.options_widget)
+        self.accordion_tree.add_category(self.token)
 
     def initialize_controls(self):
-        self.label.setObjectName('TokenLabel')
-
         self.setFrameShape(QtWidgets.QFrame.Box)
         self.setFrameShadow(QtWidgets.QFrame.Sunken)
 
         self.layout_main.setContentsMargins(1, 0, 1, 0)
         self.layout_main.setSpacing(0)
-
+        #self.layout_main.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
         #self.inner_frame.setFixedHeight(95)
         #self.inner_frame.setFrameShape(QtWidgets.QFrame.Box)
         #self.inner_frame.setFrameShadow(QtWidgets.QFrame.Sunken)
@@ -67,30 +58,22 @@ class TokenWidget(DefaultFrame):
         self.value_widget.setValidator(ALPHANUMERIC_VALIDATOR)
 
         self.setFocusPolicy(QtCore.Qt.NoFocus)
-        self.label.setFocusPolicy(QtCore.Qt.NoFocus)
-        self.inner_frame.setFocusPolicy(QtCore.Qt.NoFocus)
-        self.options_widget.setFocusPolicy(QtCore.Qt.NoFocus)
-        self.options.setFocusPolicy(QtCore.Qt.NoFocus)
         self.capital.setFocusPolicy(QtCore.Qt.NoFocus)
         self.prefix.setFocusPolicy(QtCore.Qt.NoFocus)
         self.suffix.setFocusPolicy(QtCore.Qt.NoFocus)
-
         self.value_widget.setFocusPolicy(QtCore.Qt.StrongFocus)
+
         self.setFocusProxy(self.value_widget)
 
     def connect_controls(self):
         self.value_widget.textChanged.connect(self.on_change)
 
-        self.layout_main.addWidget(self.label)
-        self.layout_main.addWidget(self.inner_frame)
+        self.layout_main.addWidget(self.accordion_tree)
         self.layout_main.addWidget(self.value_widget)
 
-        self.options.addItem(self.options_widget, 'Token Options')
-        self.options_layout.addWidget(self.capital)
-        self.options_layout.addWidget(self.prefix)
-        self.options_layout.addWidget(self.suffix)
-
-        self.inner_layout.addWidget(self.accordion_tree)
+        self.accordion_tree.add_widget_to_category(self.token, self.capital)
+        self.accordion_tree.add_widget_to_category(self.token, self.prefix)
+        self.accordion_tree.add_widget_to_category(self.token, self.suffix)
 
     def on_change(self):
         self.value = self.value_widget.text()

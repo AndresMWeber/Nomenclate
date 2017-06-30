@@ -40,9 +40,10 @@ QMenu::item:selected {
 
 QLabel#TokenLabel {
     color: #0288d1;
+    background-color: transparent;
     font-weight: 400;
     qproperty-alignment: AlignCenter;
-    font-size: 12pt;
+    font-size: 10pt;
 }
 
 QLabel#DragLabel {
@@ -87,7 +88,7 @@ QPushButton, QCheckBox {
     background: transparent;
     color: rgb(200, 200, 200);
     padding: 3px;
-    font-family: "Lato";
+    font-family: "Lato", sans-serif;
     padding-left: 5px;
     padding-right: 5px;
     min-width: 100px;
@@ -134,6 +135,27 @@ QListWidget::item:selected {
     background: red;
 }
 
+QAccordionTreeWidget {
+    border: none;
+    min-width: 150px;
+    max-width: 150px;
+}
+
+QAccordionTreeWidget::QScrollArea {
+    border: none;
+}
+
+QAccordionTreeWidget::item:!selected {
+    border: none;
+    border-left: none;
+    border-top: none;
+}
+
+QAccordionTreeWidget::item:selected {
+    border-left: none;
+}
+
+
 QTableView {
     selection-background-color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0 #656D78, stop: 1 #263238);
 }
@@ -154,27 +176,4 @@ QToolBar::handle {
 
 QTreeView {
     show-decoration-selected: 1;
-}
-
-QTreeView::item {
-     border: 1px solid #d9d9d9;
-    border-top-color: transparent;
-    border-bottom-color: transparent;
-}
-
-QTreeView::item:hover {
-    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #e7effd, stop: 1 #cbdaf1);
-    border: 1px solid #bfcde4;
-}
-
-QTreeView::item:selected {
-    border: 1px solid #567dbc;
-}
-
-QTreeView::item:selected:active{
-    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #6ea1f1, stop: 1 #567dbc);
-}
-
-QTreeView::item:selected:!active {
-    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #6b9be8, stop: 1 #577fbf);
 }
