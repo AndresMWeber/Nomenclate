@@ -34,6 +34,7 @@ QLabel#HeaderLabel {
 QMenuBar, QMenuBar::item, QMenu, QMenu::item {
     background-color: #656D78;
 }
+
 QMenu::item:selected {
     background-color: #263238;
 }
@@ -52,8 +53,6 @@ QLabel#DragLabel {
 
 QWidget#OutputWidget {
     background: rgba(200, 200, 200, .1);
-    min-height: 75;
-    max-height: 75;
 }
 
 QLabel#OutputTitle {
@@ -78,10 +77,7 @@ QFrame{
     border: 0px;
 }
 
-
 QFrame#InstanceHandler{
-    min-height: 300;
-    max-height: 300;
 }
 
 QPushButton, QCheckBox {
@@ -91,10 +87,6 @@ QPushButton, QCheckBox {
     font-family: "Lato", sans-serif;
     padding-left: 5px;
     padding-right: 5px;
-    min-width: 100px;
-    max-width: 100px;
-    min-height: 13px;
-    max-height: 13px;
 }
 
 QPushButton {
@@ -108,37 +100,17 @@ QPushButton::pressed {
 }
 
 QCheckBox::indicator {
-    border: 2px solid #5A5A5A;
+    border: 1px solid #5A5A5A;
     background: none;
 }
 
-/*
-QCheckBox::indicator:checked{
-    image: url(./resource/icons/appbar.checkmark.thick.png);
-}
-
-QCheckBox::indicator:unchecked{
-    image: url(./resource/icons/appbar.checkmark.thick.unchecked.png);
-}
-*/
-
-/*
-QListWidget::item {
-    border-style: solid;
-    border-width: 1px;
-    border-color: black;
-    background: green;
-}
-*/
-
-QListWidget::item:selected {
-    background: red;
+QCheckBox::indicator:checked {
+    border: 1px solid #E2E9FF;
+    background: #B4BACC;
 }
 
 QAccordionTreeWidget {
     border: none;
-    min-width: 150px;
-    max-width: 150px;
 }
 
 QAccordionTreeWidget::QScrollArea {
@@ -155,6 +127,34 @@ QAccordionTreeWidget::item:selected {
     border-left: none;
 }
 
+/*
+QCheckBox::indicator:checked{
+    image: url(./resource/icons/appbar.checkmark.thick.png);
+}
+
+QCheckBox::indicator:unchecked{
+    image: url(./resource/icons/appbar.checkmark.thick.unchecked.png);
+}
+
+QToolBar {
+    background: red;
+    spacing: 3px;
+}
+
+QToolBar::handle {
+    image: url(handle.png);
+}
+
+QListWidget::item {
+    border-style: solid;
+    border-width: 1px;
+    border-color: black;
+    background: green;
+}
+
+QListWidget::item:selected {
+    background: red;
+}
 
 QTableView {
     selection-background-color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0 #656D78, stop: 1 #263238);
@@ -165,15 +165,7 @@ QTableView QTableCornerButton::section {
     border: 2px outset red;
 }
 
-QToolBar {
-    background: red;
-    spacing: 3px; /* spacing between items in the tool bar */
-}
-
-QToolBar::handle {
-    image: url(handle.png);
-}
-
 QTreeView {
     show-decoration-selected: 1;
 }
+*/

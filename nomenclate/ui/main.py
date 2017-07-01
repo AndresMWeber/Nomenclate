@@ -7,6 +7,8 @@ import nomenclate.ui.drag_drop as drag_drop
 import nomenclate.ui.file_list as file_list
 
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
+global posish
+posish = None
 
 
 class MainDialog(QtWidgets.QDialog):
@@ -18,6 +20,7 @@ class MainDialog(QtWidgets.QDialog):
     def __init__(self):
         super(MainDialog, self).__init__()
         self.add_fonts()
+        self.keylist = []
         self.setup()
         self.setup_menubar()
         QtWidgets.QApplication.instance().installEventFilter(self)
@@ -127,14 +130,9 @@ class MainDialog(QtWidgets.QDialog):
 
     def eventFilter(self, source, event):
         if event.type() == QtCore.QEvent.KeyPress:
-            if event.key() == QtCore.Qt.Key_Tab:
-                focused_widget = QtWidgets.QApplication.focusWidget()
-                self.LOG.debug('Focus event %s moved to widget: %s with parent %s, from widget %s' % (event,
-                                                                                                      focused_widget,
-                                                                                                      focused_widget.parent(),
-                                                                                                      source))
-                if focused_widget.parent() in self.instance_handler.token_widgets:
-                    if self.instance_handler.select_next_token_line_edit():
+            if event.key() in [QtCore.Qt.Key_Tab, QtCore.Qt.Key_Backtab]:
+                if QtWidgets.QApplication.focusWidget().parent() in self.instance_handler.token_widgets:
+                    if self.instance_handler.select_next_token_line_edit(event.key() == QtCore.Qt.Key_Backtab):
                         return True
 
         if event.type() == QtCore.QEvent.MouseButtonPress:
@@ -155,18 +153,10 @@ def widgets_at(pos):
     :return: list(QtWidgets.QWidget), all widgets at mouse cursor
     """
     widgets = []
-    widget_at = QtWidgets.QApplication.widgetAt(pos)
-
-    while widget_at:
-        widgets.append(widget_at)
-
-        # Make widget invisible to further enquiries
-        widget_at.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents)
-        widget_at = QtWidgets.QApplication.widgetAt(pos)
+    widgets.append(QtWidgets.QApplication.widgetAt(pos))
 
     # Restore attribute
     for index, widget in enumerate(widgets):
-        widget.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents, False)
         widget_name = widget.objectName()
         widget = widget if 'qt_scrollarea_viewport' != widget_name else widget.parent()
         widgets[index] = str(widget).split('.')[-1].split(' ')[0]

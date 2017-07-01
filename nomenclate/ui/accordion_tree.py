@@ -1,4 +1,5 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
+from six import iteritems
 
 
 class QAccordionTitle(QtWidgets.QWidget):
@@ -9,7 +10,9 @@ class QAccordionTitle(QtWidgets.QWidget):
 
     def __init__(self, text, tree_widget_parent, widget_item, shadow=True):
         self.widget_item = widget_item
+        self.parent_tree_widget = tree_widget_parent
         super(QAccordionTitle, self).__init__(parent=tree_widget_parent)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.clicked.connect(self.expand)
         self.set_up(text, shadow)
 
@@ -36,15 +39,10 @@ class QAccordionTitle(QtWidgets.QWidget):
         if text is None:
             return
 
-
         label = QtWidgets.QLabel()
         label.setObjectName('TokenLabel')
         label.setText(text)
-        text_width = label.fontMetrics()
-        width = text_width.width(text) + 6
-
         label.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
-
         self.layout().addWidget(label)
 
         second_line = QtWidgets.QFrame()
@@ -54,41 +52,80 @@ class QAccordionTitle(QtWidgets.QWidget):
 
     def mousePressEvent(self, QMouseEvent):
         self.clicked.emit()
+        super(QAccordionTitle, self).mouseMoveEvent(QMouseEvent)
 
     def expand(self):
         self.widget_item.setExpanded(not self.widget_item.isExpanded())
 
 
-class QAccordionButton(QtWidgets.QPushButton):
-    def __init__(self, text, tree_widget_parent, widget_item):
-        self.widget_item = widget_item
-        super(QAccordionButton, self).__init__(text, tree_widget_parent)
-        self.clicked.connect(self.expand)
+class QAccordionTreeCategoryItem(QtWidgets.QTreeWidgetItem):
+    def __init__(self, label, parent):
+        super(QAccordionTreeCategoryItem, self).__init__()
+        self.title = QtWidgets.QWidget()
+        self.frame = QtWidgets.QFrame()
+        self.layout = QtWidgets.QVBoxLayout(self.frame)
 
-    def expand(self):
-        self.widget_item.setExpanded(not self.widget_item.isExpanded())
+    def sizeHint(self):
+        size = QtCore.QSize()
+        size += self.title.sizeHint()
+        size.setWidth(self.frame.sizeHint().width())
+        if self.isExpanded():
+            size.setHeight(self.frame.sizeHint().height() + size.height())
+        return size
 
 
 class QAccordionTreeWidget(QtWidgets.QTreeWidget):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, parent_widget, *args, **kwargs):
+        self.category_widgets = {}
         super(QAccordionTreeWidget, self).__init__(*args, **kwargs)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.parent_widget = parent_widget
         self.setRootIsDecorated(False)
         self.setIndentation(0)
         self.header().close()
-        self.category_layouts = {}
+
+    @property
+    def categories(self):
+        return list(self.category_widgets)
 
     def add_category(self, label):
-        category = QtWidgets.QTreeWidgetItem()
-        self.addTopLevelItem(category)
-        self.setItemWidget(category, 0, QAccordionTitle(label, self, category))
-        frame = QtWidgets.QFrame(self)
-        layout = QtWidgets.QVBoxLayout(frame)
-        container = QtWidgets.QTreeWidgetItem()
-        container.setDisabled(True)
-        category.addChild(container)
-        self.setItemWidget(container, 0, frame)
+        category = QAccordionTreeCategoryItem(label, self)
+        title = QAccordionTitle(label, self, category)
+        category.title = title
 
-        self.category_layouts[label] = layout
+        self.addTopLevelItem(category)
+        self.setItemWidget(category, 0, title)
+        container = QtWidgets.QTreeWidgetItem()
+
+        category.addChild(container)
+        self.setItemWidget(container, 0, category.frame)
+
+        container.setDisabled(True)
+
+        self.category_widgets[label] = category
+        category.setExpanded(True)
+        title.clicked.connect(self.sizer)
+
+    def sizer(self):
+        self.resize(self.sizeHint())
 
     def add_widget_to_category(self, category, widget):
-        self.category_layouts[category].addWidget(widget)
+        self.category_widgets[category].layout.addWidget(widget)
+
+    def resizeEvent(self, QResizeEvent):
+        try:
+            size = QResizeEvent.size()
+        except TypeError:
+            size = QResizeEvent.size
+        size.setHeight(self.sizeHint().height())
+        QResizeEvent.size = size
+
+        self.parent_widget.resizeEvent(QResizeEvent)
+        QtWidgets.QWidget.resizeEvent(self, QResizeEvent)
+
+    def sizeHint(self):
+        size = QtCore.QSize()
+        for category, item in iteritems(self.category_widgets):
+            size += item.sizeHint()
+        return size

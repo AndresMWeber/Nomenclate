@@ -30,6 +30,28 @@ class TokenWidget(DefaultFrame):
         self.token = token
         self.value = value
         super(TokenWidget, self).__init__()
+        #self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+
+    def resizeEvent(self, QResizeEvent):
+        try:
+            size = QResizeEvent.size()
+        except TypeError:
+            size = QResizeEvent.size
+        size.setHeight(self.sizeHint().height())
+        QResizeEvent.size = size
+        print(size.width(), self.width())
+
+        self.setMinimumWidth(size.width())
+
+        self.setFixedHeight(self.sizeHint().height())
+        #print(self.sizeHint().width())
+        QtWidgets.QWidget.resizeEvent(self, QResizeEvent)
+
+    def sizeHint(self):
+        size = QtCore.QSize()
+        size.setHeight(self.value_widget.sizeHint().height() + self.accordion_tree.sizeHint().height())
+        size.setWidth(super(TokenWidget, self).sizeHint().width())
+        return size
 
     def create_controls(self):
         self.layout_main = QtWidgets.QVBoxLayout(self)
@@ -39,7 +61,8 @@ class TokenWidget(DefaultFrame):
         self.suffix = QtWidgets.QLineEdit(placeholderText='suffix')
         self.value_widget = QtWidgets.QLineEdit(self.value)
 
-        self.accordion_tree = accordion_tree.QAccordionTreeWidget()
+        self.accordion_tree = accordion_tree.QAccordionTreeWidget(self)
+
         self.accordion_tree.add_category(self.token)
 
     def initialize_controls(self):
@@ -48,21 +71,17 @@ class TokenWidget(DefaultFrame):
 
         self.layout_main.setContentsMargins(1, 0, 1, 0)
         self.layout_main.setSpacing(0)
-        #self.layout_main.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
-        #self.inner_frame.setFixedHeight(95)
-        #self.inner_frame.setFrameShape(QtWidgets.QFrame.Box)
-        #self.inner_frame.setFrameShadow(QtWidgets.QFrame.Sunken)
+        # self.layout_main.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
+        # self.inner_frame.setFixedHeight(95)
+        # self.inner_frame.setFrameShape(QtWidgets.QFrame.Box)
+        # self.inner_frame.setFrameShadow(QtWidgets.QFrame.Sunken)
 
         self.prefix.setValidator(ALPHANUMERIC_VALIDATOR)
         self.suffix.setValidator(ALPHANUMERIC_VALIDATOR)
         self.value_widget.setValidator(ALPHANUMERIC_VALIDATOR)
 
         self.setFocusPolicy(QtCore.Qt.NoFocus)
-        self.capital.setFocusPolicy(QtCore.Qt.NoFocus)
-        self.prefix.setFocusPolicy(QtCore.Qt.NoFocus)
-        self.suffix.setFocusPolicy(QtCore.Qt.NoFocus)
         self.value_widget.setFocusPolicy(QtCore.Qt.StrongFocus)
-
         self.setFocusProxy(self.value_widget)
 
     def connect_controls(self):
@@ -74,6 +93,7 @@ class TokenWidget(DefaultFrame):
         self.accordion_tree.add_widget_to_category(self.token, self.capital)
         self.accordion_tree.add_widget_to_category(self.token, self.prefix)
         self.accordion_tree.add_widget_to_category(self.token, self.suffix)
+        self.accordion_tree.sizer()
 
     def on_change(self):
         self.value = self.value_widget.text()
@@ -110,9 +130,11 @@ class InstanceHandlerWidget(DefaultFrame):
         return [self.token_widget_lookup[token] for token in list(self.token_widget_lookup)]
 
     def initialize_controls(self):
+        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.refresh_tokens()
         self.setObjectName('InstanceHandler')
         self.wgt_output.setObjectName('OutputWidget')
+        self.wgt_output.setFixedHeight(75)
         self.output_title.setObjectName('OutputTitle')
         self.output_name.setObjectName('OutputLabel')
 
@@ -160,10 +182,13 @@ class InstanceHandlerWidget(DefaultFrame):
                         "</body></html>")
         self.output_name.setText(formatted.format(NAME=self.NOM.get()))
 
-    def select_next_token_line_edit(self):
-        for token, next_token in zip(self.NOM.format_order, self.NOM.format_order[1:] + [self.NOM.format_order[0]]):
+    def select_next_token_line_edit(self, direction):
+        order = self.NOM.format_order
+        direction_shifted_tokens = order[-1:] + order[:-1] if direction else order[1:] + order[:1]
+
+        for token, next_token in zip(order, direction_shifted_tokens):
             token_widget = self.token_widget_lookup[token.lower()]
-            if token_widget.is_selected() and next_token != self.NOM.format_order[0]:
+            if token_widget.is_selected():
                 next_widget = self.token_widget_lookup[next_token.lower()]
                 self.LOG.debug(
                     'Selecting from widget %r to next token widget (%s): %r' % (token_widget, next_token, next_widget))
