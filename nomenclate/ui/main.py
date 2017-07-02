@@ -112,7 +112,7 @@ class MainDialog(QtWidgets.QDialog):
         self.setStyleSheet(qss_data)
 
     def add_fonts(self):
-        font_dir = os.path.join(os.path.abspath('.'), 'resource', 'fonts')
+        font_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'resource', 'fonts')
         for font_file in os.listdir(font_dir):
             QtGui.QFontDatabase.addApplicationFont(os.path.join(font_dir, font_file))
 
@@ -140,14 +140,14 @@ class MainDialog(QtWidgets.QDialog):
 
         if event.type() == QtCore.QEvent.MouseButtonPress:
             self.LOG.debug('Widgets under cursor: %s' % ' -> '.join(reversed(widgets_at(QtGui.QCursor.pos()))))
-            event.ignore()
             return False
 
         return super(MainDialog, self).eventFilter(source, event)
 
     def closeEvent(self, e):
         QtWidgets.QApplication.instance().removeEventFilter(self)
-        return super(MainDialog, self).closeEvent(e)
+        super(MainDialog, self).closeEvent(e)
+        return exit()
 
 
 def widgets_at(pos):

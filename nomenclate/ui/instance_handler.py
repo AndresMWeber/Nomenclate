@@ -24,16 +24,14 @@ class FormatTextEdit(QtWidgets.QLineEdit):
 
 
 class TokenWidget(DefaultFrame):
-    changed = QtCore.pyqtSignal(str, str)
-    capitalized = QtCore.pyqtSignal(bool)
-    prefix_updated = QtCore.pyqtSignal(str)
-    suffix_updated = QtCore.pyqtSignal(str)
+    changed = QtCore.pyqtSignal(str, str, str, str, str)
 
     def __init__(self, token, value):
         self.token = token
         self.value = value
         super(TokenWidget, self).__init__()
-        #self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+        self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Fixed)
+        self.add_fields()
 
     def resizeEvent(self, QResizeEvent):
         try:
@@ -52,17 +50,33 @@ class TokenWidget(DefaultFrame):
         size.setWidth(super(TokenWidget, self).sizeHint().width())
         return size
 
+    def add_fields(self):
+        #if not self.token in ['var', 'version']:
+        self.accordion_tree = accordion_tree.QAccordionTreeWidget(self)
+        self.accordion_tree.add_category(self.token)
+        self.capital = QtWidgets.QComboBox()
+        self.capital.addItems(['', 'upper', 'lower'])
+        self.prefix = QtWidgets.QLineEdit(placeholderText='prefix')
+        self.suffix = QtWidgets.QLineEdit(placeholderText='suffix')
+
+        self.prefix.setValidator(ALPHANUMERIC_VALIDATOR)
+        self.suffix.setValidator(ALPHANUMERIC_VALIDATOR)
+        self.value_widget.setValidator(ALPHANUMERIC_VALIDATOR)
+        self.capital.currentIndexChanged.connect(self.on_change)
+        self.prefix.textChanged.connect(self.on_change)
+        self.suffix.textChanged.connect(self.on_change)
+
+        self.accordion_tree.add_widget_to_category(self.token, self.capital)
+        self.accordion_tree.add_widget_to_category(self.token, self.prefix)
+        self.accordion_tree.add_widget_to_category(self.token, self.suffix)
+        self.layout_main.insertWidget(0, self.accordion_tree)
+        self.accordion_tree.sizer()
+
     def create_controls(self):
         self.layout_main = QtWidgets.QVBoxLayout(self)
 
-        self.capital = QtWidgets.QCheckBox('capitalized')
-        self.prefix = QtWidgets.QLineEdit(placeholderText='prefix')
-        self.suffix = QtWidgets.QLineEdit(placeholderText='suffix')
         self.value_widget = QtWidgets.QLineEdit(self.value)
 
-        self.accordion_tree = accordion_tree.QAccordionTreeWidget(self)
-
-        self.accordion_tree.add_category(self.token)
 
     def initialize_controls(self):
         self.setFrameShape(QtWidgets.QFrame.Box)
@@ -70,14 +84,7 @@ class TokenWidget(DefaultFrame):
 
         self.layout_main.setContentsMargins(1, 0, 1, 0)
         self.layout_main.setSpacing(0)
-        # self.layout_main.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
-        # self.inner_frame.setFixedHeight(95)
-        # self.inner_frame.setFrameShape(QtWidgets.QFrame.Box)
-        # self.inner_frame.setFrameShadow(QtWidgets.QFrame.Sunken)
 
-        self.prefix.setValidator(ALPHANUMERIC_VALIDATOR)
-        self.suffix.setValidator(ALPHANUMERIC_VALIDATOR)
-        self.value_widget.setValidator(ALPHANUMERIC_VALIDATOR)
 
         self.setFocusPolicy(QtCore.Qt.NoFocus)
         self.value_widget.setFocusPolicy(QtCore.Qt.StrongFocus)
@@ -86,17 +93,16 @@ class TokenWidget(DefaultFrame):
     def connect_controls(self):
         self.value_widget.textChanged.connect(self.on_change)
 
-        self.layout_main.addWidget(self.accordion_tree)
         self.layout_main.addWidget(self.value_widget)
 
-        self.accordion_tree.add_widget_to_category(self.token, self.capital)
-        self.accordion_tree.add_widget_to_category(self.token, self.prefix)
-        self.accordion_tree.add_widget_to_category(self.token, self.suffix)
-        self.accordion_tree.sizer()
 
-    def on_change(self):
+    def on_change(self, *args, **kwargs):
         self.value = self.value_widget.text()
-        self.changed.emit(self.token, self.value)
+        self.changed.emit(self.token,
+                          self.value,
+                          self.capital.currentText(),
+                          self.prefix.text(),
+                          self.suffix.text())
 
     def is_selected(self):
         return self.value_widget.hasFocus()
@@ -119,7 +125,6 @@ class InstanceHandlerWidget(DefaultFrame):
         self.input_format = QtWidgets.QLineEdit(placeholderText='Override Format String from current =   %s' %
                                                                 self.NOM.format)
         self.token_frame = QtWidgets.QFrame()
-        self.token_frame.setStyleSheet('background-color: red;')
         self.token_layout = QtWidgets.QHBoxLayout(self.token_frame)
         self.token_layout.setContentsMargins(0, 0, 0, 0)
         self.token_layout.setSpacing(0)
@@ -129,17 +134,8 @@ class InstanceHandlerWidget(DefaultFrame):
     def token_widgets(self):
         return [self.token_widget_lookup[token] for token in list(self.token_widget_lookup)]
 
-    def resizeEvent(self, QResizeEvent):
-        print self.size(), self.token_frame.size()
-        print self.sizeHint()
-        #self.adjustSize()
-        #super(InstanceHandlerWidget, self).resizeEvent(QResizeEvent)
-
-    def sizeHint(self):
-        print super(InstanceHandlerWidget, self).sizeHint()
     def initialize_controls(self):
-        #self.token_layout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
-        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         self.refresh_tokens()
         self.setObjectName('InstanceHandler')
         self.wgt_output.setObjectName('OutputWidget')
@@ -179,10 +175,15 @@ class InstanceHandlerWidget(DefaultFrame):
     def set_format(self):
         self.NOM.format = self.input_format.toPlainText().encode('utf-8')
         self.refresh_tokens()
-        self.update_instance('', '')
+        self.update_instance('', '', '', '', '')
 
-    def update_instance(self, token, value):
+    def update_instance(self, token, value, capitalized='', prefix='', suffix=''):
         self.NOM.merge_dict({token.encode('utf-8'): value.encode('utf-8')})
+        token_attr = getattr(self.NOM, token)
+        token_attr.case_setting = capitalized
+        token_attr.prefix_setting = prefix
+        token_attr.suffix_setting = suffix
+
         formatted = str("<html><head><meta name=\"qrichtext\" content=\"1\" /></head>"
                         "<body style=\" white-space: pre-wrap; font-family:Sans Serif; "
                         "font-size:9pt; font-weight:400; font-style:normal; text-decoration:none;\">"
