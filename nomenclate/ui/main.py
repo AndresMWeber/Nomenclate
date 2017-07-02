@@ -42,7 +42,7 @@ class MainDialog(QtWidgets.QDialog):
         style_menu = self.settings_menu.addMenu('Set Style')
         default_action = style_menu.addAction('Default')
         ridiculous_action = style_menu.addAction('Ridiculous')
-        default_action.triggered.connect(lambda: self.load_stylesheet(stylesheet=""))
+        default_action.triggered.connect(lambda: self.load_stylesheet(stylesheet="default.qss"))
         ridiculous_action.triggered.connect(lambda: self.load_stylesheet(stylesheet="style.qss"))
 
     def create_controls(self):
@@ -64,10 +64,13 @@ class MainDialog(QtWidgets.QDialog):
         self.file_list_view = file_list.FileListWidget()
 
     def initialize_controls(self):
+        self.setObjectName('MainFrame')
+        self.setWindowFlags(QtCore.Qt.Tool)
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.setAcceptDrops(True)
         self.setWindowTitle(self.NAME)
-        self.setObjectName('MainFrame')
         self.setFocusPolicy(QtCore.Qt.NoFocus)
+
         self.wgt_header.setObjectName('HeaderWidget')
         self.header_label.setObjectName('HeaderLabel')
         self.header_label.setText(self.NAME.upper())

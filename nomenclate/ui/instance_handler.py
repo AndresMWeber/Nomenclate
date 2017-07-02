@@ -25,6 +25,9 @@ class FormatTextEdit(QtWidgets.QLineEdit):
 
 class TokenWidget(DefaultFrame):
     changed = QtCore.pyqtSignal(str, str)
+    capitalized = QtCore.pyqtSignal(bool)
+    prefix_updated = QtCore.pyqtSignal(str)
+    suffix_updated = QtCore.pyqtSignal(str)
 
     def __init__(self, token, value):
         self.token = token
@@ -39,12 +42,8 @@ class TokenWidget(DefaultFrame):
             size = QResizeEvent.size
         size.setHeight(self.sizeHint().height())
         QResizeEvent.size = size
-        print(size.width(), self.width())
-
-        self.setMinimumWidth(size.width())
 
         self.setFixedHeight(self.sizeHint().height())
-        #print(self.sizeHint().width())
         QtWidgets.QWidget.resizeEvent(self, QResizeEvent)
 
     def sizeHint(self):
@@ -120,6 +119,7 @@ class InstanceHandlerWidget(DefaultFrame):
         self.input_format = QtWidgets.QLineEdit(placeholderText='Override Format String from current =   %s' %
                                                                 self.NOM.format)
         self.token_frame = QtWidgets.QFrame()
+        self.token_frame.setStyleSheet('background-color: red;')
         self.token_layout = QtWidgets.QHBoxLayout(self.token_frame)
         self.token_layout.setContentsMargins(0, 0, 0, 0)
         self.token_layout.setSpacing(0)
@@ -129,7 +129,16 @@ class InstanceHandlerWidget(DefaultFrame):
     def token_widgets(self):
         return [self.token_widget_lookup[token] for token in list(self.token_widget_lookup)]
 
+    def resizeEvent(self, QResizeEvent):
+        print self.size(), self.token_frame.size()
+        print self.sizeHint()
+        #self.adjustSize()
+        #super(InstanceHandlerWidget, self).resizeEvent(QResizeEvent)
+
+    def sizeHint(self):
+        print super(InstanceHandlerWidget, self).sizeHint()
     def initialize_controls(self):
+        #self.token_layout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.refresh_tokens()
         self.setObjectName('InstanceHandler')

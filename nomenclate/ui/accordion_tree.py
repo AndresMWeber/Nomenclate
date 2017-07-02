@@ -107,25 +107,25 @@ class QAccordionTreeWidget(QtWidgets.QTreeWidget):
         category.setExpanded(True)
         title.clicked.connect(self.sizer)
 
-    def sizer(self):
-        self.resize(self.sizeHint())
-
     def add_widget_to_category(self, category, widget):
         self.category_widgets[category].layout.addWidget(widget)
-
-    def resizeEvent(self, QResizeEvent):
-        try:
-            size = QResizeEvent.size()
-        except TypeError:
-            size = QResizeEvent.size
-        size.setHeight(self.sizeHint().height())
-        QResizeEvent.size = size
-
-        self.parent_widget.resizeEvent(QResizeEvent)
-        QtWidgets.QWidget.resizeEvent(self, QResizeEvent)
 
     def sizeHint(self):
         size = QtCore.QSize()
         for category, item in iteritems(self.category_widgets):
             size += item.sizeHint()
         return size
+
+    def resizeEvent(self, QResizeEvent):
+        try:
+            size = QResizeEvent.size()
+        except TypeError:
+            size = QResizeEvent.size
+        size.setHeight(self.sizeHint().height()+50)
+        QResizeEvent.size = size
+        self.setColumnWidth(0, size.width())
+        self.parent_widget.resizeEvent(QResizeEvent)
+        QtWidgets.QWidget.resizeEvent(self, QResizeEvent)
+
+    def sizer(self):
+        self.resize(self.sizeHint())

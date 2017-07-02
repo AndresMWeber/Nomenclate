@@ -1,0 +1,37 @@
+
+QTextEdit, QLineEdit, QLabel, QListView, QWidget {
+    padding: 1px;
+    font-family: "Lato";
+    border-radius: 0;
+}
+
+QTextEdit, QLineEdit {
+    min-height: 25;
+    max-height: 25;
+}
+
+QWidget#Header{
+    min-height: 50;
+    max-height: 50;
+}
+
+QLabel#HeaderLabel {
+    font-family: "Quicksand";
+    font-weight: regular;
+    font-size: 20pt;
+}
+
+QLabel#TokenLabel {
+    font-weight: 400;
+    font-size: 10pt;
+}
+
+
+QLabel#OutputTitle {
+    qproperty-alignment: AlignCenter;
+}
+
+QLabel#OutputLabel {
+    color: #FFA552;
+    qproperty-alignment: AlignCenter;
+}
