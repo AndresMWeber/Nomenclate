@@ -166,11 +166,13 @@ class Nomenclate(object):
         """Gets the string of the current name of the object
         Returns (string): the name of the object
         """
+        old_state = self.state.copy()
         self.LOG.info('RENDERING NOMENCLATE OBJECT')
         self.LOG.info('STATE IS: %s' % self.state)
-        self.merge_dict(**kwargs)
+        self.merge_dict(kwargs)
         self.LOG.info('STATE IS: %s' % self.state)
         result = rendering.InputRenderer.render_nomenclative(self)
+        self.merge_dict(old_state)
         return result
 
     def get_chain(self, end, start=None, **kwargs):

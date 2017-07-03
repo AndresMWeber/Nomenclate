@@ -30,6 +30,7 @@ class TokenWidget(DefaultFrame):
         self.token = token
         self.value = value
         super(TokenWidget, self).__init__()
+        self.setMinimumWidth(50)
         self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Fixed)
         self.add_fields()
 
@@ -51,14 +52,20 @@ class TokenWidget(DefaultFrame):
         return size
 
     def add_fields(self):
-        #if not self.token in ['var', 'version']:
+        # if not self.token in ['var', 'version']:
         self.accordion_tree = accordion_tree.QAccordionTreeWidget(self)
         self.accordion_tree.add_category(self.token)
         self.capital = QtWidgets.QComboBox()
         self.capital.addItems(['', 'upper', 'lower'])
-        self.prefix = QtWidgets.QLineEdit(placeholderText='prefix')
-        self.suffix = QtWidgets.QLineEdit(placeholderText='suffix')
+        list_view = QtWidgets.QListView(self.capital)
+        list_view.setObjectName('drop_down_list_view')
+        self.capital.setView(list_view)
+        self.prefix = QtWidgets.QLineEdit()
+        self.suffix = QtWidgets.QLineEdit()
 
+        self.prefix.setPlaceholderText('prefix')
+        self.suffix.setPlaceholderText('suffix')
+        self.value_widget.setPlaceholderText(self.token)
         self.prefix.setValidator(ALPHANUMERIC_VALIDATOR)
         self.suffix.setValidator(ALPHANUMERIC_VALIDATOR)
         self.value_widget.setValidator(ALPHANUMERIC_VALIDATOR)
@@ -74,9 +81,7 @@ class TokenWidget(DefaultFrame):
 
     def create_controls(self):
         self.layout_main = QtWidgets.QVBoxLayout(self)
-
         self.value_widget = QtWidgets.QLineEdit(self.value)
-
 
     def initialize_controls(self):
         self.setFrameShape(QtWidgets.QFrame.Box)
@@ -85,16 +90,13 @@ class TokenWidget(DefaultFrame):
         self.layout_main.setContentsMargins(1, 0, 1, 0)
         self.layout_main.setSpacing(0)
 
-
         self.setFocusPolicy(QtCore.Qt.NoFocus)
         self.value_widget.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.setFocusProxy(self.value_widget)
 
     def connect_controls(self):
         self.value_widget.textChanged.connect(self.on_change)
-
         self.layout_main.addWidget(self.value_widget)
-
 
     def on_change(self, *args, **kwargs):
         self.value = self.value_widget.text()
@@ -122,8 +124,7 @@ class InstanceHandlerWidget(DefaultFrame):
         self.output_layout = QtWidgets.QVBoxLayout(self.wgt_output)
         self.output_title = QtWidgets.QLabel('Output Base Name')
         self.output_name = QtWidgets.QLabel()
-        self.input_format = QtWidgets.QLineEdit(placeholderText='Override Format String from current =   %s' %
-                                                                self.NOM.format)
+        self.input_format = QtWidgets.QLineEdit()
         self.token_frame = QtWidgets.QFrame()
         self.token_layout = QtWidgets.QHBoxLayout(self.token_frame)
         self.token_layout.setContentsMargins(0, 0, 0, 0)
@@ -142,7 +143,7 @@ class InstanceHandlerWidget(DefaultFrame):
         self.wgt_output.setFixedHeight(75)
         self.output_title.setObjectName('OutputTitle')
         self.output_name.setObjectName('OutputLabel')
-
+        self.input_format.setPlaceholderText("Override Format String from current = %s" % self.NOM.format)
         self.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.setFrameShape(QtWidgets.QFrame.StyledPanel)
 
@@ -173,16 +174,19 @@ class InstanceHandlerWidget(DefaultFrame):
         self.token_widget_lookup = {}
 
     def set_format(self):
-        self.NOM.format = self.input_format.toPlainText().encode('utf-8')
-        self.refresh_tokens()
-        self.update_instance('', '', '', '', '')
+        input = self.input_format.text().encode('utf-8')
+        if input and len(input) > 3:
+            self.NOM.format = input
+            self.refresh_tokens()
+            self.update_instance('', '', '', '', '')
 
     def update_instance(self, token, value, capitalized='', prefix='', suffix=''):
-        self.NOM.merge_dict({token.encode('utf-8'): value.encode('utf-8')})
-        token_attr = getattr(self.NOM, token)
-        token_attr.case_setting = capitalized
-        token_attr.prefix_setting = prefix
-        token_attr.suffix_setting = suffix
+        if any([token, capitalized, prefix, suffix]):
+            self.NOM.merge_dict({token.encode('utf-8'): value.encode('utf-8')})
+            token_attr = getattr(self.NOM, token)
+            token_attr.case_setting = capitalized
+            token_attr.prefix_setting = prefix
+            token_attr.suffix_setting = suffix
 
         formatted = str("<html><head><meta name=\"qrichtext\" content=\"1\" /></head>"
                         "<body style=\" white-space: pre-wrap; font-family:Sans Serif; "
@@ -195,10 +199,10 @@ class InstanceHandlerWidget(DefaultFrame):
     def select_next_token_line_edit(self, direction):
         order = self.NOM.format_order
         direction_shifted_tokens = order[-1:] + order[:-1] if direction else order[1:] + order[:1]
-
+        restart = order[-1] if direction else order[0]
         for token, next_token in zip(order, direction_shifted_tokens):
             token_widget = self.token_widget_lookup[token.lower()]
-            if token_widget.is_selected():
+            if token_widget.is_selected() and restart != next_token:
                 next_widget = self.token_widget_lookup[next_token.lower()]
                 self.LOG.debug(
                     'Selecting from widget %r to next token widget (%s): %r' % (token_widget, next_token, next_widget))

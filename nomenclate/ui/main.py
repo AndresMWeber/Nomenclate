@@ -7,11 +7,9 @@ import nomenclate.ui.drag_drop as drag_drop
 import nomenclate.ui.file_list as file_list
 
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
-global posish
-posish = None
 
 
-class MainDialog(QtWidgets.QDialog):
+class MainDialog(QtWidgets.QWidget):
     NAME = 'Nomenclate'
     LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
     WIDTH = 800
@@ -102,13 +100,12 @@ class MainDialog(QtWidgets.QDialog):
         self.filesystem_view.send_files.connect(self.file_list_view.update_file_paths)
 
     def load_stylesheet(self, btn_event=None, stylesheet='style.qss'):
-        stylesheet_file = os.path.normpath(os.path.abspath('.\\resource\\%s' % stylesheet))
-        if os.path.isfile(stylesheet_file):
-            qss_data = open(stylesheet_file).read()
-        else:
+        print(os.getcwd())
+        file_path = os.path.join(os.path.dirname(__file__), 'resource', stylesheet)
+        stylesheet_file = os.path.normpath(file_path)
+        qss_data = open(stylesheet_file).read() if os.path.isfile(stylesheet_file) else ''
+        if not qss_data:
             self.LOG.warning('Invalid stylesheet file specified %s...defaulting to none' % stylesheet_file)
-            self.setStyleSheet("")
-            return
         self.setStyleSheet(qss_data)
 
     def add_fonts(self):

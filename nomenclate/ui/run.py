@@ -27,12 +27,8 @@ def create():
     application.setActiveWindow(WINDOW_INSTANCE)
     environment_application = application.applicationName()
     if not environment_application in APPLICATIONS:
-        try:
-            WINDOW_INSTANCE.LOG.info('Nomenclate running in %s-mode' % environment_application)
-            application.exec_()
-        except SystemExit:
-            WINDOW_INSTANCE.LOG.info('Nomenclate encountered an error trying to run')
-            raise
+        WINDOW_INSTANCE.LOG.info('Nomenclate running in %s-mode' % environment_application)
+        application.exec_()
     else:
         application.mode = '%s' % application.applicationName()
         WINDOW_INSTANCE.LOG.info('Nomenclate running in %s-mode' % environment_application)

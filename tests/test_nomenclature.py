@@ -170,6 +170,61 @@ class TestNomenclateSwapFormats(TestNomenclateBase):
 
         self.nom.initialize_format_options(self.test_format)
 
+    def test_switch_single_format(self):
+        self.nom.format = self.lee_path
+        self.nom.LOG.info('New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
+
+        self.set_values()
+        self.assertEquals(self.nom.get(), 'LOC_hrc_test_l')
+
+        self.nom.format = self.raf_path
+        self.nom.LOG.info('(raf) New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
+
+        self.set_raf_values()
+        self.assertEquals(self.nom.get(), 'test_TLR_hrc')
+
+    def test_switch_single_char_format(self):
+        self.nom.format = 'a'
+        self.nom.LOG.info('New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
+
+        self.nom.a = 'john'
+        self.assertEquals(self.nom.get(), 'john')
+
+    def test_switch_double_format(self):
+        self.nom.format = 'af'
+        self.nom.LOG.info('New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
+
+        self.nom.af = 'john'
+        self.assertEquals(self.nom.get(), 'john')
+
+    def test_switch_triple_format(self):
+        self.nom.format = 'asd'
+        self.nom.LOG.info('New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
+
+        self.nom.asd = 'john'
+        self.assertEquals(self.nom.get(), 'john')
+
+    def test_switch_single_format_nonsense(self):
+        self.nom.format = 'asdf'
+        self.nom.LOG.info('New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
+
+        self.nom.asdf = 'john'
+        self.assertEquals(self.nom.get(), 'john')
+
+    def test_switch_single_format_repeat(self):
+        self.nom.format = 'asdf_asdf'
+        self.nom.LOG.info('New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
+
+        self.nom.asdf = 'john'
+        self.assertEquals(self.nom.get(), 'john')
+
+    def test_switch_single_format_repeat_different_casing(self):
+        self.nom.format = 'asdf_Asdf'
+        self.nom.LOG.info('New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
+
+        self.nom.asdf = 'john'
+        self.assertEquals(self.nom.get(), 'john_Asdf')
+
     def set_values(self):
         self.nom.name = 'test'
         self.nom.height = 'top'

@@ -42,16 +42,17 @@ class FileListWidget(DefaultWidget):
     TITLE = 'File List View'
 
     def create_controls(self):
-        self.layout_main = QtWidgets.QVBoxLayout()
+        self.layout_main = QtWidgets.QVBoxLayout(self)
         self.wgt_list_view = QtWidgets.QListView()
         self.list = QFileItemModel()
         self.proxy_list = QtCore.QSortFilterProxyModel()
         self.btn_widget = QtWidgets.QWidget()
-        self.btn_layout = QtWidgets.QHBoxLayout()
+        self.btn_layout = QtWidgets.QHBoxLayout(self.btn_widget)
         self.wgt_filter_list = QtWidgets.QLineEdit(placeholderText='filter...')
         self.btn_clear = QtWidgets.QPushButton('Clear')
         self.btn_remove = QtWidgets.QPushButton('Remove')
         self.btn_full = QtWidgets.QPushButton('Full Path')
+        self.btn_rename = QtWidgets.QPushButton('Rename Selected Items')
 
     def initialize_controls(self):
         self.setAcceptDrops(True)
@@ -59,16 +60,14 @@ class FileListWidget(DefaultWidget):
         self.wgt_list_view.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
 
     def connect_controls(self):
-        self.setLayout(self.layout_main)
-
         self.proxy_list.setSourceModel(self.list)
         self.wgt_list_view.setModel(self.proxy_list)
 
         self.layout_main.addWidget(self.wgt_filter_list)
         self.layout_main.addWidget(self.wgt_list_view)
         self.layout_main.addWidget(self.btn_widget)
+        self.layout_main.addWidget(self.btn_rename)
 
-        self.btn_widget.setLayout(self.btn_layout)
         self.btn_layout.addWidget(self.btn_clear)
         self.btn_layout.addWidget(self.btn_full)
         self.btn_layout.addWidget(self.btn_remove)
@@ -78,6 +77,21 @@ class FileListWidget(DefaultWidget):
         self.btn_full.clicked.connect(self.list.display_full)
         self.wgt_filter_list.textChanged.connect(self.update_regexp)
         self.list.itemChanged.connect(self.sort_model)
+        self.btn_rename.clicked.connect(self.action_rename_items)
+
+    def action_rename_items(self):
+        items = []
+        for model_index in self.wgt_list_view.selectedIndexes():
+            items.append(QtCore.QPersistentModelIndex(model_index).data())
+        message_box = QtWidgets.QMessageBox(self)
+        message_box.setText("Do you want to rename %d items" % len(items))
+        #message_box.setInformativeText("Do you really want to disable safety enforcement?")
+        message_box.addButton(QtWidgets.QMessageBox.Yes)
+        message_box.addButton(QtWidgets.QMessageBox.No)
+        message_box.setDefaultButton(QtWidgets.QMessageBox.No)
+        ret = message_box.exec_()
+        if ret:
+            print('If this were active we would rename these items: %s' % items)
 
     def update_regexp(self):
         self.proxy_list.setFilterRegExp(QtCore.QRegExp(str(self.wgt_filter_list.text()),

@@ -15,5 +15,4 @@ class TestFormatStringValidateFormatString(TestFormatStringBase):
         self.fs.get_valid_format_order('side_mide')
 
     def test_get__validate_format_string__is_format_invalid(self):
-        print(repr(self))
         self.assertRaises(exceptions.FormatError, self.fs.get_valid_format_order, 'notside;blah')
