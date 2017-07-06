@@ -2,7 +2,7 @@ import sys
 import nomenclate.settings as settings
 from PyQt5 import QtWidgets, QtCore
 from main import MainDialog
-
+import sys
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
 
 APPLICATIONS = ['Maya-2017', 'Maya-2016', 'Maya-2015', 'Nuke']
@@ -19,7 +19,6 @@ def create():
 
     if WINDOW_INSTANCE is None:
         WINDOW_INSTANCE = MainDialog()
-    WINDOW_INSTANCE.LOG.setLevel(MODULE_LOGGER_LEVEL_OVERRIDE)
     WINDOW_INSTANCE.LOG.info('%s running on %s' % (application.applicationName(), application.platformName()))
     WINDOW_INSTANCE.show()
     WINDOW_INSTANCE.raise_()

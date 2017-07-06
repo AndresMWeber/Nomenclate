@@ -1,11 +1,11 @@
-from default import DefaultFrame
-import nomenclate.settings as settings
+from six import iteritems
 from PyQt5 import QtWidgets, QtCore, QtGui
 import nomenclate
-from six import iteritems
+import nomenclate.ui.utils as utils
+import nomenclate.settings as settings
 import nomenclate.ui.accordion_tree as accordion_tree
+from default import DefaultFrame
 
-ALPHANUMERIC_VALIDATOR = QtGui.QRegExpValidator(QtCore.QRegExp('[A-Za-z0-9_]*'))
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
@@ -14,7 +14,7 @@ class FormatTextEdit(QtWidgets.QLineEdit):
 
     def __init__(self, *args, **kwargs):
         super(FormatTextEdit, self).__init__(*args, **kwargs)
-        self.setValidator(ALPHANUMERIC_VALIDATOR)
+        self.setValidator(utils.ALPHANUMERIC_VALIDATOR)
 
     def keyPressEvent(self, QKeyEvent):
         if QKeyEvent.key() == QtCore.Qt.Key_Return:
@@ -66,9 +66,9 @@ class TokenWidget(DefaultFrame):
         self.prefix.setPlaceholderText('prefix')
         self.suffix.setPlaceholderText('suffix')
         self.value_widget.setPlaceholderText(self.token)
-        self.prefix.setValidator(ALPHANUMERIC_VALIDATOR)
-        self.suffix.setValidator(ALPHANUMERIC_VALIDATOR)
-        self.value_widget.setValidator(ALPHANUMERIC_VALIDATOR)
+        self.prefix.setValidator(utils.ALPHANUMERIC_VALIDATOR)
+        self.suffix.setValidator(utils.ALPHANUMERIC_VALIDATOR)
+        self.value_widget.setValidator(utils.ALPHANUMERIC_VALIDATOR)
         self.capital.currentIndexChanged.connect(self.on_change)
         self.prefix.textChanged.connect(self.on_change)
         self.suffix.textChanged.connect(self.on_change)
