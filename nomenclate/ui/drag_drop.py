@@ -20,10 +20,12 @@ class DragDropWidget(DefaultWidget):
 
     def create_controls(self):
         self.layout_main = QtWidgets.QVBoxLayout()
+        self.drag_frame = QtWidgets.QFrame()
+        self.drag_layout = QtWidgets.QVBoxLayout(self.drag_frame)
+        self.drag_frame.setObjectName('DragFrame')
         self.btn_browse = QtWidgets.QPushButton('Browse...')
         self.text = QtWidgets.QLabel('Drag and Drop Files\nOr Click to Browse')
         self.label = QtWidgets.QLabel()
-        self.pixmap = QtGui.QPixmap(os.path.normpath(os.path.abspath('.\\resource\\drag-and-drop-icon.png')))
 
     def initialize_controls(self):
         self.setAcceptDrops(True)
@@ -33,18 +35,15 @@ class DragDropWidget(DefaultWidget):
 
     def connect_controls(self):
         self.setLayout(self.layout_main)
-        self.label.setPixmap(self.pixmap.scaled(self.label.size(), QtCore.Qt.KeepAspectRatio))
-        self.layout_main.addWidget(self.label, 0, QtCore.Qt.AlignCenter)
-        self.layout_main.addWidget(self.text, 0, QtCore.Qt.AlignCenter)
+        self.layout_main.addWidget(self.drag_frame, 0, QtCore.Qt.AlignCenter)
         self.layout_main.addWidget(self.btn_browse, 0, QtCore.Qt.AlignCenter)
+        self.drag_layout.addWidget(self.label, 0, QtCore.Qt.AlignCenter)
+        self.drag_layout.addWidget(self.text, 0, QtCore.Qt.AlignCenter)
 
         self.btn_browse.clicked.connect(self.browser)
 
     def browser(self):
         print('browsing')
-
-    def resizeEvent(self, QResizeEvent):
-        self.label.setPixmap(self.pixmap.scaled(self.label.size(), QtCore.Qt.KeepAspectRatio))
 
     def sort_model(self):
         self.list_model.sort(QtCore.Qt.AscendingOrder)

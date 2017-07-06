@@ -1,4 +1,6 @@
 import os
+from glob import glob
+from functools import partial
 from PyQt5 import QtWidgets, QtCore, QtGui
 import nomenclate.settings as settings
 import nomenclate.ui.filesystem as filesystem
@@ -17,16 +19,18 @@ class MainDialog(QtWidgets.QWidget):
 
     def __init__(self):
         super(MainDialog, self).__init__()
+        self.default_css_cache = None
         self.add_fonts()
         self.keylist = []
         self.setup()
         self.setup_menubar()
         QtWidgets.QApplication.instance().installEventFilter(self)
 
-    def setup(self):
-        self.create_controls()
-        self.initialize_controls()
-        self.connect_controls()
+    @property
+    def default_stylesheet(self):
+        if not self.default_css_cache:
+            self.default_css_cache = self.get_stylesheet_qss('default.qss')
+        return self.default_css_cache
 
     def setup_menubar(self):
         self.file_menu = self.menu_bar.addMenu('File')
@@ -38,10 +42,16 @@ class MainDialog(QtWidgets.QWidget):
         # redo_action.triggered.connect()
 
         style_menu = self.settings_menu.addMenu('Set Style')
-        default_action = style_menu.addAction('Default')
-        ridiculous_action = style_menu.addAction('Ridiculous')
-        default_action.triggered.connect(lambda: self.load_stylesheet(stylesheet="default.qss"))
-        ridiculous_action.triggered.connect(lambda: self.load_stylesheet(stylesheet="style.qss"))
+        for qss_style in glob(os.path.join(os.path.dirname(__file__), 'resource', '*.qss')):
+            file_name = os.path.basename(qss_style)
+            style_name = os.path.splitext(file_name)[0]
+            menu_action = style_menu.addAction(style_name.capitalize())
+            menu_action.triggered.connect(partial(self.load_stylesheet, stylesheet=file_name))
+
+    def setup(self):
+        self.create_controls()
+        self.initialize_controls()
+        self.connect_controls()
 
     def create_controls(self):
         self.layout_main = QtWidgets.QVBoxLayout()
@@ -60,23 +70,6 @@ class MainDialog(QtWidgets.QWidget):
         self.filesystem_view = filesystem.FileSystemWidget()
         self.drag_drop_view = drag_drop.DragDropWidget()
         self.file_list_view = file_list.FileListWidget()
-
-    def initialize_controls(self):
-        self.setObjectName('MainFrame')
-        self.setWindowFlags(QtCore.Qt.Tool)
-        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        self.setAcceptDrops(True)
-        self.setWindowTitle(self.NAME)
-        self.setFocusPolicy(QtCore.Qt.NoFocus)
-
-        self.wgt_header.setObjectName('HeaderWidget')
-        self.header_label.setObjectName('HeaderLabel')
-        self.header_label.setText(self.NAME.upper())
-        self.layout_main.setContentsMargins(0, 0, 0, 0)
-        self.layout_main.setSpacing(0)
-        self.setBaseSize(self.WIDTH, self.HEIGHT)
-        self.layout_main.setAlignment(QtCore.Qt.AlignTop)
-        self.load_stylesheet()
 
     def connect_controls(self):
         self.setLayout(self.layout_main)
@@ -99,14 +92,36 @@ class MainDialog(QtWidgets.QWidget):
         self.drag_drop_view.dropped.connect(self.file_list_view.update_file_paths)
         self.filesystem_view.send_files.connect(self.file_list_view.update_file_paths)
 
-    def load_stylesheet(self, btn_event=None, stylesheet='style.qss'):
-        print(os.getcwd())
+    def initialize_controls(self):
+        self.setObjectName('MainFrame')
+        self.setWindowFlags(QtCore.Qt.Tool)
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        self.setAcceptDrops(True)
+        self.setWindowTitle(self.NAME)
+        self.setFocusPolicy(QtCore.Qt.NoFocus)
+
+        self.wgt_header.setObjectName('HeaderWidget')
+        self.header_label.setObjectName('HeaderLabel')
+        self.header_label.setText(self.NAME.upper())
+        self.layout_main.setContentsMargins(0, 0, 0, 0)
+        self.layout_main.setSpacing(0)
+        self.setBaseSize(self.WIDTH, self.HEIGHT)
+        self.layout_main.setAlignment(QtCore.Qt.AlignTop)
+        self.load_stylesheet()
+
+    def get_stylesheet_qss(self, stylesheet):
         file_path = os.path.join(os.path.dirname(__file__), 'resource', stylesheet)
         stylesheet_file = os.path.normpath(file_path)
-        qss_data = open(stylesheet_file).read() if os.path.isfile(stylesheet_file) else ''
+        return open(stylesheet_file).read() if os.path.isfile(stylesheet_file) else ''
+
+    def load_stylesheet(self, btn_event=None, stylesheet='darkseas.qss'):
+        qss_data = self.get_stylesheet_qss(stylesheet=stylesheet) + self.default_stylesheet
+        self.LOG.info('Attemping to load CSS from file %s (appended default CSS).' % stylesheet)
+        self.LOG.debug('CSS data:\n%s' % qss_data)
         if not qss_data:
-            self.LOG.warning('Invalid stylesheet file specified %s...defaulting to none' % stylesheet_file)
+            self.LOG.warning('Invalid stylesheet file specified %s...defaulting to none' % stylesheet)
         self.setStyleSheet(qss_data)
+        return qss_data
 
     def add_fonts(self):
         font_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'resource', 'fonts')
@@ -134,6 +149,9 @@ class MainDialog(QtWidgets.QWidget):
                 if QtWidgets.QApplication.focusWidget().parent() in self.instance_handler.token_widgets:
                     if self.instance_handler.select_next_token_line_edit(event.key() == QtCore.Qt.Key_Backtab):
                         return True
+
+            if event.key() == QtCore.Qt.Key_Escape:
+                self.close()
 
         if event.type() == QtCore.QEvent.MouseButtonPress:
             self.LOG.debug('Widgets under cursor: %s' % ' -> '.join(reversed(widgets_at(QtGui.QCursor.pos()))))

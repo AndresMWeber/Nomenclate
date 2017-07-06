@@ -1,6 +1,5 @@
 import sys
 import nomenclate.settings as settings
-sys.path.append('C:\\Users\\Daemonecles\\Envs\\nomenclate\\Lib\\site-packages')
 from PyQt5 import QtWidgets, QtCore
 from main import MainDialog
 
