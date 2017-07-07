@@ -46,6 +46,11 @@ class InstanceHandlerWidget(DefaultWidget):
         return self.input_format.text().encode('utf-8')
 
     @property
+    def active_token_widgets(self):
+        return [self.token_widget_lookup[token] for token in list(self.token_widget_lookup)
+                if self.token_widget_lookup[token].parent()]
+
+    @property
     def token_widgets(self):
         return [self.token_widget_lookup[token] for token in list(self.token_widget_lookup)]
 
@@ -73,10 +78,14 @@ class InstanceHandlerWidget(DefaultWidget):
         self.clear_stale_token_widgets()
 
         for token, value in [(token, self.NOM.state[token.lower()]) for token in self.NOM.format_order]:
+            self.LOG.info('Running through token value pair %s:%s' % (token, value))
             token_widget = self.token_widget_lookup.get(token, None)
-            if not token_widget:
+            if token_widget is None:
+                self.LOG.debug('No preexisting token widget...creating and adding to %s.token_widget_lookup.' % self)
                 token_widget = token_wgt.TokenWidget(token, value)
                 self.token_widget_lookup[token] = token_widget
+            else:
+                self.token_layout.addWidget(token_widget)
 
             receiversCount = token_widget.receivers(token_widget.changed)
             if receiversCount == 0:
@@ -85,13 +94,16 @@ class InstanceHandlerWidget(DefaultWidget):
                 self.token_layout.addWidget(token_widget)
 
     def clear_stale_token_widgets(self):
-        for token_widget in self.token_widgets:
+        self.LOG.debug('Comparing current token widgets %s against format order %s' % (self.token_widgets,
+                                                                                       self.NOM.format_order))
+        for token_widget in self.active_token_widgets:
             if token_widget.token not in self.NOM.format_order:
+                self.LOG.debug('widget %s.deleteLater as it is stale.' % token_widget)
                 token_widget.deleteLater()
+                self.token_widget_lookup.pop(token_widget.token)
             else:
+                self.LOG.debug('Recycle widget %s as it is still relevant and should not be deleted.' % token_widget)
                 self.token_layout.removeWidget(token_widget)
-
-        self.token_widget_lookup = {}
 
     def set_format(self):
         input_format = self.user_format_override
