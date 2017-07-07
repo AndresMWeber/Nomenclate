@@ -100,7 +100,6 @@ class MainDialog(QtWidgets.QWidget):
         self.filesystem_view.send_files.connect(self.file_list_view.update_file_paths)
 
     def load_stylesheet(self, btn_event=None, stylesheet='style.qss'):
-        print(os.getcwd())
         file_path = os.path.join(os.path.dirname(__file__), 'resource', stylesheet)
         stylesheet_file = os.path.normpath(file_path)
         qss_data = open(stylesheet_file).read() if os.path.isfile(stylesheet_file) else ''
@@ -134,6 +133,10 @@ class MainDialog(QtWidgets.QWidget):
                 if QtWidgets.QApplication.focusWidget().parent() in self.instance_handler.token_widgets:
                     if self.instance_handler.select_next_token_line_edit(event.key() == QtCore.Qt.Key_Backtab):
                         return True
+
+            if event.key() == QtCore.Qt.Key_Escape:
+                self.close()
+                return
 
         if event.type() == QtCore.QEvent.MouseButtonPress:
             self.LOG.debug('Widgets under cursor: %s' % ' -> '.join(reversed(widgets_at(QtGui.QCursor.pos()))))

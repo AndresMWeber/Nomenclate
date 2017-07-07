@@ -5,7 +5,8 @@ import nomenclate
 from six import iteritems
 import nomenclate.ui.accordion_tree as accordion_tree
 
-ALPHANUMERIC_VALIDATOR = QtGui.QRegExpValidator(QtCore.QRegExp('[A-Za-z0-9_]*'))
+ALPHANUMERIC_VALIDATOR = QtCore.QRegExp('[A-Za-z0-9_]*')
+TOKEN_VALUE_VALIDATOR = QtCore.QRegExp('^(?!^_)(?!.*__+|\.\.+.*)[a-zA-Z0-9_\.]+(?!_)$')
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
@@ -30,9 +31,59 @@ class TokenWidget(DefaultFrame):
         self.token = token
         self.value = value
         super(TokenWidget, self).__init__()
+        self.add_fields()
+
+    def create_controls(self):
+        self.accordion_tree = accordion_tree.QAccordionTreeWidget(self)
+        self.layout_main = QtWidgets.QVBoxLayout(self)
+        self.value_widget = QtWidgets.QLineEdit(self.value)
+
+    def initialize_controls(self):
         self.setMinimumWidth(50)
         self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Fixed)
-        self.add_fields()
+
+        self.setFrameShape(QtWidgets.QFrame.Box)
+        self.setFrameShadow(QtWidgets.QFrame.Sunken)
+
+        self.layout_main.setContentsMargins(1, 0, 1, 0)
+        self.layout_main.setSpacing(0)
+
+        self.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.value_widget.setFocusPolicy(QtCore.Qt.StrongFocus)
+        self.setFocusProxy(self.value_widget)
+
+    def connect_controls(self):
+        self.value_widget.textChanged.connect(self.on_change)
+        self.layout_main.addWidget(self.value_widget)
+        self.layout_main.insertWidget(0, self.accordion_tree)
+
+    def add_fields(self):
+        # if not self.token in ['var', 'version']:
+        self.accordion_tree.add_category(self.token)
+        self.capital = QtWidgets.QComboBox()
+        self.capital.addItems(['', 'upper', 'lower'])
+        list_view = QtWidgets.QListView(self.capital)
+        list_view.setObjectName('drop_down_list_view')
+        self.capital.setView(list_view)
+        self.prefix = QtWidgets.QLineEdit()
+        self.suffix = QtWidgets.QLineEdit()
+
+        self.prefix.setPlaceholderText('prefix')
+        self.suffix.setPlaceholderText('suffix')
+        self.value_widget.setPlaceholderText(self.token)
+        self.prefix.setValidator(QtGui.QRegExpValidator(TOKEN_VALUE_VALIDATOR, self.prefix))
+        self.suffix.setValidator(QtGui.QRegExpValidator(TOKEN_VALUE_VALIDATOR, self.suffix))
+        self.value_widget.setValidator(QtGui.QRegExpValidator(TOKEN_VALUE_VALIDATOR, self.value_widget))
+        print(TOKEN_VALUE_VALIDATOR)
+        print(self.value_widget.validator().regExp().RegExp)
+        self.capital.currentIndexChanged.connect(self.on_change)
+        self.prefix.textChanged.connect(self.on_change)
+        self.suffix.textChanged.connect(self.on_change)
+
+        self.accordion_tree.add_widget_to_category(self.token, self.capital)
+        self.accordion_tree.add_widget_to_category(self.token, self.prefix)
+        self.accordion_tree.add_widget_to_category(self.token, self.suffix)
+        self.accordion_tree.sizer()
 
     def resizeEvent(self, QResizeEvent):
         try:
@@ -50,53 +101,6 @@ class TokenWidget(DefaultFrame):
         size.setHeight(self.value_widget.sizeHint().height() + self.accordion_tree.sizeHint().height())
         size.setWidth(super(TokenWidget, self).sizeHint().width())
         return size
-
-    def add_fields(self):
-        # if not self.token in ['var', 'version']:
-        self.accordion_tree = accordion_tree.QAccordionTreeWidget(self)
-        self.accordion_tree.add_category(self.token)
-        self.capital = QtWidgets.QComboBox()
-        self.capital.addItems(['', 'upper', 'lower'])
-        list_view = QtWidgets.QListView(self.capital)
-        list_view.setObjectName('drop_down_list_view')
-        self.capital.setView(list_view)
-        self.prefix = QtWidgets.QLineEdit()
-        self.suffix = QtWidgets.QLineEdit()
-
-        self.prefix.setPlaceholderText('prefix')
-        self.suffix.setPlaceholderText('suffix')
-        self.value_widget.setPlaceholderText(self.token)
-        self.prefix.setValidator(ALPHANUMERIC_VALIDATOR)
-        self.suffix.setValidator(ALPHANUMERIC_VALIDATOR)
-        self.value_widget.setValidator(ALPHANUMERIC_VALIDATOR)
-        self.capital.currentIndexChanged.connect(self.on_change)
-        self.prefix.textChanged.connect(self.on_change)
-        self.suffix.textChanged.connect(self.on_change)
-
-        self.accordion_tree.add_widget_to_category(self.token, self.capital)
-        self.accordion_tree.add_widget_to_category(self.token, self.prefix)
-        self.accordion_tree.add_widget_to_category(self.token, self.suffix)
-        self.layout_main.insertWidget(0, self.accordion_tree)
-        self.accordion_tree.sizer()
-
-    def create_controls(self):
-        self.layout_main = QtWidgets.QVBoxLayout(self)
-        self.value_widget = QtWidgets.QLineEdit(self.value)
-
-    def initialize_controls(self):
-        self.setFrameShape(QtWidgets.QFrame.Box)
-        self.setFrameShadow(QtWidgets.QFrame.Sunken)
-
-        self.layout_main.setContentsMargins(1, 0, 1, 0)
-        self.layout_main.setSpacing(0)
-
-        self.setFocusPolicy(QtCore.Qt.NoFocus)
-        self.value_widget.setFocusPolicy(QtCore.Qt.StrongFocus)
-        self.setFocusProxy(self.value_widget)
-
-    def connect_controls(self):
-        self.value_widget.textChanged.connect(self.on_change)
-        self.layout_main.addWidget(self.value_widget)
 
     def on_change(self, *args, **kwargs):
         self.value = self.value_widget.text()
