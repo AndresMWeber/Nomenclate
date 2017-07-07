@@ -159,7 +159,9 @@ class MainDialog(QtWidgets.QWidget):
                         return True
 
             elif event.key() == QtCore.Qt.Key_Escape:
-                self.close()
+                print(self.focused_widget)
+                if not issubclass(self.focused_widget, QtWidgets.QLineEdit):
+                    self.close()
 
         if event.type() == QtCore.QEvent.Close:
             self.LOG.debug('Close event %s detected from widget %s with parent %s' % (event, source, source.parent()))
@@ -171,6 +173,12 @@ class MainDialog(QtWidgets.QWidget):
         else:
             super(MainDialog, self).keyPressEvent(QKeyPressEvent)
         return
+
+    def mousePressEvent(self, event):
+        focused_widget = self.focused_widget
+        if isinstance(focused_widget, QtWidgets.QLineEdit):
+            focused_widget.clearFocus()
+        QtGui.QMainWindow.mousePressEvent(self, event)
 
     def closeEvent(self, e):
         QtWidgets.QApplication.instance().removeEventFilter(self)

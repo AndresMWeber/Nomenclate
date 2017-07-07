@@ -166,6 +166,10 @@ QComboBox::down-arrow:on {
     left: 1px;
 }
 
+QCompleter {
+    background-color: transparent;
+}
+
 /*
 QCheckBox::indicator:checked{
     image: url(./nomenclate/ui/resource/icons/appbar.checkmark.thick.png);

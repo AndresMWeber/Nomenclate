@@ -79,19 +79,33 @@ class InstanceHandlerWidget(DefaultWidget):
         for token, value in [(token, self.NOM.state[token.lower()]) for token in self.NOM.format_order]:
             token = token.lower()
             self.LOG.info('Running through token value pair %s:%s' % (token, value))
-            token_widget = self.token_widget_lookup.get(token, None)
-            if token_widget is None:
-                self.LOG.debug('No preexisting token widget...creating and adding to %s.token_widget_lookup.' % self)
-                token_widget = token_wgt.TokenWidget(token, value)
-                self.token_widget_lookup[token] = token_widget
-            else:
-                self.token_layout.addWidget(token_widget)
-
+            token_widget = self.create_token_widget(token, value)
             receiversCount = token_widget.receivers(token_widget.changed)
             if receiversCount == 0:
                 self.LOG.info('Connecting %s.changed -> %s.update_instance and adding to layout' % (token_widget, self))
                 token_widget.changed.connect(self.update_instance)
                 self.token_layout.addWidget(token_widget)
+
+    def create_token_widget(self, token, value):
+        token_widget = self.token_widget_lookup.get(token, None)
+        if token_widget is None:
+            self.LOG.debug('No preexisting token widget...creating and adding to %s.token_widget_lookup.' % self)
+            token_widget = token_wgt.TokenWidget(token, value)
+            self.token_widget_lookup[token] = token_widget
+            self.add_token_widget_completion_from_config(token)
+        else:
+            self.token_layout.addWidget(token_widget)
+        return token_widget
+
+    def add_token_widget_completion_from_config(self, token):
+        token_widget = self.token_widget_lookup.get(token, None)
+        try:
+            settings = [str(option) for option in self.NOM.cfg.get(token, list)]
+            print settings
+            token_widget.value_widget.set_completer_items(settings)
+
+        except nomenclate.core.errors.ResourceNotFoundError:
+            print 'could not find config entries for token %s' % token
 
     def clear_stale_token_widgets(self):
         self.LOG.debug('Comparing current token widgets %s against format order %s' % (self.token_widgets,
