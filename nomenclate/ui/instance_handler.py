@@ -77,6 +77,7 @@ class InstanceHandlerWidget(DefaultWidget):
     def refresh_active_token_widgets(self):
 
         for token, value in [(token, self.NOM.state[token.lower()]) for token in self.NOM.format_order]:
+            token = token.lower()
             self.LOG.info('Running through token value pair %s:%s' % (token, value))
             token_widget = self.token_widget_lookup.get(token, None)
             if token_widget is None:
@@ -116,9 +117,12 @@ class InstanceHandlerWidget(DefaultWidget):
         self.update_instance("", "", "", "", "")
 
     def update_instance(self, token, value, capitalized='', prefix='', suffix=''):
+        update_dict = {'token':token, 'value':value, 'capitalized':capitalized, 'prefix':prefix, 'suffix':suffix}
+        self.LOG.info('Updating instance with %s' % update_dict)
         if any([token, capitalized, prefix, suffix]):
             self.NOM.merge_dict({token.encode('utf-8'): value.encode('utf-8')})
             token_attr = getattr(self.NOM, token)
+            self.LOG.info('Obtained TokenAttr: %r, now modifying with new settings' % token_attr)
             token_attr.case_setting = capitalized
             token_attr.prefix_setting = prefix
             token_attr.suffix_setting = suffix

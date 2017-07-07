@@ -5,16 +5,11 @@ import string
 import nomenclate.settings as settings
 from . import processing
 
-MODULE_LOGGER_LEVEL_OVERRIDE = None
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
 class InputRenderer(type):
     RENDER_FUNCTIONS = {}
-    REGEX_PARENTHESIS = r'([\(\)]+)'
-    REGEX_BRACKETS = r'([\{\}]+)'
-    REGEX_STATIC_TOKEN = r'(\(\w+\))'
-    REGEX_BRACKET_TOKEN = r'(\{\w+\})'
-    REGEX_TOKEN_SEARCH = r'(?P<token>((?<![a-z]){TOKEN}(?![0-9]))|((?<=[a-z]){TOKEN_CAPITALIZED}(?![0-9])))'
 
     LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
 
@@ -84,7 +79,7 @@ class InputRenderer(type):
     @classmethod
     def _prepend_token_match_objects(cls, token_values, incomplete_nomenclative):
         for token, value in iteritems(token_values):
-            re_token = cls.REGEX_TOKEN_SEARCH.format(TOKEN=token,
+            re_token = settings.REGEX_TOKEN_SEARCH.format(TOKEN=token,
                                                      TOKEN_CAPITALIZED=token[0].upper() + token[1:])
             re_matches = re.finditer(re_token, incomplete_nomenclative, 0)
 
@@ -110,17 +105,16 @@ class InputRenderer(type):
         :param formatted_string: str, string that has had tokens replaced
         :return: str, cleaned up name of object
         """
-        # TODO: chunk this out to sub-processes for easier error checking, could be own class
         # Remove whitespace
         result = formatted_string.replace(' ', '')
         # Remove any static token parentheses
-        result = re.sub(cls.REGEX_PARENTHESIS, '', result)
+        result = re.sub(settings.REGEX_PARENTHESIS, '', result)
         # Remove any multiple underscores
         result = re.sub('_+', '_', result)
         # Remove trailing or preceding non letter characters
-        result = re.sub(r'(^[\W_]+)|([\W_]+$)', '', result)
+        result = re.sub(settings.REGEX_ADJACENT_UNDERSCORE, '', result)
         #  not sure what this one was...but certainly not it.
-        result = re.sub(r'(\()|(\))', '', result)
+        result = re.sub(settings.REGEX_SINGLE_PARENTHESIS, '', result)
         return result
 
     @staticmethod

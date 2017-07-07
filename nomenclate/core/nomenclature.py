@@ -12,7 +12,7 @@ from .tools import (
     NomenclateNotifier
 )
 
-MODULE_LOGGER_LEVEL_OVERRIDE = None
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
 class Nomenclate(object):

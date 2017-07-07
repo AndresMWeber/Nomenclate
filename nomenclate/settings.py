@@ -23,6 +23,13 @@ def get_module_logger(module_name, module_override_level=None):
     return getLogger(module_name, level=module_logger_level)
 
 # Is not a hard coded (word) and does not end with any non word characters or capitals (assuming camel)
-FORMAT_STRING_REGEX = r'(?:\([\w]+\))|([A-Za-z0-9][^A-Z_\W]+)'
-STATIC_TEXT_REGEX = '\([\w]+\)'
 SEPARATORS = '\\._-?()'
+REGEX_SINGLE_PARENTHESIS = '(\()|(\))'
+REGEX_PARENTHESIS = r'([\(\)]+)'
+REGEX_BRACKETS = r'([\{\}]+)'
+REGEX_STATIC_TOKEN = '(\(\w+\))'
+REGEX_BRACKET_TOKEN = r'(\{\w+\})'
+REGEX_TOKEN_SEARCH = r'(?P<token>((?<![a-z]){TOKEN}(?![0-9]))|((?<=[a-z_]){TOKEN_CAPITALIZED}(?![0-9])))'
+REGEX_ADJACENT_UNDERSCORE = r'(^[\W_]+)|([\W_]+$)'
+
+FORMAT_STRING_REGEX = r'(?:{STATIC_TEXT_REGEX})|([A-Za-z0-9][^A-Z_\W]+)'.format(STATIC_TEXT_REGEX=REGEX_STATIC_TOKEN)

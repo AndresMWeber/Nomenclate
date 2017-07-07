@@ -9,7 +9,7 @@ import nomenclate.ui.instance_handler as instance_handler
 import nomenclate.ui.drag_drop as drag_drop
 import nomenclate.ui.file_list as file_list
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
 class MainDialog(QtWidgets.QWidget):
@@ -104,7 +104,7 @@ class MainDialog(QtWidgets.QWidget):
         self.setWindowFlags(QtCore.Qt.Tool)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.setAcceptDrops(True)
-        self.setFocusPolicy(QtCore.Qt.NoFocus)
+        #self.setFocusPolicy(QtCore.Qt.NoFocus)
 
         self.wgt_header.setObjectName('HeaderWidget')
         self.header_label.setObjectName('HeaderLabel')

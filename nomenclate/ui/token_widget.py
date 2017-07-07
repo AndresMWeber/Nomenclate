@@ -59,7 +59,7 @@ class TokenWidget(DefaultFrame):
     changed = QtCore.pyqtSignal(str, str, str, str, str)
 
     def __init__(self, token, value):
-        self.token = token
+        self.token = token.lower()
         self.value = value
         super(TokenWidget, self).__init__()
         self.add_fields()

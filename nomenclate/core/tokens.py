@@ -24,8 +24,8 @@ class TokenAttr(object):
     def __init__(self, label=None, token=None):
         """
 
-        :param label:
-        :param token:
+        :param label: str, the label is represents the value we want to replace the given token with
+        :param token: str, the raw name for the token to be used
         """
         try:
             self.validate_entries(label)

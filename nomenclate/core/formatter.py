@@ -3,7 +3,7 @@ import re
 from . import errors as exceptions
 import nomenclate.settings as settings
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.DEBUG
 
 
 class FormatString(object):
@@ -16,9 +16,7 @@ class FormatString(object):
     @format_order.setter
     def format_order(self, format_target):
         if format_target:
-            self.processed_format_order = self.get_valid_format_order(format_target,
-                                                                      format_order=self.parse_format_order(
-                                                                          format_target))
+            self.processed_format_order = self.get_valid_format_order(format_target)
         else:
             self.processed_format_order = []
 
@@ -26,12 +24,11 @@ class FormatString(object):
         self.LOG.info('Initializing format string with input %r' % format_string)
         self.processed_format_order = []
         self.format_string = format_string
-        self.format_order = format_string
+        self.format_order = self.format_string
         self.swap_format(format_string)
 
     def swap_format(self, format_target):
         try:
-            self.get_valid_format_order(format_target)
             self.format_order = format_target
             self.format_string = format_target
             self.LOG.debug('Successfully set format string: %s and format order: %s' % (self.format_string,
@@ -53,7 +50,7 @@ class FormatString(object):
         self.LOG.debug('Getting format order from target %s' % repr(format_target))
         try:
             pattern = re.compile(settings.FORMAT_STRING_REGEX)
-            return [match.group() for match in pattern.finditer(format_target) if None not in match.groups()]
+            return [match.group() for match in pattern.finditer(format_target)]# if None not in match.groups()]
         except TypeError:
             raise exceptions.FormatError('Format string %s is not a valid input type, must be <type str>' %
                                          format_target)
@@ -77,14 +74,15 @@ class FormatString(object):
         return format_target
 
     def remove_static_text(self, format_target):
-        return re.sub(settings.STATIC_TEXT_REGEX, '', format_target)
+        return re.sub(settings.REGEX_STATIC_TOKEN, '', format_target)
 
     def validate_separator_characters(self, separator_characters):
+        self.LOG.debug('Validating leftover separator characters %s' % separator_characters)
         for char in separator_characters:
             if char not in settings.SEPARATORS:
                 msg = "You have specified an invalid format string %s, must be separated by %s." % (
-                separator_characters,
-                settings.SEPARATORS)
+                    separator_characters,
+                    settings.SEPARATORS)
                 self.LOG.warning(msg)
                 raise exceptions.FormatError(msg)
 
@@ -93,7 +91,6 @@ class FormatString(object):
             msg = "Format string has duplicate token names (capitalization insensitive).  Please correct."
             self.LOG.warning(msg)
             raise exceptions.FormatError(msg)
-
 
     def __str__(self):
         return str(self.format_string)

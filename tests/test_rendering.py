@@ -30,7 +30,7 @@ class TestNomenclativeBase(basetest.TestBase):
 class TestNomenclativeProcessMatches(TestNomenclativeBase):
     def test_valid(self):
         test_dict = self.token_test_dict.copy()
-        rendering.InputRenderer._prepend_token_match_objects(test_dict, self.nomenclative_valid.str)
+        rendering.InputRenderer._prepend_token_match_objects(test_dict, self.nomenclative_valid.raw_formatted_string)
         for token, value in iteritems(test_dict):
             self.nomenclative_valid.add_match(*value)
         self.assertEquals(self.nomenclative_valid.process_matches(),
@@ -38,7 +38,7 @@ class TestNomenclativeProcessMatches(TestNomenclativeBase):
 
     def test_valid_short(self):
         test_dict = self.token_test_dict.copy()
-        rendering.InputRenderer._prepend_token_match_objects(test_dict, self.nomenclative_valid_short.str)
+        rendering.InputRenderer._prepend_token_match_objects(test_dict, self.nomenclative_valid_short.raw_formatted_string)
         for token, value in iteritems(test_dict):
             if isinstance(value, str):
                 pass
@@ -49,13 +49,13 @@ class TestNomenclativeProcessMatches(TestNomenclativeBase):
 
     def test_invalid(self):
         self.assertEquals(self.nomenclative_invalid.process_matches(),
-                          self.nomenclative_invalid.str)
+                          self.nomenclative_invalid.raw_formatted_string)
 
 
 class TestNomenclativeAddMatch(TestNomenclativeBase):
     def test_valid(self):
         test_dict = self.token_test_dict.copy()
-        rendering.InputRenderer._prepend_token_match_objects(test_dict, self.nomenclative_valid.str)
+        rendering.InputRenderer._prepend_token_match_objects(test_dict, self.nomenclative_valid.raw_formatted_string)
         for token, value in iteritems(test_dict):
             self.nomenclative_valid.add_match(*value)
         self.assertEquals(self.nomenclative_valid.process_matches(),
@@ -63,7 +63,7 @@ class TestNomenclativeAddMatch(TestNomenclativeBase):
 
     def test_short_valid(self):
         test_dict = self.token_test_dict.copy()
-        rendering.InputRenderer._prepend_token_match_objects(test_dict, self.nomenclative_valid_short.str)
+        rendering.InputRenderer._prepend_token_match_objects(test_dict, self.nomenclative_valid_short.raw_formatted_string)
         for token, value in iteritems(test_dict):
             if not isinstance(value, str):
                 self.nomenclative_valid_short.add_match(*value)
@@ -73,8 +73,8 @@ class TestNomenclativeAddMatch(TestNomenclativeBase):
     def test_overlap(self):
         test_dict = {'name': 'left', 'side': 'left'}
         test_overlap = {'side_name': 'overlapped'}
-        rendering.InputRenderer._prepend_token_match_objects(test_dict, self.nomenclative_valid_short.str)
-        rendering.InputRenderer._prepend_token_match_objects(test_overlap, self.nomenclative_valid_short.str)
+        rendering.InputRenderer._prepend_token_match_objects(test_dict, self.nomenclative_valid_short.raw_formatted_string)
+        rendering.InputRenderer._prepend_token_match_objects(test_overlap, self.nomenclative_valid_short.raw_formatted_string)
 
         for token, value in iteritems(test_dict):
             if not isinstance(value, str):
@@ -86,5 +86,5 @@ class TestNomenclativeAddMatch(TestNomenclativeBase):
 
     def test_non_regex_match_object(self):
         self.assertEquals(self.nomenclative_invalid.process_matches(),
-                          self.nomenclative_invalid.str)
+                          self.nomenclative_invalid.raw_formatted_string)
 
