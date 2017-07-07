@@ -1,9 +1,10 @@
-from default import DefaultFrame
-import nomenclate.settings as settings
+from six import iteritems
 from PyQt5 import QtWidgets, QtCore, QtGui
 import nomenclate
-from six import iteritems
+import nomenclate.ui.utils as utils
+import nomenclate.settings as settings
 import nomenclate.ui.accordion_tree as accordion_tree
+from default import DefaultFrame
 
 ALPHANUMERIC_VALIDATOR = QtCore.QRegExp('[A-Za-z0-9_]*')
 TOKEN_VALUE_VALIDATOR = QtCore.QRegExp('^(?!^_)(?!.*__+|\.\.+.*)[a-zA-Z0-9_\.]+(?!_)$')
@@ -15,7 +16,7 @@ class FormatTextEdit(QtWidgets.QLineEdit):
 
     def __init__(self, *args, **kwargs):
         super(FormatTextEdit, self).__init__(*args, **kwargs)
-        self.setValidator(ALPHANUMERIC_VALIDATOR)
+        self.setValidator(utils.ALPHANUMERIC_VALIDATOR)
 
     def keyPressEvent(self, QKeyEvent):
         if QKeyEvent.key() == QtCore.Qt.Key_Return:
@@ -74,8 +75,7 @@ class TokenWidget(DefaultFrame):
         self.prefix.setValidator(QtGui.QRegExpValidator(TOKEN_VALUE_VALIDATOR, self.prefix))
         self.suffix.setValidator(QtGui.QRegExpValidator(TOKEN_VALUE_VALIDATOR, self.suffix))
         self.value_widget.setValidator(QtGui.QRegExpValidator(TOKEN_VALUE_VALIDATOR, self.value_widget))
-        print(TOKEN_VALUE_VALIDATOR)
-        print(self.value_widget.validator().regExp().RegExp)
+
         self.capital.currentIndexChanged.connect(self.on_change)
         self.prefix.textChanged.connect(self.on_change)
         self.suffix.textChanged.connect(self.on_change)
@@ -142,11 +142,12 @@ class InstanceHandlerWidget(DefaultFrame):
     def initialize_controls(self):
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         self.refresh_tokens()
+
         self.setObjectName('InstanceHandler')
         self.wgt_output.setObjectName('OutputWidget')
-        self.wgt_output.setFixedHeight(75)
         self.output_title.setObjectName('OutputTitle')
         self.output_name.setObjectName('OutputLabel')
+
         self.input_format.setPlaceholderText("Override Format String from current = %s" % self.NOM.format)
         self.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.setFrameShape(QtWidgets.QFrame.StyledPanel)
@@ -159,6 +160,8 @@ class InstanceHandlerWidget(DefaultFrame):
         self.layout_main.addWidget(self.token_frame)
         self.layout_main.addWidget(self.wgt_output)
         self.input_format.returnPressed.connect(self.set_format)
+        self.input_format.setText('asdf_masdf')
+        self.set_format()
 
     def refresh_tokens(self):
         self.clear_tokens()
@@ -178,11 +181,13 @@ class InstanceHandlerWidget(DefaultFrame):
         self.token_widget_lookup = {}
 
     def set_format(self):
-        input = self.input_format.text().encode('utf-8')
-        if input and len(input) > 3:
-            self.NOM.format = input
+        print('Format before: %s' % self.NOM.format)
+        input_format = self.input_format.text().encode('utf-8')
+        if input_format and len(input_format) > 3:
+            self.NOM.format = input_format
             self.refresh_tokens()
             self.update_instance('', '', '', '', '')
+        print('Format after: %s' % self.NOM.format)
 
     def update_instance(self, token, value, capitalized='', prefix='', suffix=''):
         if any([token, capitalized, prefix, suffix]):
@@ -199,6 +204,7 @@ class InstanceHandlerWidget(DefaultFrame):
                         "margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:20pt;\">{NAME}</p>"
                         "</body></html>")
         self.output_name.setText(formatted.format(NAME=self.NOM.get()))
+        print('update instance: %s, %r, %s' % (self.NOM.format, self.NOM.get(), self.output_name.text()))
 
     def select_next_token_line_edit(self, direction):
         order = self.NOM.format_order
