@@ -167,7 +167,7 @@ class MainDialog(QtWidgets.QWidget):
 
     def keyPressEvent(self, QKeyPressEvent):
         if QKeyPressEvent.key() in [QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return]:
-            print('Ignoring return press')
+            pass
         else:
             super(MainDialog, self).keyPressEvent(QKeyPressEvent)
         return

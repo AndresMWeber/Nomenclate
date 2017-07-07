@@ -3,7 +3,7 @@ import re
 from . import errors as exceptions
 import nomenclate.settings as settings
 
-MODULE_LOGGER_LEVEL_OVERRIDE = None
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
 class FormatString(object):
@@ -37,9 +37,9 @@ class FormatString(object):
             self.LOG.debug('Successfully set format string: %s and format order: %s' % (self.format_string,
                                                                                         self.format_order))
         except exceptions.FormatError as e:
-            msg = "Could not validate input format target %s"
+            msg = "Could not validate input format target %s" % format_target
             self.LOG.error(msg)
-            exceptions.FormatError(msg)
+            raise e
 
     def parse_format_order(self, format_target):
         """ Dissects the format string and gets the order of the tokens as it finds them l->r
@@ -64,20 +64,36 @@ class FormatString(object):
         self.LOG.debug('Validating format target %r and parsing for format order %r.' % (format_target, format_order))
         format_order = format_order or self.parse_format_order(format_target)
         self.LOG.debug('Resulting format order is %s' % format_order)
+        self.validate_no_token_duplicates(format_order)
+        format_target = self.remove_tokens(format_target, format_order)
+        format_target = self.remove_static_text(format_target)
+        self.validate_separator_characters(format_target)
+        self.LOG.debug('After processing format_target is (should only be valid separator chars): %s' % format_target)
+        return format_order
 
+    def remove_tokens(self, format_target, format_order):
         for format_str in format_order:
             format_target = re.sub(format_str, '', format_target, count=1)
+        return format_target
 
-        format_target = re.sub(settings.STATIC_TEXT_REGEX, '', format_target)
-        self.LOG.debug('After processing format_target is %s' % format_target)
+    def remove_static_text(self, format_target):
+        return re.sub(settings.STATIC_TEXT_REGEX, '', format_target)
 
-        for char in format_target:
+    def validate_separator_characters(self, separator_characters):
+        for char in separator_characters:
             if char not in settings.SEPARATORS:
-                msg = "You have specified an invalid format string %s, must be separated by %s." % (format_target,
-                                                                                                    settings.SEPARATORS)
+                msg = "You have specified an invalid format string %s, must be separated by %s." % (
+                separator_characters,
+                settings.SEPARATORS)
                 self.LOG.warning(msg)
                 raise exceptions.FormatError(msg)
-        return format_order
+
+    def validate_no_token_duplicates(self, format_order):
+        if len(format_order) != len(list(set([order.lower() for order in format_order]))):
+            msg = "Format string has duplicate token names (capitalization insensitive).  Please correct."
+            self.LOG.warning(msg)
+            raise exceptions.FormatError(msg)
+
 
     def __str__(self):
         return str(self.format_string)

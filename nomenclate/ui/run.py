@@ -39,13 +39,11 @@ def create():
 
     if not environment_application in APPLICATIONS:
         WINDOW_INSTANCE.LOG.info('Nomenclate running in %s-mode' % environment_application)
-        execution_result = application.exec_()
+        application.exec_()
     else:
         application.mode = '%s' % application.applicationName()
         WINDOW_INSTANCE.LOG.info('Nomenclate running in %s-mode' % environment_application)
         WINDOW_INSTANCE.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
-
-    print(execution_result)
 
 def delete():
     global WINDOW_INSTANCE
