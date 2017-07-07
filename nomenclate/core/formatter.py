@@ -7,12 +7,20 @@ MODULE_LOGGER_LEVEL_OVERRIDE = None
 
 
 class FormatString(object):
-    # Is not a hard coded (word) and does not end with any non word characters or capitals (assuming camel)
-    # FORMAT_STRING_REGEX = r'(?:(?<=\()[\w]+(?=\)))|([A-Za-z0-9][^A-Z_\W]+)'
-    FORMAT_STRING_REGEX = r'(?:\([\w]+\))|([A-Za-z0-9][^A-Z_\W]+)'
-    SEPARATORS = '\\._-?()'
-
     LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
+
+    @property
+    def format_order(self):
+        return self.processed_format_order
+
+    @format_order.setter
+    def format_order(self, format_target):
+        if format_target:
+            self.processed_format_order = self.get_valid_format_order(format_target,
+                                                                      format_order=self.parse_format_order(
+                                                                          format_target))
+        else:
+            self.processed_format_order = []
 
     def __init__(self, format_string=""):
         self.LOG.info('Initializing format string with input %r' % format_string)
@@ -44,24 +52,11 @@ class FormatString(object):
         """
         self.LOG.debug('Getting format order from target %s' % repr(format_target))
         try:
-            pattern = re.compile(self.FORMAT_STRING_REGEX)
+            pattern = re.compile(settings.FORMAT_STRING_REGEX)
             return [match.group() for match in pattern.finditer(format_target) if None not in match.groups()]
         except TypeError:
             raise exceptions.FormatError('Format string %s is not a valid input type, must be <type str>' %
                                          format_target)
-
-    @property
-    def format_order(self):
-        return self.processed_format_order
-
-    @format_order.setter
-    def format_order(self, format_target):
-        if format_target:
-            self.processed_format_order = self.get_valid_format_order(format_target,
-                                                                      format_order=self.parse_format_order(
-                                                                          format_target))
-        else:
-            self.processed_format_order = []
 
     def get_valid_format_order(self, format_target, format_order=None):
         """ Checks to see if the target format string follows the proper style
@@ -73,12 +68,13 @@ class FormatString(object):
         for format_str in format_order:
             format_target = re.sub(format_str, '', format_target, count=1)
 
-        format_target = re.sub('\([\w]+\)', '', format_target)
+        format_target = re.sub(settings.STATIC_TEXT_REGEX, '', format_target)
         self.LOG.debug('After processing format_target is %s' % format_target)
 
         for char in format_target:
-            if char not in self.SEPARATORS:
-                msg = "You have specified an invalid format string %s." % format_target
+            if char not in settings.SEPARATORS:
+                msg = "You have specified an invalid format string %s, must be separated by %s." % (format_target,
+                                                                                                    settings.SEPARATORS)
                 self.LOG.warning(msg)
                 raise exceptions.FormatError(msg)
         return format_order

@@ -37,8 +37,7 @@ class Nomenclate(object):
         :param args: dict, any amount of dictionaries desired as input
         :param kwargs: str, kwargs to pass to the nomenclate tokens
         """
-        if input_dict is None:
-            input_dict = dict()
+        input_dict = dict() if input_dict is None else input_dict
 
         self.notifier = NomenclateNotifier(self.__setattr__)
         self.LOG.info('***CREATING NEW NOMENCLATE OBJECT***')
@@ -46,7 +45,6 @@ class Nomenclate(object):
 
         self.cfg = config.ConfigParse(config_filepath=config_filepath)
         self.format_string_object = formatter.FormatString(format_string=format_string)
-
         self.CONFIG_OPTIONS = dict()
 
         self.reset_from_config(format_target=format_string)

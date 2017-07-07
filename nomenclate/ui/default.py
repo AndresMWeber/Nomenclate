@@ -27,6 +27,9 @@ class Default(object):
     def connect_controls(self):
         raise NotImplementedError
 
+    def closeEvent(self, event):
+        print("widget closing %s" % self)
+        super(Default, self).closeEvent(event)
 
 class DefaultWidget(QtWidgets.QWidget, Default):
     pass

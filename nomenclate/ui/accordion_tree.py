@@ -83,7 +83,7 @@ class QAccordionTreeWidget(QtWidgets.QTreeWidget):
         self.parent_widget = parent_widget
         self.setRootIsDecorated(False)
         self.setIndentation(0)
-        self.header().close()
+        self.header().hide()
 
     @property
     def categories(self):

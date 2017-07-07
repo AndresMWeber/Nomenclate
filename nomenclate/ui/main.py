@@ -12,7 +12,7 @@ import nomenclate.ui.file_list as file_list
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
 
 
-class MainDialog(QtWidgets.QDialog):
+class MainDialog(QtWidgets.QWidget):
     NAME = 'Nomenclate'
     LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
     WIDTH = 800
@@ -158,18 +158,21 @@ class MainDialog(QtWidgets.QDialog):
                     if self.instance_handler.select_next_token_line_edit(event.key() == QtCore.Qt.Key_Backtab):
                         return True
 
-            if event.key() == QtCore.Qt.Key_Escape:
+            elif event.key() == QtCore.Qt.Key_Escape:
                 self.close()
 
+        if event.type() == QtCore.QEvent.Close:
+            self.LOG.debug('Close event %s detected from widget %s with parent %s' % (event, source, source.parent()))
         return super(MainDialog, self).eventFilter(source, event)
 
     def keyPressEvent(self, QKeyPressEvent):
         if QKeyPressEvent.key() in [QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return]:
-            return
-        super(MainDialog, self).keyPressEvent(QKeyPressEvent)
-
+            print('Ignoring return press')
+        else:
+            super(MainDialog, self).keyPressEvent(QKeyPressEvent)
+        return
 
     def closeEvent(self, e):
         QtWidgets.QApplication.instance().removeEventFilter(self)
-        super(MainDialog, self).closeEvent(e)
+        self.deleteLater()
         return exit()

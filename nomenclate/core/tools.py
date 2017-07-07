@@ -64,10 +64,7 @@ def get_keys_containing(search_string, input_dict, default=None, first_found=Tru
             output = output[next(iter(output))]
         except StopIteration:
             pass
-
-    output = output or default
-
-    return output
+    return output or default
 
 
 def gen_dict_key_matches(key, dictionary, _path=None, full_path=False):
@@ -82,7 +79,7 @@ def gen_dict_key_matches(key, dictionary, _path=None, full_path=False):
     """
     if _path is None:
         _path = []
-    LOG.debug('\nThe main input to the function is:\n %s\n' % pformat(dict(dictionary)))
+    LOG.debug('\nThe searching for key %s in dictionary:\n %s\n' % (key, pformat(dict(dictionary))))
     for k, v in iteritems(dictionary):
         _path.append(k)
         if k == key:

@@ -1,13 +1,10 @@
-from six import iteritems
 from PyQt5 import QtWidgets, QtCore, QtGui
 import nomenclate
 import nomenclate.ui.utils as utils
+import nomenclate.ui.token_widget as token_wgt
 import nomenclate.settings as settings
-import nomenclate.ui.accordion_tree as accordion_tree
-from default import DefaultFrame
+from default import DefaultWidget
 
-ALPHANUMERIC_VALIDATOR = QtCore.QRegExp('[A-Za-z0-9_]*')
-TOKEN_VALUE_VALIDATOR = QtCore.QRegExp('^(?!^_)(?!.*__+|\.\.+.*)[a-zA-Z0-9_\.]+(?!_)$')
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
@@ -25,99 +22,8 @@ class FormatTextEdit(QtWidgets.QLineEdit):
             super(FormatTextEdit, self).keyPressEvent(QKeyEvent)
 
 
-class TokenWidget(DefaultFrame):
-    changed = QtCore.pyqtSignal(str, str, str, str, str)
 
-    def __init__(self, token, value):
-        self.token = token
-        self.value = value
-        super(TokenWidget, self).__init__()
-        self.add_fields()
-
-    def create_controls(self):
-        self.accordion_tree = accordion_tree.QAccordionTreeWidget(self)
-        self.layout_main = QtWidgets.QVBoxLayout(self)
-        self.value_widget = QtWidgets.QLineEdit(self.value)
-
-    def initialize_controls(self):
-        self.setMinimumWidth(50)
-        self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Fixed)
-
-        self.setFrameShape(QtWidgets.QFrame.Box)
-        self.setFrameShadow(QtWidgets.QFrame.Sunken)
-
-        self.layout_main.setContentsMargins(1, 0, 1, 0)
-        self.layout_main.setSpacing(0)
-
-        self.setFocusPolicy(QtCore.Qt.NoFocus)
-        self.value_widget.setFocusPolicy(QtCore.Qt.StrongFocus)
-        self.setFocusProxy(self.value_widget)
-
-    def connect_controls(self):
-        self.value_widget.textChanged.connect(self.on_change)
-        self.layout_main.addWidget(self.value_widget)
-        self.layout_main.insertWidget(0, self.accordion_tree)
-
-    def add_fields(self):
-        # if not self.token in ['var', 'version']:
-        self.accordion_tree.add_category(self.token)
-        self.capital = QtWidgets.QComboBox()
-        self.capital.addItems(['', 'upper', 'lower'])
-        list_view = QtWidgets.QListView(self.capital)
-        list_view.setObjectName('drop_down_list_view')
-        self.capital.setView(list_view)
-        self.prefix = QtWidgets.QLineEdit()
-        self.suffix = QtWidgets.QLineEdit()
-
-        self.prefix.setPlaceholderText('prefix')
-        self.suffix.setPlaceholderText('suffix')
-        self.value_widget.setPlaceholderText(self.token)
-        self.prefix.setValidator(QtGui.QRegExpValidator(TOKEN_VALUE_VALIDATOR, self.prefix))
-        self.suffix.setValidator(QtGui.QRegExpValidator(TOKEN_VALUE_VALIDATOR, self.suffix))
-        self.value_widget.setValidator(QtGui.QRegExpValidator(TOKEN_VALUE_VALIDATOR, self.value_widget))
-
-        self.capital.currentIndexChanged.connect(self.on_change)
-        self.prefix.textChanged.connect(self.on_change)
-        self.suffix.textChanged.connect(self.on_change)
-
-        self.accordion_tree.add_widget_to_category(self.token, self.capital)
-        self.accordion_tree.add_widget_to_category(self.token, self.prefix)
-        self.accordion_tree.add_widget_to_category(self.token, self.suffix)
-        self.accordion_tree.sizer()
-
-    def resizeEvent(self, QResizeEvent):
-        try:
-            size = QResizeEvent.size()
-        except TypeError:
-            size = QResizeEvent.size
-        size.setHeight(self.sizeHint().height())
-        QResizeEvent.size = size
-
-        self.setFixedHeight(self.sizeHint().height())
-        QtWidgets.QWidget.resizeEvent(self, QResizeEvent)
-
-    def sizeHint(self):
-        size = QtCore.QSize()
-        size.setHeight(self.value_widget.sizeHint().height() + self.accordion_tree.sizeHint().height())
-        size.setWidth(super(TokenWidget, self).sizeHint().width())
-        return size
-
-    def on_change(self, *args, **kwargs):
-        self.value = self.value_widget.text()
-        self.changed.emit(self.token,
-                          self.value,
-                          self.capital.currentText(),
-                          self.prefix.text(),
-                          self.suffix.text())
-
-    def is_selected(self):
-        return self.value_widget.hasFocus()
-
-    def __repr__(self):
-        return super(TokenWidget, self).__repr__().replace('>', ' %r>' % self.token.lower())
-
-
-class InstanceHandlerWidget(DefaultFrame):
+class InstanceHandlerWidget(DefaultWidget):
     TITLE = 'File List View'
     NOM = nomenclate.Nom()
     LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
@@ -136,12 +42,16 @@ class InstanceHandlerWidget(DefaultFrame):
         self.token_widget_lookup = {}
 
     @property
+    def user_format_override(self):
+        return self.input_format.text().encode('utf-8')
+
+    @property
     def token_widgets(self):
         return [self.token_widget_lookup[token] for token in list(self.token_widget_lookup)]
 
     def initialize_controls(self):
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
-        self.refresh_tokens()
+        self.refresh_active_token_widgets()
 
         self.setObjectName('InstanceHandler')
         self.wgt_output.setObjectName('OutputWidget')
@@ -149,8 +59,6 @@ class InstanceHandlerWidget(DefaultFrame):
         self.output_name.setObjectName('OutputLabel')
 
         self.input_format.setPlaceholderText("Override Format String from current = %s" % self.NOM.format)
-        self.setFrameShadow(QtWidgets.QFrame.Sunken)
-        self.setFrameShape(QtWidgets.QFrame.StyledPanel)
 
     def connect_controls(self):
         self.output_layout.addWidget(self.output_title)
@@ -160,34 +68,38 @@ class InstanceHandlerWidget(DefaultFrame):
         self.layout_main.addWidget(self.token_frame)
         self.layout_main.addWidget(self.wgt_output)
         self.input_format.returnPressed.connect(self.set_format)
-        self.input_format.setText('asdf_masdf')
-        self.set_format()
 
-    def refresh_tokens(self):
-        self.clear_tokens()
-        for token, value in iteritems(self.NOM.state):
-            token_widget = TokenWidget(token, value)
-            self.token_widget_lookup[token] = (token_widget)
+    def refresh_active_token_widgets(self):
+        self.clear_stale_token_widgets()
 
-        # Add in order based on format order
-        for token in self.NOM.format_order:
-            token_widget = self.token_widget_lookup[token.lower()]
-            token_widget.changed.connect(self.update_instance)
-            self.token_layout.addWidget(token_widget)
+        for token, value in [(token, self.NOM.state[token.lower()]) for token in self.NOM.format_order]:
+            token_widget = self.token_widget_lookup.get(token, None)
+            if not token_widget:
+                token_widget = token_wgt.TokenWidget(token, value)
+                self.token_widget_lookup[token] = token_widget
 
-    def clear_tokens(self):
-        for i in reversed(range(self.token_layout.count())):
-            self.token_layout.itemAt(i).widget().deleteLater()
+            receiversCount = token_widget.receivers(token_widget.changed)
+            if receiversCount == 0:
+                self.LOG.info('Connecting %s.changed -> %s.update_instance and adding to layout' % (token_widget, self))
+                token_widget.changed.connect(self.update_instance)
+                self.token_layout.addWidget(token_widget)
+
+    def clear_stale_token_widgets(self):
+        for token_widget in self.token_widgets:
+            if token_widget.token not in self.NOM.format_order:
+                token_widget.deleteLater()
+            else:
+                self.token_layout.removeWidget(token_widget)
+
         self.token_widget_lookup = {}
 
     def set_format(self):
-        print('Format before: %s' % self.NOM.format)
-        input_format = self.input_format.text().encode('utf-8')
+        input_format = self.user_format_override
         if input_format and len(input_format) > 3:
             self.NOM.format = input_format
-            self.refresh_tokens()
-            self.update_instance('', '', '', '', '')
-        print('Format after: %s' % self.NOM.format)
+            self.refresh_active_token_widgets()
+            self.update_instance("", "", "", "", "")
+        return
 
     def update_instance(self, token, value, capitalized='', prefix='', suffix=''):
         if any([token, capitalized, prefix, suffix]):
@@ -204,7 +116,6 @@ class InstanceHandlerWidget(DefaultFrame):
                         "margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:20pt;\">{NAME}</p>"
                         "</body></html>")
         self.output_name.setText(formatted.format(NAME=self.NOM.get()))
-        print('update instance: %s, %r, %s' % (self.NOM.format, self.NOM.get(), self.output_name.text()))
 
     def select_next_token_line_edit(self, direction):
         order = self.NOM.format_order
