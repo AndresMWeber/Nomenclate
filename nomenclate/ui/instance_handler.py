@@ -75,7 +75,6 @@ class InstanceHandlerWidget(DefaultWidget):
         self.input_format.returnPressed.connect(self.set_format)
 
     def refresh_active_token_widgets(self):
-        self.clear_stale_token_widgets()
 
         for token, value in [(token, self.NOM.state[token.lower()]) for token in self.NOM.format_order]:
             self.LOG.info('Running through token value pair %s:%s' % (token, value))
@@ -109,9 +108,12 @@ class InstanceHandlerWidget(DefaultWidget):
         input_format = self.user_format_override
         if input_format and len(input_format) > 3:
             self.NOM.format = input_format
-            self.refresh_active_token_widgets()
-            self.update_instance("", "", "", "", "")
-        return
+        self.refresh()
+
+    def refresh(self):
+        self.clear_stale_token_widgets()
+        self.refresh_active_token_widgets()
+        self.update_instance("", "", "", "", "")
 
     def update_instance(self, token, value, capitalized='', prefix='', suffix=''):
         if any([token, capitalized, prefix, suffix]):

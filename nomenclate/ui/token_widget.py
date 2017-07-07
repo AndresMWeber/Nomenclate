@@ -6,6 +6,55 @@ from default import DefaultFrame
 
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
+
+class OptionsCompleter(QtWidgets.QCompleter):
+    def __init__(self, parent, all_tags):
+        super(OptionsCompleter, self).__init__(self, all_tags, parent)
+        self.all_tags = set(all_tags)
+        self.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
+
+    def update(self, options, completion_prefix):
+        options = list(self.all_tags.difference(options))
+        model = QtWidgets.QStringListModel(options, self)
+        self.setModel(model)
+
+        self.setCompletionPrefix(completion_prefix)
+        if completion_prefix.strip() != '':
+            self.complete()
+
+
+class TokenLineEdit(QtWidgets.QLineEdit):
+    text_modified = QtCore.pyqtSignal(QtCore.QObject, QtCore.QObject)
+
+    def __init__(self, *args):
+        super(TokenLineEdit, self).__init__(self, *args)
+        self.textChanged.connect(self, self.text_changed)
+
+        options_completer = OptionsCompleter(self, ['test', 'mest', 'fest'])
+        options_completer.activated.connect(self.complete_text)
+        self.text_changed.connect(options_completer.update)
+    def text_changed(self, text):
+        all_text = text
+        text = all_text[:self.cursorPosition()]
+        prefix = text.split(',')[-1].strip()
+
+        text_tags = []
+        for t in all_text.split(','):
+            t1 = t.strip()
+            if t1 != '':
+                text_tags.append(t)
+        text_tags = list(set(text_tags))
+        self.text_modified.emit(text_tags, prefix)
+
+    def complete_text(self, text):
+        cursor_pos = self.cursorPosition()
+        before_text = self.text()[:cursor_pos]
+        after_text = self.text()[cursor_pos:]
+        prefix_len = len(before_text.split(',')[-1].strip())
+        self.setText('%s%s, %s' % (before_text[:cursor_pos - prefix_len], text, after_text))
+        self.setCursorPosition(cursor_pos - prefix_len + len(text) + 2)
+
+
 class TokenWidget(DefaultFrame):
     changed = QtCore.pyqtSignal(str, str, str, str, str)
 
