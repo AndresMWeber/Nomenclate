@@ -98,6 +98,7 @@ class MainDialog(QtWidgets.QDialog):
         self.filesystem_view.send_files.connect(self.file_list_view.update_file_paths)
 
     def initialize_controls(self):
+        self.load_stylesheet(stylesheet=self.MAIN_QSS)
         self.setWindowTitle(self.NAME)
         self.setObjectName('MainFrame')
         self.setWindowFlags(QtCore.Qt.Tool)
@@ -112,7 +113,6 @@ class MainDialog(QtWidgets.QDialog):
         self.layout_main.setSpacing(0)
         self.setBaseSize(self.WIDTH, self.HEIGHT)
         self.layout_main.setAlignment(QtCore.Qt.AlignTop)
-        self.load_stylesheet(stylesheet=self.MAIN_QSS)
 
     def get_stylesheet_qss(self, stylesheet):
         file_path = os.path.join(utils.RESOURCES_PATH, stylesheet)

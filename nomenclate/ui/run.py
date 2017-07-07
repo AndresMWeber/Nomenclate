@@ -24,6 +24,7 @@ def create():
     WINDOW_INSTANCE.raise_()
     application.setActiveWindow(WINDOW_INSTANCE)
     environment_application = application.applicationName()
+
     if not environment_application in APPLICATIONS:
         WINDOW_INSTANCE.LOG.info('Nomenclate running in %s-mode' % environment_application)
         application.exec_()

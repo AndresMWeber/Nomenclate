@@ -109,6 +109,7 @@ class TokenWidget(DefaultFrame):
     def is_selected(self):
         return self.value_widget.hasFocus()
 
+    def 
     def __repr__(self):
         return super(TokenWidget, self).__repr__().replace('>', ' %r>' % self.token.lower())
 
@@ -138,11 +139,12 @@ class InstanceHandlerWidget(DefaultFrame):
     def initialize_controls(self):
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         self.refresh_tokens()
+
         self.setObjectName('InstanceHandler')
         self.wgt_output.setObjectName('OutputWidget')
-        self.wgt_output.setFixedHeight(75)
         self.output_title.setObjectName('OutputTitle')
         self.output_name.setObjectName('OutputLabel')
+
         self.input_format.setPlaceholderText("Override Format String from current = %s" % self.NOM.format)
         self.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.setFrameShape(QtWidgets.QFrame.StyledPanel)
@@ -155,6 +157,8 @@ class InstanceHandlerWidget(DefaultFrame):
         self.layout_main.addWidget(self.token_frame)
         self.layout_main.addWidget(self.wgt_output)
         self.input_format.returnPressed.connect(self.set_format)
+        self.input_format.setText('asdf_masdf')
+        self.set_format()
 
     def refresh_tokens(self):
         self.clear_tokens()
@@ -174,11 +178,13 @@ class InstanceHandlerWidget(DefaultFrame):
         self.token_widget_lookup = {}
 
     def set_format(self):
-        input = self.input_format.text().encode('utf-8')
-        if input and len(input) > 3:
-            self.NOM.format = input
+        print('Format before: %s' % self.NOM.format)
+        input_format = self.input_format.text().encode('utf-8')
+        if input_format and len(input_format) > 3:
+            self.NOM.format = input_format
             self.refresh_tokens()
             self.update_instance('', '', '', '', '')
+        print('Format after: %s' % self.NOM.format)
 
     def update_instance(self, token, value, capitalized='', prefix='', suffix=''):
         if any([token, capitalized, prefix, suffix]):
@@ -195,6 +201,7 @@ class InstanceHandlerWidget(DefaultFrame):
                         "margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:20pt;\">{NAME}</p>"
                         "</body></html>")
         self.output_name.setText(formatted.format(NAME=self.NOM.get()))
+        print('update instance: %s, %r, %s' % (self.NOM.format, self.NOM.get(), self.output_name.text()))
 
     def select_next_token_line_edit(self, direction):
         order = self.NOM.format_order
