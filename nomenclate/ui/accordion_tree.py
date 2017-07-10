@@ -75,6 +75,8 @@ class QAccordionTreeCategoryItem(QtWidgets.QTreeWidgetItem):
 
 
 class QAccordionTreeWidget(QtWidgets.QTreeWidget):
+    fold_event = QtCore.pyqtSignal()
+
     def __init__(self, parent_widget, *args, **kwargs):
         self.category_widgets = {}
         super(QAccordionTreeWidget, self).__init__(*args, **kwargs)
@@ -84,10 +86,16 @@ class QAccordionTreeWidget(QtWidgets.QTreeWidget):
         self.setRootIsDecorated(False)
         self.setIndentation(0)
         self.header().hide()
+        self.fold_event.connect(self.sizer)
 
     @property
     def categories(self):
         return list(self.category_widgets)
+
+    def fold(self, fold_state):
+        for category_label in list(self.category_widgets):
+            self.category_widgets[category_label].setExpanded(fold_state)
+        self.fold_event.emit()
 
     def add_category(self, label):
         category = QAccordionTreeCategoryItem(label, self)
@@ -105,6 +113,7 @@ class QAccordionTreeWidget(QtWidgets.QTreeWidget):
 
         self.category_widgets[label] = category
         category.setExpanded(True)
+
         title.clicked.connect(self.sizer)
 
     def add_widget_to_category(self, category, widget):

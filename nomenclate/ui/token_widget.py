@@ -10,15 +10,22 @@ MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 class TokenLineEdit(QtWidgets.QLineEdit):
     def __init__(self, *args):
         super(TokenLineEdit, self).__init__(*args)
-        self.completer = QtWidgets.QCompleter()
+        self.completer = QtWidgets.QCompleter(parent=self)
         self.setCompleter(self.completer)
+        self.completer_style_delegate = QtWidgets.QStyledItemDelegate(parent=self.completer)
+        self.completer.popup().setItemDelegate(self.completer_style_delegate)
+        self.completer.popup().setStyleSheet('color: rgb(200, 200, 200); background: rgba(200, 200, 200, .1);')
         self.completer.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
 
     def set_completer_items(self, items):
         self.completer.setModel(QtCore.QStringListModel(items))
+        self.completer.popup().setItemDelegate(self.completer_style_delegate)
+        # self.completer.popup().setStyleSheet("background-color: yellow")
+        # print self.completer_style_delegate.stylesheet()
+        # print self.completer_style_delegate.parent(), self.completer.parent()
+        # print self.completer.popup().style(), self.completer.popup().styleSheet(), type(self.completer.popup())
 
     def mousePressEvent(self, QMouseClickEvent):
-        print dir(self.completer)
         self.completer.setCompletionMode(self.completer.UnfilteredPopupCompletion)
         self.completer.complete()
         self.completer.setCompletionMode(self.completer.FilteredPopupCompletion)

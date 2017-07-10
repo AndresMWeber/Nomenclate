@@ -22,11 +22,11 @@ class FormatTextEdit(QtWidgets.QLineEdit):
             super(FormatTextEdit, self).keyPressEvent(QKeyEvent)
 
 
-
 class InstanceHandlerWidget(DefaultWidget):
     TITLE = 'File List View'
     NOM = nomenclate.Nom()
     LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
+    nomenclate_output = QtCore.pyqtSignal(str)
 
     def create_controls(self):
         self.layout_main = QtWidgets.QVBoxLayout(self)
@@ -40,6 +40,7 @@ class InstanceHandlerWidget(DefaultWidget):
         self.token_layout.setContentsMargins(0, 0, 0, 0)
         self.token_layout.setSpacing(0)
         self.token_widget_lookup = {}
+        self.fold_state = True
 
     @property
     def user_format_override(self):
@@ -54,6 +55,11 @@ class InstanceHandlerWidget(DefaultWidget):
     def token_widgets(self):
         return [self.token_widget_lookup[token] for token in list(self.token_widget_lookup)]
 
+    def fold(self):
+        self.fold_state = not self.fold_state
+        for token_widget in self.active_token_widgets:
+            token_widget.accordion_tree.fold(self.fold_state)
+
     def initialize_controls(self):
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         self.refresh_active_token_widgets()
@@ -62,7 +68,7 @@ class InstanceHandlerWidget(DefaultWidget):
         self.wgt_output.setObjectName('OutputWidget')
         self.output_title.setObjectName('OutputTitle')
         self.output_name.setObjectName('OutputLabel')
-
+        self.nomenclate_output.connect(self.set_output)
         self.input_format.setPlaceholderText("Override Format String from current = %s" % self.NOM.format)
 
     def connect_controls(self):
@@ -75,7 +81,6 @@ class InstanceHandlerWidget(DefaultWidget):
         self.input_format.returnPressed.connect(self.set_format)
 
     def refresh_active_token_widgets(self):
-
         for token, value in [(token, self.NOM.state[token.lower()]) for token in self.NOM.format_order]:
             token = token.lower()
             self.LOG.info('Running through token value pair %s:%s' % (token, value))
@@ -101,11 +106,10 @@ class InstanceHandlerWidget(DefaultWidget):
         token_widget = self.token_widget_lookup.get(token, None)
         try:
             settings = [str(option) for option in self.NOM.cfg.get(token, list)]
-            print settings
             token_widget.value_widget.set_completer_items(settings)
 
         except nomenclate.core.errors.ResourceNotFoundError:
-            print 'could not find config entries for token %s' % token
+            self.LOG.debug('Could not find config entries for token %s' % token)
 
     def clear_stale_token_widgets(self):
         self.LOG.debug('Comparing current token widgets %s against format order %s' % (self.token_widgets,
@@ -131,7 +135,7 @@ class InstanceHandlerWidget(DefaultWidget):
         self.update_instance("", "", "", "", "")
 
     def update_instance(self, token, value, capitalized='', prefix='', suffix=''):
-        update_dict = {'token':token, 'value':value, 'capitalized':capitalized, 'prefix':prefix, 'suffix':suffix}
+        update_dict = {'token': token, 'value': value, 'capitalized': capitalized, 'prefix': prefix, 'suffix': suffix}
         self.LOG.info('Updating instance with %s' % update_dict)
         if any([token, capitalized, prefix, suffix]):
             self.NOM.merge_dict({token.encode('utf-8'): value.encode('utf-8')})
@@ -140,14 +144,10 @@ class InstanceHandlerWidget(DefaultWidget):
             token_attr.case_setting = capitalized
             token_attr.prefix_setting = prefix
             token_attr.suffix_setting = suffix
+        self.nomenclate_output.emit(self.NOM.get())
 
-        formatted = str("<html><head><meta name=\"qrichtext\" content=\"1\" /></head>"
-                        "<body style=\" white-space: pre-wrap; font-family:Sans Serif; "
-                        "font-size:9pt; font-weight:400; font-style:normal; text-decoration:none;\">"
-                        "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; "
-                        "margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:20pt;\">{NAME}</p>"
-                        "</body></html>")
-        self.output_name.setText(formatted.format(NAME=self.NOM.get()))
+    def set_output(self, input_name):
+        self.output_name.setText(input_name)
 
     def select_next_token_line_edit(self, direction):
         order = self.NOM.format_order

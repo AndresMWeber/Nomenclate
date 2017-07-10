@@ -3,11 +3,11 @@ from PyQt5 import QtWidgets, QtCore
 from main import MainDialog
 import logging
 import sys
+
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
 
 APPLICATIONS = ['Maya-2017', 'Maya-2016', 'Maya-2015', 'Nuke']
 WINDOW_INSTANCE = None
-
 
 
 def create():
@@ -20,16 +20,6 @@ def create():
 
     if WINDOW_INSTANCE is None:
         WINDOW_INSTANCE = MainDialog()
-
-    def handle_exception(exc_type, exc_value, exc_traceback):
-        if issubclass(exc_type, KeyboardInterrupt):
-            sys.__excepthook__(exc_type, exc_value, exc_traceback)
-            return
-        WINDOW_INSTANCE.LOG._log.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
-    handler = logging.StreamHandler(stream=sys.stdout)
-    WINDOW_INSTANCE.LOG._log.addHandler(handler)
-
-    sys.excepthook = handle_exception
 
     WINDOW_INSTANCE.LOG.info('%s running on %s' % (application.applicationName(), application.platformName()))
     WINDOW_INSTANCE.show()
@@ -44,6 +34,7 @@ def create():
         application.mode = '%s' % application.applicationName()
         WINDOW_INSTANCE.LOG.info('Nomenclate running in %s-mode' % environment_application)
         WINDOW_INSTANCE.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        WINDOW_INSTANCE.setWindowFlags(QtCore.Qt.Tool)
 
 def delete():
     global WINDOW_INSTANCE

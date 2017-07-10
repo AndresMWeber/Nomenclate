@@ -13,3 +13,5 @@ coveralls==1.1
 twine==1.9.1
 Sphinx==1.6.2
 docutils==0.13.1
+python-qt5=0.3.0
+PyQt5=5.9
