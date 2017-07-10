@@ -28,7 +28,7 @@ class TokenLineEdit(QtWidgets.QLineEdit):
     def mousePressEvent(self, QMouseClickEvent):
         self.completer.setCompletionMode(self.completer.UnfilteredPopupCompletion)
         self.completer.complete()
-        self.completer.setCompletionMode(self.completer.FilteredPopupCompletion)
+        self.completer.setCompletionMode(self.completer.PopupCompletion)
         super(TokenLineEdit, self).mousePressEvent(QMouseClickEvent)
 
 

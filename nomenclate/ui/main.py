@@ -33,6 +33,10 @@ class MainDialog(QtWidgets.QWidget):
         QtWidgets.QApplication.instance().installEventFilter(self)
 
     @property
+    def focused_widget(self):
+        return QtWidgets.QApplication.focusWidget()
+
+    @property
     def default_stylesheet(self):
         if not self.default_css_cache:
             self.default_css_cache = self.get_stylesheet_qss(self.DEFAULT_QSS)
@@ -143,13 +147,12 @@ class MainDialog(QtWidgets.QWidget):
 
     def get_stylesheet_qss(self, stylesheet):
         file_path = os.path.join(utils.RESOURCES_PATH, stylesheet)
-
         stylesheet_file = os.path.normpath(file_path)
         return open(stylesheet_file).read() if os.path.isfile(stylesheet_file) else ''
 
     def load_stylesheet(self, btn_event=None, stylesheet=''):
         qss_data = self.get_stylesheet_qss(stylesheet=stylesheet) + self.default_stylesheet
-        self.LOG.info('Attemping to load CSS from file %s (appended default CSS).' % stylesheet)
+        self.LOG.info('Attempting to load CSS from file %s (appended default CSS).' % stylesheet)
         if not qss_data:
             self.LOG.warning('Invalid stylesheet file specified %s...defaulting to none' % stylesheet)
         self.setStyleSheet(qss_data)
@@ -172,10 +175,6 @@ class MainDialog(QtWidgets.QWidget):
             self.wgt_stack.setCurrentIndex(0)
         else:
             event.ignore()
-
-    @property
-    def focused_widget(self):
-        return QtWidgets.QApplication.focusWidget()
 
     def eventFilter(self, source, event):
         if event.type() == QtCore.QEvent.KeyPress:
