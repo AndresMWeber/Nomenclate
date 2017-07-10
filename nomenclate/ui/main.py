@@ -7,7 +7,7 @@ import nomenclate.settings as settings
 import nomenclate.ui.filesystem as filesystem
 import nomenclate.ui.instance_handler as instance_handler
 import nomenclate.ui.drag_drop as drag_drop
-import nomenclate.ui.file_list as file_list
+import nomenclate.ui.object_list as file_list
 
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.DEBUG
 

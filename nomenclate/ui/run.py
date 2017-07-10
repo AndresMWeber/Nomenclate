@@ -32,7 +32,7 @@ def create():
         application.exec_()
     else:
         application.mode = '%s' % application.applicationName()
-        WINDOW_INSTANCE.LOG.info('Nomenclate running in %s-mode' % environment_application)
+        WINDOW_INSTANCE.LOG.info('Nomenclate running as a tool in %s-mode' % environment_application)
         WINDOW_INSTANCE.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         WINDOW_INSTANCE.setWindowFlags(QtCore.Qt.Tool)
 
