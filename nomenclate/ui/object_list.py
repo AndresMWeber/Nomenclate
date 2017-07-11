@@ -5,13 +5,46 @@ from PyQt5 import QtWidgets, QtGui, QtCore
 
 class QFileItem(QtGui.QStandardItem):
     def __init__(self, path):
-        if os.path.exists(path):
-            self.long_path = os.path.normpath(path)
-            self.short_path = os.path.basename(self.long_path)
-            super(QFileItem, self).__init__(self.short_path)
-            self.setEditable(False)
+        self.path = path
+        super(QFileItem, self).__init__(self.path)
+        self.setEditable(False)
+
+    def split_non_alpha(split_string, reverse=False):
+        end_pos = 0 if not reverse else len(split_string)
+        char_index = len(split_string) - 1 if not reverse else 1
+        while char_index >= end_pos and split_string[char_index].isalpha():
+            char_index -= 1
+        return (split_string[:char_index], split_string[char_index:])
+
+    @property
+    def long_path(self):
+        if self.os_mode:
+            return os.path.normpath(self.path)
         else:
-            raise IOError('Input %s is not a valid file path' % path)
+            return self.path
+
+    @property
+    def short_path(self):
+        if self.os_mode:
+            return os.path.basename(self.path)
+        else:
+            return self.split_non_alpha(self.path)
+
+    @property
+    def os_mode(self):
+        return self.is_valid and (self.is_file or self.is_dir)
+
+    @property
+    def is_valid(self):
+        return os.path.exists(self.path)
+
+    @property
+    def is_file(self):
+        return os.path.isfile(self.path)
+
+    @property
+    def is_dir(self):
+        return os.path.isdir(self.path)
 
 
 class QFileItemModel(QtGui.QStandardItemModel):
@@ -49,7 +82,7 @@ class QFileItemModel(QtGui.QStandardItemModel):
 
     def display_full(self):
         self.FULL_PATH = not self.FULL_PATH
-        for item in self.items:
+        for item in self.object_paths:
             self.set_item_path(item)
 
     def set_item_path(self, item):

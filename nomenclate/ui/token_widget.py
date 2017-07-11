@@ -6,8 +6,6 @@ from default import DefaultFrame
 
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
-print(QtWidgets.__file__)
-
 
 class CustomCompleter(QtWidgets.QCompleter):
     def __init__(self, options, parent=None):
@@ -73,10 +71,11 @@ class TokenWidget(DefaultFrame):
         self.layout_main.insertWidget(0, self.accordion_tree)
 
     def add_fields(self):
+        # TODO: modify version/var specific rollouts here.
         # if not self.token in ['var', 'version']:
         self.accordion_tree.add_category(self.token)
         self.capital = QtWidgets.QComboBox()
-        self.capital.addItems(['caps', 'upper', 'lower'])
+        self.capital.addItems(['case', 'upper', 'lower'])
         list_view = QtWidgets.QListView(self.capital)
         list_view.setObjectName('drop_down_list_view')
         self.capital.setView(list_view)
