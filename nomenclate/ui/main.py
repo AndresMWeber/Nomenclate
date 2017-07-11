@@ -61,7 +61,7 @@ class MainDialog(QtWidgets.QWidget):
         view_action_refresh.triggered.connect(self.populate_qss_styles)
 
         view_action = self.view_menu.addAction('Expand All Tokens')
-        view_action.setShortcut('Ctrl+Space')
+        view_action.setShortcut('Ctrl+H')
         view_action.triggered.connect(self.instance_handler.fold)
 
         exit_action = self.file_menu.addAction('Exit')
@@ -90,6 +90,7 @@ class MainDialog(QtWidgets.QWidget):
         if isinstance(self, QtWidgets.QMainWindow):
             self.setCentralWidget(QtWidgets.QWidget())
             main_widget = self.centralWidget()
+
         self.layout_main = QtWidgets.QVBoxLayout(main_widget)
 
         self.menu_bar = QtWidgets.QMenuBar()
@@ -125,8 +126,9 @@ class MainDialog(QtWidgets.QWidget):
         self.files_layout.addWidget(self.file_list_view, 1)
         self.files_layout.addWidget(self.wgt_stack)
 
-        self.drag_drop_view.dropped.connect(self.file_list_view.update_file_paths)
-        self.filesystem_view.send_files.connect(self.file_list_view.update_file_paths)
+        self.drag_drop_view.dropped_files.connect(self.update_names)
+        self.filesystem_view.send_files.connect(self.update_names)
+        self.instance_handler.nomenclate_output.connect(self.update_names)
 
     def initialize_controls(self):
         self.setFocus(QtCore.Qt.PopupFocusReason)
@@ -144,6 +146,14 @@ class MainDialog(QtWidgets.QWidget):
         self.layout_main.setSpacing(0)
         self.setBaseSize(self.WIDTH, self.HEIGHT)
         self.layout_main.setAlignment(QtCore.Qt.AlignTop)
+
+    def update_names(self, object_paths=None):
+        object_paths = object_paths if isinstance(object_paths, list) else self.file_list_view.wgt_list_view.object_paths
+        if object_paths:
+            self.file_list_view.update_object_paths(self.generate_names(object_paths))
+
+    def generate_names(self, object_paths):
+        return [(target, self.instance_handler.get_index(index)) for index, target in enumerate(object_paths)]
 
     def get_stylesheet_qss(self, stylesheet):
         file_path = os.path.join(utils.RESOURCES_PATH, stylesheet)
@@ -202,7 +212,7 @@ class MainDialog(QtWidgets.QWidget):
     def closeEvent(self, e):
         self.LOG.debug('Widget %s has focus during escape press' % self.focused_widget)
         if not issubclass(type(self.focused_widget), QtWidgets.QLineEdit):
-            self.LOG.info('Escape pressed and not within a QLineEdit, exiting.')
+            self.LOG.info('closeEvent and not within a QLineEdit, exiting.')
             QtWidgets.QApplication.instance().removeEventFilter(self)
             self.deleteLater()
             return exit()

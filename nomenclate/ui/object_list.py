@@ -9,43 +9,119 @@ class QFileItem(QtGui.QStandardItem):
             self.long_path = os.path.normpath(path)
             self.short_path = os.path.basename(self.long_path)
             super(QFileItem, self).__init__(self.short_path)
+            self.setEditable(False)
         else:
             raise IOError('Input %s is not a valid file path' % path)
 
 
 class QFileItemModel(QtGui.QStandardItemModel):
-    FULL = True
+    FULL_PATH = True
+
+    def __init__(self):
+        super(QFileItemModel, self).__init__()
+        self.setColumnCount(2)
 
     @property
-    def items(self):
+    def object_paths(self):
         return [self.itemFromIndex(self.index(row_index, 0)) for row_index in range(self.rowCount())]
 
-    def appendRow(self, q_file_item):
-        if any([q_file_item.long_path == row_item.long_path for row_item in self.items]):
-            return
-        super(QFileItemModel, self).appendRow(self.set_item_path(q_file_item))
+    @property
+    def data_table(self):
+        index_table = []
+        for row in range(self.rowCount()):
+            index_table.append([])
+            for column in range(self.columnCount()):
+                index_table[row].append(self.itemFromIndex(self.index(row, column)))
+        return index_table
+
+    def appendRow(self, row_entry):
+        entry_object_path, entry_label = row_entry
+        entry_object_path = QFileItem(entry_object_path)
+
+        for row_item in self.data_table:
+            object_path, label = row_item
+            if entry_object_path.long_path == object_path.long_path:
+                label.setText(entry_label)
+                return
+
+        self.set_item_path(entry_object_path)
+        super(QFileItemModel, self).appendRow([entry_object_path, QtGui.QStandardItem(entry_label)])
 
     def display_full(self):
-        self.FULL = not self.FULL
+        self.FULL_PATH = not self.FULL_PATH
         for item in self.items:
             self.set_item_path(item)
 
     def set_item_path(self, item):
-        if self.FULL:
+        if self.FULL_PATH:
             item.setText(item.long_path)
         else:
             item.setText(item.short_path)
         return item
 
 
+class QFileRenameTreeView(QtWidgets.QTreeView):
+    def __init__(self, *args, **kwargs):
+        super(QFileRenameTreeView, self).__init__(*args, **kwargs)
+
+        # Creating
+        self.proxy_model = QtCore.QSortFilterProxyModel()
+        self.base_model = QFileItemModel()
+        self.filter_regex = QtCore.QRegExp("", QtCore.Qt.CaseInsensitive, QtCore.QRegExp.FixedString)
+
+        # Settings
+        self.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        self.setAlternatingRowColors(True)
+        self.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+        self.proxy_model.setSourceModel(self.base_model)
+        self.setModel(self.proxy_model)
+        self.proxy_model.setFilterRegExp(self.filter_regex)
+
+        self.setHeaderHidden(True)
+        self.header().setStretchLastSection(False)
+        self.header().setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
+        self.header().setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
+
+        # Connections
+        self.base_model.itemChanged.connect(self.sort_model)
+
+    def update_regexp(self, regex):
+        self.filter_regex.setPattern(regex)
+        self.proxy_model.setFilterRegExp(self.filter_regex)
+
+    @property
+    def object_paths(self):
+        object_paths = []
+        for row in range(self.base_model.rowCount()):
+            object_paths.append(QtCore.QPersistentModelIndex(self.base_model.index(row, 0)).data())
+        return object_paths
+
+    def remove_selected_items(self):
+        remove_rows = []
+        for selected_index in self.selectedIndexes():
+            for row_index in range(self.base_model.rowCount()):
+                model_index = self.base_model.index(row_index, 0)
+                item = self.base_model.itemFromIndex(model_index)
+                if selected_index.data() in [item.short_path, item.long_path]:
+                    remove_rows.append(QtCore.QPersistentModelIndex(model_index))
+
+        for persistent_row_index in remove_rows:
+            self.model().removeRow(persistent_row_index.row())
+
+    def sort_model(self):
+        self.model().sort(QtCore.Qt.AscendingOrder)
+
+
 class FileListWidget(DefaultWidget):
     TITLE = 'File List View'
 
+    @property
+    def selected_items(self):
+        return [QtCore.QPersistentModelIndex(index).data() for index in self.wgt_list_view.selectedIndexes()]
+
     def create_controls(self):
         self.layout_main = QtWidgets.QVBoxLayout(self)
-        self.wgt_list_view = QtWidgets.QListView()
-        self.list = QFileItemModel()
-        self.proxy_list = QtCore.QSortFilterProxyModel()
+        self.wgt_list_view = QFileRenameTreeView()
         self.btn_widget = QtWidgets.QWidget()
         self.btn_layout = QtWidgets.QHBoxLayout(self.btn_widget)
         self.wgt_filter_list = QtWidgets.QLineEdit(placeholderText='filter...')
@@ -56,13 +132,6 @@ class FileListWidget(DefaultWidget):
 
     def initialize_controls(self):
         self.setAcceptDrops(True)
-        self.wgt_list_view.setAlternatingRowColors(True)
-        self.wgt_list_view.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
-
-    def connect_controls(self):
-        self.proxy_list.setSourceModel(self.list)
-        self.wgt_list_view.setModel(self.proxy_list)
-
         self.layout_main.addWidget(self.wgt_filter_list)
         self.layout_main.addWidget(self.wgt_list_view)
         self.layout_main.addWidget(self.btn_widget)
@@ -72,51 +141,28 @@ class FileListWidget(DefaultWidget):
         self.btn_layout.addWidget(self.btn_full)
         self.btn_layout.addWidget(self.btn_remove)
 
-        self.btn_remove.clicked.connect(self.remove_selected_items)
-        self.btn_clear.clicked.connect(self.clear_model)
-        self.btn_full.clicked.connect(self.list.display_full)
-        self.wgt_filter_list.textChanged.connect(self.update_regexp)
-        self.list.itemChanged.connect(self.sort_model)
+    def connect_controls(self):
+        self.btn_remove.clicked.connect(self.wgt_list_view.remove_selected_items)
         self.btn_rename.clicked.connect(self.action_rename_items)
 
+        self.btn_clear.clicked.connect(self.wgt_list_view.base_model.clear)
+        self.btn_full.clicked.connect(self.wgt_list_view.base_model.display_full)
+        self.wgt_filter_list.textChanged.connect(self.wgt_list_view.update_regexp)
+
     def action_rename_items(self):
-        items = []
-        for model_index in self.wgt_list_view.selectedIndexes():
-            items.append(QtCore.QPersistentModelIndex(model_index).data())
-        message_box = QtWidgets.QMessageBox(self)
-        message_box.setText("Do you want to rename %d items" % len(items))
-        #message_box.setInformativeText("Do you really want to disable safety enforcement?")
-        message_box.addButton(QtWidgets.QMessageBox.Yes)
-        message_box.addButton(QtWidgets.QMessageBox.No)
-        message_box.setDefaultButton(QtWidgets.QMessageBox.No)
-        ret = message_box.exec_()
-        if ret:
-            print('If this were active we would rename these items: %s' % items)
+        selected_items = self.selected_items
+        self.update_file_names()
+        if selected_items:
+            message_box = QtWidgets.QMessageBox(self)
+            message_box.setText("Do you want to rename %d items" % len(selected_items))
+            # message_box.setInformativeText("Do you really want to disable safety enforcement?")
+            message_box.addButton(QtWidgets.QMessageBox.Yes)
+            message_box.addButton(QtWidgets.QMessageBox.No)
+            message_box.setDefaultButton(QtWidgets.QMessageBox.No)
+            ret = message_box.exec_()
+            if ret:
+                print('If this were active we would rename these items: %s' % selected_items)
 
-    def update_regexp(self):
-        self.proxy_list.setFilterRegExp(QtCore.QRegExp(str(self.wgt_filter_list.text()),
-                                                       QtCore.Qt.CaseInsensitive,
-                                                       QtCore.QRegExp.FixedString))
-
-    def sort_model(self):
-        self.list.sort(QtCore.Qt.AscendingOrder)
-
-    def remove_selected_items(self):
-        remove_rows = []
-        for model_index in self.wgt_list_view.selectedIndexes():
-            for row_index in range(self.list.rowCount()):
-                list_model_index = self.list.index(row_index, 0)
-                item = self.list.itemFromIndex(list_model_index)
-                if item.short_path == model_index.data() or item.long_path == model_index.data():
-                    remove_rows.append(QtCore.QPersistentModelIndex(list_model_index))
-
-        for persistent_row_index in remove_rows:
-            self.list.removeRow(persistent_row_index.row())
-
-    def clear_model(self):
-        self.list.clear()
-
-    def update_file_paths(self, links):
-        for link in links:
-            item = QFileItem(link)
-            self.list.appendRow(item)
+    def update_object_paths(self, link_label_pair):
+        for pair in link_label_pair:
+            self.wgt_list_view.base_model.appendRow(pair)

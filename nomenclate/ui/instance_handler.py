@@ -55,6 +55,9 @@ class InstanceHandlerWidget(DefaultWidget):
     def token_widgets(self):
         return [self.token_widget_lookup[token] for token in list(self.token_widget_lookup)]
 
+    def get_index(self, index):
+        return self.NOM.get() + str(index)
+
     def fold(self):
         self.fold_state = not self.fold_state
         for token_widget in self.active_token_widgets:

@@ -6,30 +6,41 @@ from default import DefaultFrame
 
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
+print(QtWidgets.__file__)
+
+
+class CustomCompleter(QtWidgets.QCompleter):
+    def __init__(self, options, parent=None):
+        self.options = QtCore.QStringListModel(options)
+        super(CustomCompleter, self).__init__(parent=parent)
+        self.popup().setStyleSheet(str('QListView{ color: rgb(200, 200, 200); '
+                                       'background-color: rgba(200, 200, 200, .1);'
+                                       '}'
+                                       'QListView::item:selected{ '
+                                       'background-color: rgba(255, 0, 0); }'))
+        # always show all (filtered) completions
+        self.setCompletionMode(self.PopupCompletion)
+
 
 class TokenLineEdit(QtWidgets.QLineEdit):
     def __init__(self, *args):
         super(TokenLineEdit, self).__init__(*args)
-        self.completer = QtWidgets.QCompleter(parent=self)
+        self.completer = CustomCompleter([], parent=self)
         self.setCompleter(self.completer)
-        self.completer_style_delegate = QtWidgets.QStyledItemDelegate(parent=self.completer)
-        self.completer.popup().setItemDelegate(self.completer_style_delegate)
-        self.completer.popup().setStyleSheet('color: rgb(200, 200, 200); background: rgba(200, 200, 200, .1);')
-        self.completer.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
 
     def set_completer_items(self, items):
         self.completer.setModel(QtCore.QStringListModel(items))
-        self.completer.popup().setItemDelegate(self.completer_style_delegate)
-        # self.completer.popup().setStyleSheet("background-color: yellow")
-        # print self.completer_style_delegate.stylesheet()
-        # print self.completer_style_delegate.parent(), self.completer.parent()
-        # print self.completer.popup().style(), self.completer.popup().styleSheet(), type(self.completer.popup())
 
     def mousePressEvent(self, QMouseClickEvent):
-        self.completer.setCompletionMode(self.completer.UnfilteredPopupCompletion)
+        # TODO: Figure out how to reset the popup so we get the full options again.  This does not work.
+        self.completer.popup().reset()
+        self.completer.popup().update()
         self.completer.complete()
-        self.completer.setCompletionMode(self.completer.PopupCompletion)
         super(TokenLineEdit, self).mousePressEvent(QMouseClickEvent)
+
+    def keyPressEvent(self, QKeyPressEvent):
+        print dir(self.completer.popup())
+        super(TokenLineEdit, self).keyPressEvent(QKeyPressEvent)
 
 
 class TokenWidget(DefaultFrame):

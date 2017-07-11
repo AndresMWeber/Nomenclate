@@ -465,7 +465,7 @@ class NameParser(object):
         :param input_string: str, input string
         :return: str, output regex
         """
-        result = '([%s%s]' % (input_string[0].upper(), input_string[0].lower())
-        for char in input_string[1:]:
+        result=''
+        for char in input_string:
             result += '[%s%s]?' % (char.upper(), char.lower())
-        return result + ')'
+        return '(%s)' % result

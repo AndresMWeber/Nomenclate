@@ -3,7 +3,7 @@ import re
 from . import errors as exceptions
 import nomenclate.settings as settings
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.DEBUG
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
 class FormatString(object):

@@ -15,7 +15,7 @@ class DragDropItemModel(QtGui.QStandardItemModel):
 
 class DragDropWidget(DefaultWidget):
     TITLE = 'Drag and Drop'
-    dropped = QtCore.pyqtSignal(list)
+    dropped_files = QtCore.pyqtSignal(list)
     browse = QtCore.pyqtSignal()
 
     def create_controls(self):
@@ -68,7 +68,7 @@ class DragDropWidget(DefaultWidget):
         if event.mimeData().hasUrls:
             event.setDropAction(QtCore.Qt.CopyAction)
             event.accept()
-            self.dropped.emit([str(url.toLocalFile()) for url in event.mimeData().urls()])
+            self.dropped_files.emit([str(url.toLocalFile()) for url in event.mimeData().urls()])
         else:
             event.ignore()
 

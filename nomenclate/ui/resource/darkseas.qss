@@ -6,13 +6,12 @@ QTextEdit, QLineEdit, QLabel, QListView, QWidget {
     border-radius: 0;
 }
 
-QListView {
+QListView, QTreeView {
     alternate-background-color: rgba(200,200,200,.1);
     background-color: rgba(200,200,200,.05);
 }
 
-
-QListView::item:selected:!active{
+QListView::item:selected:!active, QTreeView::item:selected:!active{
     color: rgba(200,200,200,.5);
     background: rgba(35, 107, 178, .3);
 }
