@@ -8,18 +8,48 @@ from default import DefaultWidget
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
-class FormatTextEdit(QtWidgets.QLineEdit):
-    return_pressed = QtCore.pyqtSignal()
+class FormatTextEdit(QtWidgets.QTextEdit):
+    returnPressed = QtCore.pyqtSignal()
 
     def __init__(self, *args, **kwargs):
         super(FormatTextEdit, self).__init__(*args, **kwargs)
-        self.setValidator(utils.ALPHANUMERIC_VALIDATOR)
+        self.regex = QtCore.QRegExp(utils.TOKEN_VALUE_VALIDATOR)
+        self.setValidator(QtGui.QRegExpValidator(self.regex, self))
+        self.setReadOnly(True)
+        self.returnPressed.connect(lambda: self.setReadOnly(True))
 
-    def keyPressEvent(self, QKeyEvent):
-        if QKeyEvent.key() == QtCore.Qt.Key_Return:
-            self.return_pressed.emit()
-        else:
-            super(FormatTextEdit, self).keyPressEvent(QKeyEvent)
+    def setValidator(self, validator):
+        self.validator = validator
+
+    def validate_input(self):
+        if self.toPlainText() and not self.regex.exactMatch(self.toPlainText()):
+            return False
+        return True
+
+    def mouseDoubleClickEvent(self, QKeyPressEvent):
+        self.setReadOnly(False)
+        super(FormatTextEdit, self).mouseDoubleClickEvent(QKeyPressEvent)
+
+    def keyPressEvent(self, QKeyPressEvent):
+        cursor = self.textCursor()
+        start, end = cursor.selectionStart(), cursor.selectionEnd()
+
+        start_text = self.toPlainText()
+        if QKeyPressEvent.key() == QtCore.Qt.Key_Return:
+            self.returnPressed.emit()
+        super(FormatTextEdit, self).keyPressEvent(QKeyPressEvent)
+        try:
+            nomenclate.core.formatter.FormatString.get_valid_format_order(self.toPlainText())
+        except nomenclate.core.errors.FormatError:
+            print 'warning warning invalid char %s added to string %s' % (QKeyPressEvent.text(), self.toPlainText())
+            self.setText(start_text)
+            cursor.setPosition(start)
+            cursor.setPosition(end, QtGui.QTextCursor.KeepAnchor)
+            self.setTextCursor(cursor)
+        except nomenclate.core.errors.BalanceError:
+            #TODO: figure out how to ensure we have a balance before setting final result
+            pass
+
 
 
 class InstanceHandlerWidget(DefaultWidget):
@@ -34,7 +64,7 @@ class InstanceHandlerWidget(DefaultWidget):
         self.output_layout = QtWidgets.QVBoxLayout(self.wgt_output)
         self.output_title = QtWidgets.QLabel('Output Base Name')
         self.output_name = QtWidgets.QLabel()
-        self.input_format = QtWidgets.QLineEdit()
+        self.input_format = FormatTextEdit()
         self.token_frame = QtWidgets.QFrame()
         self.token_layout = QtWidgets.QHBoxLayout(self.token_frame)
         self.token_layout.setContentsMargins(0, 0, 0, 0)
@@ -44,7 +74,7 @@ class InstanceHandlerWidget(DefaultWidget):
 
     @property
     def user_format_override(self):
-        return self.input_format.text().encode('utf-8')
+        return self.input_format.toPlainText().encode('utf-8')
 
     @property
     def active_token_widgets(self):
@@ -72,7 +102,9 @@ class InstanceHandlerWidget(DefaultWidget):
         self.output_title.setObjectName('OutputTitle')
         self.output_name.setObjectName('OutputLabel')
         self.nomenclate_output.connect(self.set_output)
-        self.input_format.setPlaceholderText("Override Format String from current = %s" % self.NOM.format)
+        msg = "DOUBLE CLICK TO MODIFY CURRENT FORMAT: %s" % self.NOM.format
+        self.input_format.setPlaceholderText(msg)
+        self.input_format.setText('test<span style="color:#ff0000;">test</span>')
 
     def connect_controls(self):
         self.output_layout.addWidget(self.output_title)
