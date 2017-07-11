@@ -39,7 +39,6 @@ class TokenLineEdit(QtWidgets.QLineEdit):
         super(TokenLineEdit, self).mousePressEvent(QMouseClickEvent)
 
     def keyPressEvent(self, QKeyPressEvent):
-        print dir(self.completer.popup())
         super(TokenLineEdit, self).keyPressEvent(QKeyPressEvent)
 
 
