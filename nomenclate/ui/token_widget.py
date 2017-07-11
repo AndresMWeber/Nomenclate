@@ -12,14 +12,11 @@ print(QtWidgets.__file__)
 class CustomCompleter(QtWidgets.QCompleter):
     def __init__(self, options, parent=None):
         self.options = QtCore.QStringListModel(options)
-        super(CustomCompleter, self).__init__(parent=parent)
+        super(CustomCompleter, self).__init__(self.options, parent)
         self.popup().setStyleSheet(str('QListView{ color: rgb(200, 200, 200); '
-                                       'background-color: rgba(200, 200, 200, .1);'
-                                       '}'
-                                       'QListView::item:selected{ '
-                                       'background-color: rgba(255, 0, 0); }'))
-        # always show all (filtered) completions
-        self.setCompletionMode(self.PopupCompletion)
+                                       'background-color: rgba(200, 200, 200, .4);'
+                                       '}'))
+        self.setCompletionMode(self.UnfilteredPopupCompletion)
 
 
 class TokenLineEdit(QtWidgets.QLineEdit):
