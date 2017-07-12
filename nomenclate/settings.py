@@ -18,9 +18,11 @@ ERROR = ERROR
 FATAL = FATAL
 QUIET = None
 
+
 def get_module_logger(module_name, module_override_level=None):
     module_logger_level = module_override_level or PACKAGE_LOGGER_LEVEL
     return getLogger(module_name, level=module_logger_level)
+
 
 # Is not a hard coded (word) and does not end with any non word characters or capitals (assuming camel)
 
@@ -38,4 +40,3 @@ REGEX_TOKEN = r'[A-Za-z0-9][^A-Z\W{SEP}]+'.format(SEP=SEPARATORS)
 FORMAT_STRING_REGEX = r'(?:{STATIC})|({TOKEN})|{CHAR}'.format(STATIC=REGEX_STATIC_TOKEN,
                                                               TOKEN=REGEX_TOKEN,
                                                               CHAR=REGEX_SINGLE_LETTER)
-print '%r' % FORMAT_STRING_REGEX

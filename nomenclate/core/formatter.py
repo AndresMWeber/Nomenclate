@@ -3,7 +3,7 @@ import re
 from . import errors as exceptions
 import nomenclate.settings as settings
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.DEBUG
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
 class FormatString(object):
@@ -67,7 +67,7 @@ class FormatString(object):
         format_target = cls.remove_tokens(format_target, format_order)
         format_target = cls.remove_static_text(format_target)
         cls.validate_separator_characters(format_target)
-        #cls.validate_matched_parenthesis(format_target)
+        cls.validate_matched_parenthesis(format_target)
         cls.LOG.debug('After processing format_target is (should only be valid separator chars): %s' % format_target)
         return format_order
 
@@ -95,7 +95,7 @@ class FormatString(object):
     @classmethod
     def validate_no_token_duplicates(cls, format_order):
         if len(format_order) != len(list(set([order.lower() for order in format_order]))):
-            msg = "Format string has duplicate token names (capitalization insensitive).  Please correct."
+            msg = "Format string has duplicate token names (capitalization insensitive)."
             cls.LOG.warning(msg)
             raise exceptions.FormatError(msg)
 
@@ -106,26 +106,24 @@ class FormatString(object):
         :param format_order:
         :return:
         """
-        #TODO: Fiiixxxxxx
-        if format_target:
-            print 'alalalala', format_target
-            iparens = iter('(){}[]<>')
-            parens = dict(zip(iparens, iparens))
-            closing = parens.values()
-            unbalanced = False
+        iparens = iter('(){}[]<>')
+        parens = dict(zip(iparens, iparens))
+        closing = parens.values()
+
+        def balanced(astr):
             stack = []
-            for c in format_target:
+            for c in astr:
                 d = parens.get(c, None)
                 if d:
                     stack.append(d)
                 elif c in closing:
                     if not stack or c != stack.pop():
-                        msg = "Format string has unmatching parentheses (capitalization insensitive).  Please correct."
-                        cls.LOG.warning(msg)
-                        raise exceptions.BalanceError(msg)
-            balanced = not stack
-            if not unbalanced:
-                msg = "Format string has unmatching parentheses (capitalization insensitive).  Please correct."
+                        return False
+            return not stack
+
+        if format_target:
+            if not balanced(format_target):
+                msg = "Format string has unmatching parentheses."
                 cls.LOG.warning(msg)
                 raise exceptions.BalanceError(msg)
 

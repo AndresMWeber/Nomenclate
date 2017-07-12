@@ -12,8 +12,7 @@ class CustomCompleter(QtWidgets.QCompleter):
         self.options = QtCore.QStringListModel(options)
         super(CustomCompleter, self).__init__(self.options, parent)
         self.popup().setStyleSheet(str('QListView{ color: rgb(200, 200, 200); '
-                                       'background-color: rgba(200, 200, 200, .4);'
-                                       '}'))
+                                       'background-color: rgba(200, 200, 200, .4);}'))
         self.setCompletionMode(self.UnfilteredPopupCompletion)
 
 

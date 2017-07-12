@@ -9,47 +9,79 @@ MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
 class FormatTextEdit(QtWidgets.QTextEdit):
-    returnPressed = QtCore.pyqtSignal()
+    returnPressed = QtCore.pyqtSignal(QtCore.QEvent)
 
-    def __init__(self, *args, **kwargs):
-        super(FormatTextEdit, self).__init__(*args, **kwargs)
+    def __init__(self):
+        super(FormatTextEdit, self).__init__()
         self.regex = QtCore.QRegExp(utils.TOKEN_VALUE_VALIDATOR)
-        self.setValidator(QtGui.QRegExpValidator(self.regex, self))
-        self.setReadOnly(True)
-        self.returnPressed.connect(lambda: self.setReadOnly(True))
+        self.validator = QtGui.QRegExpValidator(self.regex, self)
 
-    def setValidator(self, validator):
-        self.validator = validator
+    @property
+    def text(self):
+        return self.toPlainText()
 
     def validate_input(self):
-        if self.toPlainText() and not self.regex.exactMatch(self.toPlainText()):
+        if self.text_input.text and not self.regex.exactMatch(self.text_input.text):
             return False
         return True
 
-    def mouseDoubleClickEvent(self, QKeyPressEvent):
-        self.setReadOnly(False)
-        super(FormatTextEdit, self).mouseDoubleClickEvent(QKeyPressEvent)
-
     def keyPressEvent(self, QKeyPressEvent):
+        if QKeyPressEvent.key() == QtCore.Qt.Key_Return:
+            self.returnPressed.emit(QKeyPressEvent)
+            return
+
         cursor = self.textCursor()
         start, end = cursor.selectionStart(), cursor.selectionEnd()
+        start_text = self.text
 
-        start_text = self.toPlainText()
-        if QKeyPressEvent.key() == QtCore.Qt.Key_Return:
-            self.returnPressed.emit()
         super(FormatTextEdit, self).keyPressEvent(QKeyPressEvent)
+
         try:
-            nomenclate.core.formatter.FormatString.get_valid_format_order(self.toPlainText())
+            nomenclate.core.formatter.FormatString.get_valid_format_order(self.text)
+
         except nomenclate.core.errors.FormatError:
-            print 'warning warning invalid char %s added to string %s' % (QKeyPressEvent.text(), self.toPlainText())
             self.setText(start_text)
             cursor.setPosition(start)
             cursor.setPosition(end, QtGui.QTextCursor.KeepAnchor)
             self.setTextCursor(cursor)
         except nomenclate.core.errors.BalanceError:
-            #TODO: figure out how to ensure we have a balance before setting final result
             pass
 
+
+class FormatLabel(QtWidgets.QLabel):
+    doubleClick = QtCore.pyqtSignal(QtCore.QEvent)
+
+    def mouseDoubleClickEvent(self, QMousePressEvent):
+        self.doubleClick.emit(QMousePressEvent)
+        super(FormatTextEdit, self).mouseDoubleClickEvent(QMousePressEvent)
+
+
+class FormatWidget(QtWidgets.QWidget):
+    def __init__(self, *args, **kwargs):
+        super(FormatTextEdit, self).__init__(*args, **kwargs)
+        self.text_input = FormatWidget()
+        self.format_label = FormatLabel()
+
+        self.returnPressed = self.text_input.returnPressed
+        self.doubleClick = self.format_label.doubleClick
+        self.setPlaceholderText = self.text_input.setPlaceholderText
+        self.setText = self.text_input.setText
+
+        QtWidgets.QHBoxLayout(self)
+        self.layout().addWidget(self.text_input)
+        self.layout().addWidget(self.format_label)
+
+        self.returnPressed.connect(self.swap_visible_widget)
+        self.format_label.doubleClick.connect(self.swap_visible_widget)
+
+        self.setText('test<span style="color:#ff0000;">test</span>')
+        self.swap_visible_widget()
+
+    def swap_visible_widget(self):
+        print 'either click or return was pressed'
+        text_input_hidden = self.text_input.isHidden()
+        self.text_input.setVisible(text_input_hidden)
+        self.format_label.setVisible(not text_input_hidden)
 
 
 class InstanceHandlerWidget(DefaultWidget):
@@ -104,7 +136,6 @@ class InstanceHandlerWidget(DefaultWidget):
         self.nomenclate_output.connect(self.set_output)
         msg = "DOUBLE CLICK TO MODIFY CURRENT FORMAT: %s" % self.NOM.format
         self.input_format.setPlaceholderText(msg)
-        self.input_format.setText('test<span style="color:#ff0000;">test</span>')
 
     def connect_controls(self):
         self.output_layout.addWidget(self.output_title)
@@ -160,8 +191,15 @@ class InstanceHandlerWidget(DefaultWidget):
 
     def set_format(self):
         input_format = self.user_format_override
-        if input_format and len(input_format) > 3:
+        try:
             self.NOM.format = input_format
+        except nomenclate.core.errors.BalanceError as e:
+            fix_msg = '\nYou need to fix it before you can input this format.'
+            message_box = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Warning,
+                                                "Format Error",
+                                                e.message + fix_msg,
+                                                QtWidgets.QMessageBox.Ok, self)
+            message_box.exec_()
         self.refresh()
 
     def refresh(self):
@@ -188,6 +226,7 @@ class InstanceHandlerWidget(DefaultWidget):
         order = self.NOM.format_order
         direction_shifted_tokens = order[-1:] + order[:-1] if direction else order[1:] + order[:1]
         restart = order[-1] if direction else order[0]
+
         for token, next_token in zip(order, direction_shifted_tokens):
             token_widget = self.token_widget_lookup[token.lower()]
             if token_widget.is_selected() and restart != next_token:

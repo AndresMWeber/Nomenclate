@@ -184,14 +184,13 @@ class FileListWidget(DefaultWidget):
 
     def action_rename_items(self):
         selected_items = self.selected_items
-        self.update_file_names()
         if selected_items:
-            message_box = QtWidgets.QMessageBox(self)
-            message_box.setText("Do you want to rename %d items" % len(selected_items))
+            message_box = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Warning,
+                                                "Rename Items",
+                                                "Do you want to rename %d items" % len(selected_items),
+                                                [QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No],
+                                                self)
             # message_box.setInformativeText("Do you really want to disable safety enforcement?")
-            message_box.addButton(QtWidgets.QMessageBox.Yes)
-            message_box.addButton(QtWidgets.QMessageBox.No)
-            message_box.setDefaultButton(QtWidgets.QMessageBox.No)
             ret = message_box.exec_()
             if ret:
                 print('If this were active we would rename these items: %s' % selected_items)
