@@ -50,6 +50,9 @@ class TokenWidget(DefaultFrame):
         self.layout_main = QtWidgets.QVBoxLayout(self)
         self.value_widget = TokenLineEdit(self.value)
 
+    def set_category_title(self, category, title):
+        self.accordion_tree.set_title(category, title)
+
     def initialize_controls(self):
         self.setMinimumWidth(50)
         self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Fixed)

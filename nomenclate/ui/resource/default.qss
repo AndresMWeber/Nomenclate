@@ -4,7 +4,7 @@ QTextEdit, QLineEdit, QLabel, QListView, QWidget {
     border-radius: 0;
 }
 
-QTextEdit, QLineEdit {
+QTextEdit, QLineEdit, QLabel {
     min-height: 25;
     max-height: 25;
 }

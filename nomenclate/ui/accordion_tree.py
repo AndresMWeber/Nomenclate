@@ -14,7 +14,11 @@ class QAccordionTitle(QtWidgets.QWidget):
         super(QAccordionTitle, self).__init__(parent=tree_widget_parent)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.clicked.connect(self.expand)
+        self.label = None
         self.set_up(text, shadow)
+
+    def set_label(self, text):
+        self.label.setText(text)
 
     def set_up(self, text, shadow):
         self.setMinimumHeight(2)
@@ -43,6 +47,7 @@ class QAccordionTitle(QtWidgets.QWidget):
         label.setObjectName('TokenLabel')
         label.setText(text)
         label.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
+        self.label = label
         self.layout().addWidget(label)
 
         second_line = QtWidgets.QFrame()
@@ -92,6 +97,12 @@ class QAccordionTreeWidget(QtWidgets.QTreeWidget):
     def categories(self):
         return list(self.category_widgets)
 
+    def set_title(self, category, title):
+        category = category.lower()
+        categories = self.category_widgets
+        if category in categories:
+            categories.get(category).title.set_label(title)
+
     def fold(self, fold_state):
         for category_label in list(self.category_widgets):
             self.category_widgets[category_label].setExpanded(fold_state)
@@ -116,6 +127,25 @@ class QAccordionTreeWidget(QtWidgets.QTreeWidget):
 
         title.clicked.connect(self.sizer)
 
+    def set_category_label(self, category, label_text):
+        category = QAccordionTreeCategoryItem(label, self)
+        title = QAccordionTitle(label, self, category)
+        category.title = title
+
+        self.addTopLevelItem(category)
+        self.setItemWidget(category, 0, title)
+        container = QtWidgets.QTreeWidgetItem()
+
+        category.addChild(container)
+        self.setItemWidget(container, 0, category.frame)
+
+        container.setDisabled(True)
+
+        self.category_widgets[category]
+        category.setExpanded(True)
+
+        title.clicked.connect(self.sizer)
+
     def add_widget_to_category(self, category, widget):
         self.category_widgets[category].layout.addWidget(widget)
 
@@ -130,7 +160,7 @@ class QAccordionTreeWidget(QtWidgets.QTreeWidget):
             size = QResizeEvent.size()
         except TypeError:
             size = QResizeEvent.size
-        size.setHeight(self.sizeHint().height()+50)
+        size.setHeight(self.sizeHint().height() + 50)
         QResizeEvent.size = size
         self.setColumnWidth(0, size.width())
         self.parent_widget.resizeEvent(QResizeEvent)
