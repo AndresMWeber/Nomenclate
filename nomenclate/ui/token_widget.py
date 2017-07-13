@@ -1,39 +1,12 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
 import nomenclate.ui.utils as utils
 import nomenclate.settings as settings
+import nomenclate.ui.input_widgets as input_widgets
 import nomenclate.ui.accordion_tree as accordion_tree
 from default import DefaultFrame
 
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
-
-class CustomCompleter(QtWidgets.QCompleter):
-    def __init__(self, options, parent=None):
-        self.options = QtCore.QStringListModel(options)
-        super(CustomCompleter, self).__init__(self.options, parent)
-        self.popup().setStyleSheet(str('QListView{ color: rgb(200, 200, 200); '
-                                       'background-color: rgba(200, 200, 200, .4);}'))
-        self.setCompletionMode(self.UnfilteredPopupCompletion)
-
-
-class TokenLineEdit(QtWidgets.QLineEdit):
-    def __init__(self, *args):
-        super(TokenLineEdit, self).__init__(*args)
-        self.completer = CustomCompleter([], parent=self)
-        self.setCompleter(self.completer)
-
-    def set_completer_items(self, items):
-        self.completer.setModel(QtCore.QStringListModel(items))
-
-    def mousePressEvent(self, QMouseClickEvent):
-        # TODO: Figure out how to reset the popup so we get the full options again.  This does not work.
-        self.completer.popup().reset()
-        self.completer.popup().update()
-        self.completer.complete()
-        super(TokenLineEdit, self).mousePressEvent(QMouseClickEvent)
-
-    def keyPressEvent(self, QKeyPressEvent):
-        super(TokenLineEdit, self).keyPressEvent(QKeyPressEvent)
 
 
 class TokenWidget(DefaultFrame):
@@ -48,7 +21,7 @@ class TokenWidget(DefaultFrame):
     def create_controls(self):
         self.accordion_tree = accordion_tree.QAccordionTreeWidget(self)
         self.layout_main = QtWidgets.QVBoxLayout(self)
-        self.value_widget = TokenLineEdit(self.value)
+        self.value_widget = input_widgets.CompleterTextEntry(self.value)
 
     def set_category_title(self, category, title):
         self.accordion_tree.set_title(category, title)
@@ -86,10 +59,11 @@ class TokenWidget(DefaultFrame):
 
         self.prefix.setPlaceholderText('prefix')
         self.suffix.setPlaceholderText('suffix')
-        self.value_widget.setPlaceholderText(self.token)
         self.prefix.setValidator(QtGui.QRegExpValidator(utils.TOKEN_VALUE_VALIDATOR, self.prefix))
         self.suffix.setValidator(QtGui.QRegExpValidator(utils.TOKEN_VALUE_VALIDATOR, self.suffix))
-        self.value_widget.setValidator(QtGui.QRegExpValidator(utils.TOKEN_VALUE_VALIDATOR, self.value_widget))
+        self.value_widget.setPlaceholderText(self.token)
+        self.value_widget.add_completer([])
+        self.value_widget.set_validation(utils.TOKEN_VALUE_VALIDATOR)
 
         self.capital.currentIndexChanged.connect(self.on_change)
         self.prefix.textChanged.connect(self.on_change)

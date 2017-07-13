@@ -1,47 +1,8 @@
-from PyQt5 import QtWidgets, QtCore, QtGui
-import nomenclate
+import PyQt5.QtWidgets as QtWidgets
+import PyQt5.QtCore as QtCore
+import nomenclate.ui.input_widgets as input_widgets
 import nomenclate.ui.utils as utils
-import random
 from six import iteritems
-
-class FormatTextEdit(QtWidgets.QTextEdit):
-    returnPressed = QtCore.pyqtSignal(QtCore.QEvent)
-
-    def __init__(self):
-        super(FormatTextEdit, self).__init__()
-        self.regex = QtCore.QRegExp(utils.TOKEN_VALUE_VALIDATOR)
-        self.validator = QtGui.QRegExpValidator(self.regex, self)
-
-    @property
-    def text(self):
-        return self.toPlainText().encode('utf-8')
-
-    def validate_input(self):
-        if self.text_input.text and not self.regex.exactMatch(self.text_input.text):
-            return False
-        return True
-
-    def keyPressEvent(self, QKeyPressEvent):
-        if QKeyPressEvent.key() == QtCore.Qt.Key_Return:
-            self.returnPressed.emit(QKeyPressEvent)
-            return
-
-        cursor = self.textCursor()
-        start, end = cursor.selectionStart(), cursor.selectionEnd()
-        start_text = self.text
-
-        super(FormatTextEdit, self).keyPressEvent(QKeyPressEvent)
-
-        try:
-            nomenclate.core.formatter.FormatString.get_valid_format_order(self.text)
-
-        except nomenclate.core.errors.FormatError:
-            self.setText(start_text)
-            cursor.setPosition(start)
-            cursor.setPosition(end, QtGui.QTextCursor.KeepAnchor)
-            self.setTextCursor(cursor)
-        except nomenclate.core.errors.BalanceError:
-            pass
 
 
 class FormatLabel(QtWidgets.QLabel):
@@ -57,7 +18,8 @@ class FormatWidget(QtWidgets.QWidget):
 
     def __init__(self, starting_format='', *args, **kwargs):
         super(FormatWidget, self).__init__(*args, **kwargs)
-        self.text_input = FormatTextEdit()
+        self.text_input = input_widgets.CompleterTextEntry()
+        self.text_input.set_validation(utils.TOKEN_VALUE_VALIDATOR)
         self.format_label = FormatLabel(starting_format)
 
         self.returnPressed = self.text_input.returnPressed
@@ -76,7 +38,7 @@ class FormatWidget(QtWidgets.QWidget):
 
     @property
     def text(self):
-        return self.text_input.text
+        return self.text_input.text_utf
 
     def swap_visible_widget(self):
         text_input_hidden = self.text_input.isHidden()

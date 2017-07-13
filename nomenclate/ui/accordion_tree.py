@@ -1,4 +1,7 @@
-from PyQt5 import QtWidgets, QtCore, QtGui
+import PyQt5.QtWidgets as QtWidgets
+import PyQt5.QtCore as QtCore
+import PyQt5.QtGui as QtGui
+
 from six import iteritems
 
 

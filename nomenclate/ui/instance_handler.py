@@ -1,4 +1,5 @@
-from PyQt5 import QtWidgets, QtCore, QtGui
+import PyQt5.QtWidgets as QtWidgets
+import PyQt5.QtCore as QtCore
 import nomenclate
 import nomenclate.ui.token_widget as token_wgt
 import nomenclate.ui.format_widget as format_wgt
@@ -76,7 +77,7 @@ class InstanceHandlerWidget(DefaultWidget):
         for token_widget in self.active_token_widgets:
             token = token_widget.token.lower()
 
-            if token in map(str.lower, list(color_dict)):
+            if token in [str(color).lower() for color in list(color_dict)]:
                 color, rich_color = color_dict.get(token)
                 token_widget.set_category_title(token, rich_color)
 

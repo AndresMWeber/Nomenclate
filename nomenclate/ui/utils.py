@@ -1,4 +1,4 @@
-from PyQt5 import QtGui, QtCore
+import PyQt5.QtCore as QtCore
 import os
 
 ALPHANUMERIC_VALIDATOR = QtCore.QRegExp('[A-Za-z0-9_]*')

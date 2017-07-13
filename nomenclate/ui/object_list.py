@@ -1,6 +1,9 @@
 import os
 from default import DefaultWidget
-from PyQt5 import QtWidgets, QtGui, QtCore
+import PyQt5.QtWidgets as QtWidgets
+import PyQt5.QtCore as QtCore
+import PyQt5.QtGui as QtGui
+
 
 
 class QFileItem(QtGui.QStandardItem):

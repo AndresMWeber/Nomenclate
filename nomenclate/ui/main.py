@@ -1,7 +1,9 @@
 import os
 from glob import glob
 from functools import partial
-from PyQt5 import QtWidgets, QtCore, QtGui
+import PyQt5.QtWidgets as QtWidgets
+import PyQt5.QtCore as QtCore
+import PyQt5.QtGui as QtGui
 import nomenclate.ui.utils as utils
 import nomenclate.settings as settings
 import nomenclate.ui.filesystem as filesystem
@@ -9,7 +11,7 @@ import nomenclate.ui.instance_handler as instance_handler
 import nomenclate.ui.drag_drop as drag_drop
 import nomenclate.ui.object_list as file_list
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.DEBUG
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
 class MainDialog(QtWidgets.QWidget):
