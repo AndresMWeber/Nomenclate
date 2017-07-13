@@ -1,4 +1,6 @@
-from PyQt5 import QtWidgets, QtCore, QtGui
+import PyQt5.QtWidgets as QtWidgets
+import PyQt5.QtCore as QtCore
+import PyQt5.QtGui as QtGui
 import nomenclate.ui.utils as utils
 import nomenclate.settings as settings
 import nomenclate.ui.input_widgets as input_widgets
@@ -6,7 +8,6 @@ import nomenclate.ui.accordion_tree as accordion_tree
 from default import DefaultFrame
 
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
-
 
 
 class TokenWidget(DefaultFrame):

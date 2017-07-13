@@ -2,6 +2,7 @@ import PyQt5.QtWidgets as QtWidgets
 import PyQt5.QtCore as QtCore
 import nomenclate.ui.input_widgets as input_widgets
 import nomenclate.ui.utils as utils
+import nomenclate.core.tools as tools
 from six import iteritems
 
 
@@ -50,3 +51,6 @@ class FormatWidget(QtWidgets.QWidget):
             color, rich_color = color_pair
             format_string = format_string.replace(format_token, rich_color)
         self.format_label.setText(format_string)
+
+    def set_options(self, options):
+        self.text_input.add_completer(list(tools.flattenDictToLeaves(options)))

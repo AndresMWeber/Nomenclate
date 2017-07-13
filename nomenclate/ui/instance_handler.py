@@ -51,6 +51,8 @@ class InstanceHandlerWidget(DefaultWidget):
         self.output_name.setObjectName('OutputLabel')
         self.nomenclate_output.connect(self.set_output)
 
+        self.input_format.set_options(self.get_options_list('naming_formats', return_type=dict))
+
     def connect_controls(self):
         self.input_format.returnPressed.connect(self.set_format)
         self.format_updated.connect(self.generate_token_colors)
@@ -109,28 +111,17 @@ class InstanceHandlerWidget(DefaultWidget):
             self.LOG.debug('No preexisting token widget...creating and adding to %s.token_widget_lookup.' % self)
             token_widget = token_wgt.TokenWidget(token, value)
             self.token_widget_lookup[token] = token_widget
-            self.add_token_widget_completion_from_config(token)
+            options = self.get_completion_from_config(token)
+            token_widget.value_widget.set_completer_items(options)
         else:
             self.token_layout.addWidget(token_widget)
         return token_widget
 
-    def add_token_widget_completion_from_config(self, token):
-        token_widget = self.token_widget_lookup.get(token, None)
+    def get_completion_from_config(self, search_string):
         try:
-            settings = map(str, self.get_options_list(token, list))
-            token_widget.value_widget.set_completer_items(settings)
-
+            return map(str, self.get_options_list(search_string, list))
         except nomenclate.core.errors.ResourceNotFoundError:
-            self.LOG.debug('Could not find config entries for token %s' % token)
-
-    def add_format_widget_completion_from_config(self, token):
-        token_widget = self.token_widget_lookup.get(token, None)
-        try:
-            settings = map(str, self.get_options_list(token, list))
-            token_widget.value_widget.set_completer_items(settings)
-
-        except nomenclate.core.errors.ResourceNotFoundError:
-            self.LOG.debug('Could not find config entries for token %s' % token)
+            self.LOG.debug('Could not find config entries for token %s' % search_string)
 
     def clear_stale_token_widgets(self):
         self.LOG.debug('Comparing current token widgets %s against format order %s' % (self.token_widgets,

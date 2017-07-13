@@ -2,10 +2,11 @@ import PyQt5.QtWidgets as QtWidgets
 import PyQt5.QtCore as QtCore
 import PyQt5.QtGui as QtGui
 import nomenclate
+import nomenclate.ui.utils as utils
 
 
 class CustomCompleter(QtWidgets.QCompleter):
-    insertText = QtCore.pyqtSignal(str)
+    insertText = QtCore.pyqtSignal(str, name='insertText')
 
     def __init__(self, options, parent=None):
         self.options = QtCore.QStringListModel(options)
@@ -14,15 +15,24 @@ class CustomCompleter(QtWidgets.QCompleter):
                                        'background-color: rgba(200, 200, 200, .4);}'))
         self.setCompletionMode(self.UnfilteredPopupCompletion)
         self.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
+        self.highlighted.connect(self.setHighlighted)
+        self.lastSelected = ''
 
     def set_items(self, items):
         self.setModel(QtCore.QStringListModel(items))
+
+    def setHighlighted(self, text):
+        self.lastSelected = text
+
+    def getSelected(self):
+        return self.lastSelected
 
 
 class TokenLineEdit(QtWidgets.QLineEdit):
     def __init__(self, *args):
         super(TokenLineEdit, self).__init__(*args)
         self.completer = CustomCompleter([], parent=self)
+        self.setCompleter(self.completer)
         self.set_completer_items = self.completer.set_items
 
     def mousePressEvent(self, QMouseClickEvent):
@@ -73,66 +83,36 @@ class CompleterTextEntry(QtWidgets.QLineEdit):
 
         self.completer = CustomCompleter(items, parent=self)
         self.completer.setWidget(self)
+        self.setCompleter(self.completer)
         self.completer.insertText.connect(self.insertCompletion)
         self.set_completer_items = self.completer.set_items
         self.set_completer_items(items)
 
     def insertCompletion(self, completion):
         if self.completer:
-            tc = self.cursor()
-            extra = (len(completion) - len(self.completer.completionPrefix()))
-            tc.movePosition(QtGui.QTextCursor.Left)
-            tc.movePosition(QtGui.QTextCursor.EndOfWord)
-            tc.insert(completion[-extra:])
-            self.setCursorPosition(tc.start)
+            start, end = utils.find_whole_word_span(self.text_utf, self.cursorPosition())
+            self.setCursorPosition(start)
+            self.setText(utils.replace_str_absolute(self.text_utf, completion, start, end))
             self.completer.popup().hide()
 
     def mouse_completer_event(self, event):
         if self.completer:
             self.set_mode('unfiltered')
-            self.completer.setCompletionPrefix("")
-            popup = self.completer.popup()
-            popup.setCurrentIndex(self.completer.completionModel().index(0, 0))
             self.completer.complete()
+            self.completer.setCompletionPrefix("")
+            # popup = self.completer.popup()
+            # popup.setCurrentIndex(self.completer.completionModel().index(0, 0))
 
     def filter_completer(self, event):
         if self.completer:
-            self.set_mode('filtered')
-            word = self.find_whole_word(self.cursorPosition())
-            cr = self.cursorRect()
-
+            word = utils.find_whole_word(self.text_utf, self.cursorPosition())
             if len(word) > 0:
                 self.completer.setCompletionPrefix(word)
-                popup = self.completer.popup()
-                popup.setCurrentIndex(self.completer.completionModel().index(0, 0))
-
-                cr.setWidth(self.completer.popup().sizeHintForColumn(0)
-                            + self.completer.popup().verticalScrollBar().sizeHint().width())
-                self.completer.complete(cr)
+                if self.completer.completionModel().rowCount():
+                    self.set_mode('filtered')
+                    self.completer.complete()
             else:
                 self.completer.popup().hide()
-
-    def find_whole_word(self, cursor_position):
-        start_position = cursor_position
-        text = self.text_utf
-        end, start = start_position, start_position
-        
-        for index, char in enumerate(text[start_position:]):
-            abs_index = start_position + index
-            if char in nomenclate.settings.SEPARATORS or abs_index == len(text) - 1:
-                index = index + 1 if abs_index == len(text) - 1 else index
-                end = start_position + index
-                break
-
-        for index, char in enumerate(reversed(text[0:start_position])):
-            index+=1
-            abs_index = start_position - index
-            if char in nomenclate.settings.SEPARATORS or abs_index == 0:
-                index = index if abs_index == 0 else index - 1
-                start = start_position - index
-                break
-        return text[start:end]
-
 
     def filter_validator(self, start_text, orig_start, event):
         if self.validator:
@@ -149,12 +129,13 @@ class CompleterTextEntry(QtWidgets.QLineEdit):
         super(CompleterTextEntry, self).mousePressEvent(QMouseClickEvent)
 
     def keyPressEvent(self, event):
-        if event.key() == QtCore.Qt.Key_Tab and self.completer.popup().isVisible():
+        self.set_mode('filtered')
+        if event.key() == QtCore.Qt.Key_Return and self.completer.popup().isVisible():
             self.completer.insertText.emit(self.completer.getSelected())
-            self.completer.setCompletionMode(QtWidgets.QCompleter.PopupCompletion)
+            event.accept()
             return
 
-        if event.key() == QtCore.Qt.Key_Return:
+        elif event.key() == QtCore.Qt.Key_Return:
             self.returnPressed.emit(event)
             return
 

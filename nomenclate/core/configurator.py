@@ -169,7 +169,7 @@ class ConfigParse(object):
 
             return query_result
         except IndexError:
-            self.LOG.info('Not sure why but IndexError was found...defaulting to return: %s = %r' %
+            self.LOG.info('IndexError was found...defaulting to return: %s = %r' %
                           (return_type, return_type()))
             return return_type()
 

@@ -105,3 +105,18 @@ def flatten(it):
                 yield y
         else:
             yield x
+
+
+def flattenDictToLeaves(d, result=None, index=None):
+    if result is None:
+        result = []
+    if isinstance(d, (list, tuple)):
+        for indexB, element in enumerate(d):
+            flattenDictToLeaves(element, result, index=indexB)
+    elif isinstance(d, dict):
+        for key in list(d):
+            value = d[key]
+            flattenDictToLeaves(value, result, index=None)
+    else:
+        result.append(d)
+    return result
