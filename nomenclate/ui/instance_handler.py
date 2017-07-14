@@ -202,19 +202,14 @@ class InstanceHandlerWidget(DefaultWidget):
                     nudge_value = 5 if dark else -5
                     if color is None:
                         color = utils.hex_to_rgb(utils.gen_color(hash(format_token)))
-                        #print 'rand', color
                     else:
                         color = utils.nudge_color_value(utils.hex_to_rgb(color), nudge_value)
-                        #print 'nudged', color
                     contrast_against = (0,0,0) if dark else (1,1,1)
 
                     bg_score = utils.get_contrast_ratio(color, contrast_against)
                     if last_color:
                         color_score = utils.get_contrast_ratio(color, last_color)
-                print 'token %s ended on color %s with bg-contrast %f and color-contrast %f' % (format_token,
-                                                                                                color,
-                                                                                                bg_score,
-                                                                                                color_score)
+
                 rich_color = '<span style="color:{COLOR};">{TOKEN}</span>'.format(COLOR=utils.rgb_to_hex(color),
                                                                                   TOKEN=format_token)
                 self.TOKEN_COLORS[format_token] = (color, rich_color)
