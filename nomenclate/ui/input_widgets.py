@@ -91,8 +91,8 @@ class CompleterTextEntry(QtWidgets.QLineEdit):
     def insertCompletion(self, completion):
         if self.completer:
             start, end = utils.find_whole_word_span(self.text_utf, self.cursorPosition())
-            self.setCursorPosition(start)
-            self.setText(utils.replace_str_absolute(self.text_utf, completion, start, end))
+            #self.setCursorPosition(start)
+            #self.setText(utils.replace_str_absolute(self.text_utf, completion, start, end))
             self.completer.popup().hide()
 
     def mouse_completer_event(self, event):

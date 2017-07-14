@@ -46,10 +46,21 @@ class FormatWidget(QtWidgets.QWidget):
         self.text_input.setVisible(text_input_hidden)
         self.format_label.setVisible(not text_input_hidden)
 
-    def update_format(self, format_string, color_lookup):
-        for format_token, color_pair in iteritems(color_lookup):
-            color, rich_color = color_pair
-            format_string = format_string.replace(format_token, rich_color)
+    def update_format(self, format_string, color_lookup, format_order):
+        last_position = 0
+        for format_token in format_order:
+            #print 'workong on token ', format_token, len(format_string)
+            color, rich_color = color_lookup[format_token]
+            pre_slice = format_string[:last_position]
+            work_slice = format_string[last_position:]
+            old_length = len(format_string)
+            #print 'pre', pre_slice, 'work', work_slice
+            last_position = len(pre_slice) + work_slice.index(format_token) + len(format_token)
+            #print ('New "last" position is %d' % last_position)
+            format_string = pre_slice + work_slice.replace(format_token, rich_color, 1)
+            #print 'last pos %d, new len %d, adjust pos by: %d' % (last_position, len(format_string), last_position - len(format_string))
+            last_position += len(format_string) - old_length
+            #print last_position
         self.format_label.setText(format_string)
 
     def set_options(self, options):

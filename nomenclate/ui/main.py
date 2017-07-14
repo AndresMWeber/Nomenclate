@@ -6,15 +6,14 @@ import PyQt5.QtCore as QtCore
 import PyQt5.QtGui as QtGui
 import nomenclate.ui.utils as utils
 import nomenclate.settings as settings
-import nomenclate.ui.filesystem as filesystem
 import nomenclate.ui.instance_handler as instance_handler
-import nomenclate.ui.drag_drop as drag_drop
 import nomenclate.ui.object_list as file_list
 
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
 class MainDialog(QtWidgets.QWidget):
+    dropped_files = QtCore.pyqtSignal(list)
     NAME = 'Nomenclate'
     LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
     WIDTH = 800
@@ -97,6 +96,7 @@ class MainDialog(QtWidgets.QWidget):
 
         self.menu_bar = QtWidgets.QMenuBar()
 
+        self.wgt_drop_area = QtWidgets.QWidget()
         self.wgt_header = QtWidgets.QWidget()
         self.wgt_files = QtWidgets.QFrame()
         self.wgt_stack = QtWidgets.QStackedWidget()
@@ -106,8 +106,7 @@ class MainDialog(QtWidgets.QWidget):
         self.files_layout = QtWidgets.QHBoxLayout()
 
         self.instance_handler = instance_handler.InstanceHandlerWidget()
-        self.filesystem_view = filesystem.FileSystemWidget()
-        self.drag_drop_view = drag_drop.DragDropWidget()
+        #self.filesystem_view = filesystem.FileSystemWidget()
         self.file_list_view = file_list.FileListWidget()
 
     def connect_controls(self):
@@ -121,15 +120,16 @@ class MainDialog(QtWidgets.QWidget):
         self.layout_main.addWidget(self.instance_handler)
         self.layout_main.addWidget(self.wgt_files)
 
-        self.wgt_stack.addWidget(self.drag_drop_view)
-        self.wgt_stack.addWidget(self.filesystem_view)
+        self.wgt_stack.addWidget(self.file_list_view)
+        self.wgt_stack.addWidget(self.wgt_drop_area)
+        #self.wgt_stack.addWidget(self.filesystem_view)
 
         self.wgt_files.setLayout(self.files_layout)
-        self.files_layout.addWidget(self.file_list_view, 1)
+        #self.files_layout.addWidget(self.file_list_view, 1)
         self.files_layout.addWidget(self.wgt_stack)
 
-        self.drag_drop_view.dropped_files.connect(self.update_names)
-        self.filesystem_view.send_files.connect(self.update_names)
+        self.dropped_files.connect(self.update_names)
+        #self.filesystem_view.send_files.connect(self.update_names)
         self.instance_handler.nomenclate_output.connect(self.update_names)
 
     def initialize_controls(self):
@@ -184,9 +184,20 @@ class MainDialog(QtWidgets.QWidget):
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls:
             event.accept()
-            self.wgt_stack.setCurrentIndex(0)
+            self.wgt_stack.setCurrentIndex(1)
         else:
             event.ignore()
+
+    def dragLeaveEvent(self, event):
+        event.accept()
+        self.wgt_stack.setCurrentIndex(0)
+
+    def dropEvent(self, event):
+        if event.mimeData().hasUrls:
+            event.setDropAction(QtCore.Qt.CopyAction)
+            event.accept()
+            self.dropped_files.emit([str(url.toLocalFile()) for url in event.mimeData().urls()])
+            self.wgt_stack.setCurrentIndex(0)
 
     def eventFilter(self, source, event):
         if event.type() == QtCore.QEvent.KeyPress:

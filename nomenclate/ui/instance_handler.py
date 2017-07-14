@@ -19,7 +19,7 @@ class InstanceHandlerWidget(DefaultWidget):
 
     nomenclate_output = QtCore.pyqtSignal(str)
     format_updated = QtCore.pyqtSignal(str, list)
-    token_colors_updated = QtCore.pyqtSignal(str, dict)
+    token_colors_updated = QtCore.pyqtSignal(str, dict, list)
 
     def create_controls(self):
         self.layout_main = QtWidgets.QVBoxLayout(self)
@@ -195,4 +195,4 @@ class InstanceHandlerWidget(DefaultWidget):
                 rich_color = '<span style="color:{COLOR};">{TOKEN}</span>'.format(COLOR=color, TOKEN=format_token)
                 self.TOKEN_COLORS[format_token] = (color, rich_color)
 
-        self.token_colors_updated.emit(format_string, self.TOKEN_COLORS)
+        self.token_colors_updated.emit(format_string, self.TOKEN_COLORS, format_order)
