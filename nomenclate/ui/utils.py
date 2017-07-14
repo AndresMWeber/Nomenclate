@@ -76,6 +76,11 @@ def hex_to_rgb(hex_color):
     else:
         return hex_color
 
+
+def rgb_to_hex(rgb_color):
+    return '#%02x%02x%02x' % (rgb_color[0], rgb_color[1], rgb_color[2])
+
+
 def get_contrast_YIQ(hex_color):
     r, g, b = hex_to_rgb(hex_color)
     yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000  # 'black' if yiq >= 128 else 'white'
@@ -124,3 +129,8 @@ def get_contrast_ratio(color_a, color_b, mode=0):
               "{:.01F}:1 Usable for {}\n").format(contrast_ratio, usable_for))
     """
     return contrast_ratio
+
+
+def nudge_color_value(rgb_color, nudge_val):
+    print rgb_color
+    return [color + nudge_val for color in rgb_color]

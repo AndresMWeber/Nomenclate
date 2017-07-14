@@ -12,6 +12,7 @@ QPushButton, QRadioButton::indicator:checked, QRadioButton::indicator:unchecked
 QMenu::item
 {
     color: #999999;
+    background-color: transparent;
 }
 
 QMenu::item:selected

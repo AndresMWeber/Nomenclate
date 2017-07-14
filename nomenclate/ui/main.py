@@ -9,6 +9,7 @@ import nomenclate.settings as settings
 import nomenclate.ui.instance_handler as instance_handler
 import nomenclate.ui.object_list as file_list
 import nomenclate.ui.default as default
+
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
@@ -30,6 +31,7 @@ class MainDialog(default.DefaultWidget):
     light_text_css_cache = None
 
     def __init__(self):
+        self.last_action = None
         self.dark = True
         super(MainDialog, self).__init__()
         self.keylist = []
@@ -139,17 +141,28 @@ class MainDialog(default.DefaultWidget):
 
         view_action_refresh = self.view_menu.addAction('Refresh Stylsheets from Folder')
         view_action_refresh.setShortcut('Ctrl+R')
-        view_action_refresh.triggered.connect(self.populate_qss_styles)
+        view_action_refresh.triggered.connect(lambda: self.run_action(self.populate_qss_styles))
 
         view_action = self.view_menu.addAction('Expand/Collapse Tokens')
         view_action.setShortcut('Ctrl+H')
-        view_action.triggered.connect(self.instance_handler.fold)
+        view_action.triggered.connect(lambda: self.run_action(self.instance_handler.fold))
 
+        repeat_action = self.edit_menu.addAction('Repeat last menu action')
+        repeat_action.setShortcut('Ctrl+G')
+        repeat_action.triggered.connect(self.repeat_last_action)
         exit_action = self.file_menu.addAction('Exit')
         exit_action.setShortcut('Escape')
         exit_action.triggered.connect(self.close)
 
         self.populate_qss_styles()
+
+    def run_action(self, action_function, *args, **kwargs):
+        self.last_action = action_function
+        action_function(*args, **kwargs)
+
+    def repeat_last_action(self):
+        if self.last_action is not None:
+            self.last_action()
 
     def populate_qss_styles(self):
         self.style_menu.clear()
@@ -157,7 +170,7 @@ class MainDialog(default.DefaultWidget):
             file_name = os.path.basename(qss_style)
             style_name = os.path.splitext(file_name)[0]
             menu_action = self.style_menu.addAction(style_name.capitalize())
-            menu_action.triggered.connect(partial(self.load_stylesheet, stylesheet=file_name))
+            menu_action.triggered.connect(partial(self.run_action, self.load_stylesheet, stylesheet=file_name))
 
     def get_stylesheet_qss(self, stylesheet):
         file_path = os.path.join(utils.RESOURCES_PATH, stylesheet)
@@ -173,7 +186,10 @@ class MainDialog(default.DefaultWidget):
         self.LOG.info('Attempting to load CSS from file %s (appended default CSS).' % stylesheet)
         if not qss_data:
             self.LOG.warning('Invalid stylesheet file specified %s...defaulting to none' % stylesheet)
+
         QtWidgets.QApplication.instance().setStyleSheet(qss_data)
+        self.instance_handler.generate_token_colors()
+
         return qss_data
 
     def update_names(self, object_paths=None):
