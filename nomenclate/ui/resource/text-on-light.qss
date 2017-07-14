@@ -1,0 +1,30 @@
+
+QWidget, QTabBar::tab, QCheckBox::indicator, QTabBar::tab:!selected
+{
+    color: #666666;
+}
+
+QPushButton, QRadioButton::indicator:checked, QRadioButton::indicator:unchecked
+{
+    color: #666666;
+}
+
+QMenu::item
+{
+    color: #333333;
+}
+
+QMenu::item:selected
+{
+    color: #333333;
+}
+
+QWidget:disabled, QMenu::item:disabled, QCheckBox:disabled
+{
+    color: #666666;
+}
+
+QMenu::separator, QMainWindow::separator, QMainWindow::separator:hover, QHeaderView::section
+{
+    color: #999999;
+}

@@ -2,6 +2,7 @@ import PyQt5.QtCore as QtCore
 import os
 import operator
 import nomenclate
+import random
 
 ALPHANUMERIC_VALIDATOR = QtCore.QRegExp('[A-Za-z0-9_]*')
 TOKEN_VALUE_VALIDATOR = QtCore.QRegExp('^(?!^_)(?!.*__+|\.\.+.*)[a-zA-Z0-9_\.]+(?!_)$')
@@ -47,7 +48,7 @@ def replace_str_absolute(text, replacement, start, end=None):
         end = start + len(replacement) - 1
 
     if end > len(text) - 1:
-        output_text += [' '] * (end - len(text)+1)
+        output_text += [' '] * (end - len(text) + 1)
 
     replace_char = ' '
     for index, char in enumerate(output_text):
@@ -59,3 +60,67 @@ def replace_str_absolute(text, replacement, start, end=None):
             output_text[index] = replace_char
             replacement_index += 1
     return ''.join([_ for _ in output_text if _ != ' '])
+
+
+def gen_color(seed=None):
+    if seed is not None:
+        random.seed(seed)
+    r = lambda: random.randint(0, 255)
+    return '#%02X%02X%02X' % (r(), r(), r())
+
+
+def hex_to_rgb(hex_color):
+    if isinstance(hex_color, str):
+        hex_color = hex_color.replace('#', '')
+        return tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
+    else:
+        return hex_color
+
+def get_contrast_YIQ(hex_color):
+    r, g, b = hex_to_rgb(hex_color)
+    yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000  # 'black' if yiq >= 128 else 'white'
+    return yiq
+
+
+def get_luminance(color_code):
+    index = float(color_code) / 255
+    if index < 0.03928:
+        return index / 12.92
+    else:
+        return ((index + 0.055) / 1.055) ** 2.4
+
+
+def get_relative_luminance(rgb):
+    r, g, b = rgb
+    r_lum, g_lum, b_lum = get_luminance(r), get_luminance(g), get_luminance(b)
+    return 0.2126 * r_lum + 0.7152 * g_lum + 0.0722 * b_lum
+
+
+def get_contrast_ratio(color_a, color_b, mode=0):
+    light = color_a if sum(color_a) > sum(color_b) else color_b
+    dark = color_a if sum(color_a) < sum(color_b) else color_b
+
+    contrast_ratio = (get_relative_luminance(light) + 0.05) / (get_relative_luminance(dark) + 0.05)
+
+    if mode:
+        yiq_contrast_ratio = (get_contrast_YIQ(light) / (get_contrast_YIQ(dark) or 0.01))
+        contrast_ratio = yiq_contrast_ratio
+
+    if contrast_ratio < 3:
+        usable_for = "(ratio 0-3) incidental usage or logotypes."
+    elif contrast_ratio >= 3 and contrast_ratio < 4.5:
+        usable_for = "(ratio 3-4.5) minimum contrast large text."
+    elif contrast_ratio >= 4.5 and contrast_ratio < 7:
+        usable_for = "(ratio 4.5-7) minimum contrast or enhanced contrast large text."
+    elif contrast_ratio >= 7:
+        usable_for = "(ratio >= 7) enhanced contrast."
+    """
+    print(str("Contrast ratio calculator\n"
+              "Usable for the W3C Web Content Accessibility Guidelines (WCAG) 2.0\n"
+              "http://www.w3.org/TR/2008/REC-WCAG20-20081211/\n"
+              "1.4.3 Contrast (Minimum): 4.5:1 (Large text: 3:1)\n"
+              "1.4.6 Contrast (Enhanced): 7:1 (Large text: 4.5:1)\n"
+              "Calculated contrast:\n"
+              "{:.01F}:1 Usable for {}\n").format(contrast_ratio, usable_for))
+    """
+    return contrast_ratio

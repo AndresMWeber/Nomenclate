@@ -8,11 +8,11 @@ import nomenclate.ui.utils as utils
 import nomenclate.settings as settings
 import nomenclate.ui.instance_handler as instance_handler
 import nomenclate.ui.object_list as file_list
-
+import nomenclate.ui.default as default
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
-class MainDialog(QtWidgets.QWidget):
+class MainDialog(default.DefaultWidget):
     dropped_files = QtCore.pyqtSignal(list)
     NAME = 'Nomenclate'
     LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
@@ -20,15 +20,20 @@ class MainDialog(QtWidgets.QWidget):
     HEIGHT = 600
 
     DEFAULT_QSS = 'default.qss'
+    DARK_TEXT_QSS = 'text-on-light.qss'
+    LIGHT_TEXT_QSS = 'text-on-dark.qss'
     MAIN_QSS = 'darkseas.qss'
     QSS_GLOB = '*.qss'
 
+    default_css_cache = None
+    dark_text_css_cache = None
+    light_text_css_cache = None
+
     def __init__(self):
+        self.dark = True
         super(MainDialog, self).__init__()
-        self.default_css_cache = None
         self.keylist = []
         self.add_fonts()
-        self.setup()
         self.setup_menubar()
         self.setup_hotkeys()
         QtWidgets.QApplication.instance().installEventFilter(self)
@@ -41,50 +46,17 @@ class MainDialog(QtWidgets.QWidget):
     def default_stylesheet(self):
         if not self.default_css_cache:
             self.default_css_cache = self.get_stylesheet_qss(self.DEFAULT_QSS)
-        return self.default_css_cache
+        qss = str(self.default_css_cache)
+        if self.dark:
+            if not self.light_text_css_cache:
+                self.dark_text_css_cache = self.get_stylesheet_qss(self.DARK_TEXT_QSS)
+            qss += str(self.dark_text_css_cache)
+        else:
+            if not self.light_text_css_cache:
+                self.light_text_css_cache = self.get_stylesheet_qss(self.LIGHT_TEXT_QSS)
+            qss += str(self.light_text_css_cache)
 
-    def setup_hotkeys(self):
-        #self.hotkey_close = QtWidgets.QShortcut(QtGui.QKeySequence("Escape"), self)
-        #self.hotkey_close.activated.connect(self.close)
-        #self.hotkey_fold = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+Space"), self)
-        #self.hotkey_fold.activated.connect(self.instance_handler.fold)
-        pass
-
-    def setup_menubar(self):
-        self.file_menu = self.menu_bar.addMenu('File')
-        self.edit_menu = self.menu_bar.addMenu('Edit')
-        self.view_menu = self.menu_bar.addMenu('View')
-        self.settings_menu = self.menu_bar.addMenu('Settings')
-        self.style_menu = self.settings_menu.addMenu('Set Style')
-
-        view_action_refresh = self.view_menu.addAction('Refresh Stylsheets from Folder')
-        view_action_refresh.setShortcut('Ctrl+R')
-        view_action_refresh.triggered.connect(self.populate_qss_styles)
-
-        view_action = self.view_menu.addAction('Expand All Tokens')
-        view_action.setShortcut('Ctrl+H')
-        view_action.triggered.connect(self.instance_handler.fold)
-
-        exit_action = self.file_menu.addAction('Exit')
-        exit_action.setShortcut('Escape')
-        exit_action.triggered.connect(self.close)
-
-        redo_action = self.edit_menu.addAction('Placeholder')
-        #redo_action.triggered.connect()
-        self.populate_qss_styles()
-
-    def populate_qss_styles(self):
-        self.style_menu.clear()
-        for qss_style in glob(os.path.join(utils.RESOURCES_PATH, self.QSS_GLOB)):
-            file_name = os.path.basename(qss_style)
-            style_name = os.path.splitext(file_name)[0]
-            menu_action = self.style_menu.addAction(style_name.capitalize())
-            menu_action.triggered.connect(partial(self.load_stylesheet, stylesheet=file_name))
-
-    def setup(self):
-        self.create_controls()
-        self.initialize_controls()
-        self.connect_controls()
+        return qss
 
     def create_controls(self):
         main_widget = self
@@ -105,8 +77,8 @@ class MainDialog(QtWidgets.QWidget):
         self.header_label = QtWidgets.QLabel()
         self.files_layout = QtWidgets.QHBoxLayout()
 
-        self.instance_handler = instance_handler.InstanceHandlerWidget()
-        #self.filesystem_view = filesystem.FileSystemWidget()
+        self.instance_handler = instance_handler.InstanceHandlerWidget(parent=self)
+        # self.filesystem_view = filesystem.FileSystemWidget()
         self.file_list_view = file_list.FileListWidget()
 
     def connect_controls(self):
@@ -122,17 +94,19 @@ class MainDialog(QtWidgets.QWidget):
 
         self.wgt_stack.addWidget(self.file_list_view)
         self.wgt_stack.addWidget(self.wgt_drop_area)
-        #self.wgt_stack.addWidget(self.filesystem_view)
 
+        # self.setWindowOpacity(0.8)
         self.wgt_files.setLayout(self.files_layout)
-        #self.files_layout.addWidget(self.file_list_view, 1)
         self.files_layout.addWidget(self.wgt_stack)
 
         self.dropped_files.connect(self.update_names)
-        #self.filesystem_view.send_files.connect(self.update_names)
         self.instance_handler.nomenclate_output.connect(self.update_names)
 
     def initialize_controls(self):
+        font = QtWidgets.QApplication.font()
+        font.setStyleStrategy(font.PreferAntialias)
+        QtWidgets.QApplication.setFont(font)
+
         self.setFocus(QtCore.Qt.PopupFocusReason)
         self.load_stylesheet(stylesheet=self.MAIN_QSS)
         self.setWindowTitle(self.NAME)
@@ -149,13 +123,41 @@ class MainDialog(QtWidgets.QWidget):
         self.setBaseSize(self.WIDTH, self.HEIGHT)
         self.layout_main.setAlignment(QtCore.Qt.AlignTop)
 
-    def update_names(self, object_paths=None):
-        object_paths = object_paths if isinstance(object_paths, list) else self.file_list_view.wgt_list_view.object_paths
-        if object_paths:
-            self.file_list_view.update_object_paths(self.generate_names(object_paths))
+    def setup_hotkeys(self):
+        # self.hotkey_close = QtWidgets.QShortcut(QtGui.QKeySequence("Escape"), self)
+        # self.hotkey_close.activated.connect(self.close)
+        # self.hotkey_fold = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+Space"), self)
+        # self.hotkey_fold.activated.connect(self.instance_handler.fold)
+        pass
 
-    def generate_names(self, object_paths):
-        return [(target, self.instance_handler.get_index(index)) for index, target in enumerate(object_paths)]
+    def setup_menubar(self):
+        self.file_menu = self.menu_bar.addMenu('File')
+        self.edit_menu = self.menu_bar.addMenu('Edit')
+        self.view_menu = self.menu_bar.addMenu('View')
+        self.settings_menu = self.menu_bar.addMenu('Settings')
+        self.style_menu = self.settings_menu.addMenu('Set Style')
+
+        view_action_refresh = self.view_menu.addAction('Refresh Stylsheets from Folder')
+        view_action_refresh.setShortcut('Ctrl+R')
+        view_action_refresh.triggered.connect(self.populate_qss_styles)
+
+        view_action = self.view_menu.addAction('Expand/Collapse Tokens')
+        view_action.setShortcut('Ctrl+H')
+        view_action.triggered.connect(self.instance_handler.fold)
+
+        exit_action = self.file_menu.addAction('Exit')
+        exit_action.setShortcut('Escape')
+        exit_action.triggered.connect(self.close)
+
+        self.populate_qss_styles()
+
+    def populate_qss_styles(self):
+        self.style_menu.clear()
+        for qss_style in glob(os.path.join(utils.RESOURCES_PATH, self.QSS_GLOB)):
+            file_name = os.path.basename(qss_style)
+            style_name = os.path.splitext(file_name)[0]
+            menu_action = self.style_menu.addAction(style_name.capitalize())
+            menu_action.triggered.connect(partial(self.load_stylesheet, stylesheet=file_name))
 
     def get_stylesheet_qss(self, stylesheet):
         file_path = os.path.join(utils.RESOURCES_PATH, stylesheet)
@@ -163,12 +165,25 @@ class MainDialog(QtWidgets.QWidget):
         return open(stylesheet_file).read() if os.path.isfile(stylesheet_file) else ''
 
     def load_stylesheet(self, btn_event=None, stylesheet=''):
+        self.dark = False
+        if 'dark' in stylesheet.lower() or stylesheet == 'darkseas.qss':
+            self.dark = True
+
         qss_data = self.get_stylesheet_qss(stylesheet=stylesheet) + self.default_stylesheet
         self.LOG.info('Attempting to load CSS from file %s (appended default CSS).' % stylesheet)
         if not qss_data:
             self.LOG.warning('Invalid stylesheet file specified %s...defaulting to none' % stylesheet)
-        self.setStyleSheet(qss_data)
+        QtWidgets.QApplication.instance().setStyleSheet(qss_data)
         return qss_data
+
+    def update_names(self, object_paths=None):
+        object_paths = object_paths if isinstance(object_paths,
+                                                  list) else self.file_list_view.wgt_list_view.object_paths
+        if object_paths:
+            self.file_list_view.update_object_paths(self.generate_names(object_paths))
+
+    def generate_names(self, object_paths):
+        return [(target, self.instance_handler.get_index(index)) for index, target in enumerate(object_paths)]
 
     def add_fonts(self):
         for font_file in [os.path.join(utils.FONTS_PATH, path) for path in os.listdir(utils.FONTS_PATH)]:

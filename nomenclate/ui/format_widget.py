@@ -1,9 +1,10 @@
 import PyQt5.QtWidgets as QtWidgets
 import PyQt5.QtCore as QtCore
+import PyQt5.QtGui as QtGui
 import nomenclate.ui.input_widgets as input_widgets
 import nomenclate.ui.utils as utils
 import nomenclate.core.tools as tools
-from six import iteritems
+
 
 
 class FormatLabel(QtWidgets.QLabel):
@@ -47,6 +48,11 @@ class FormatWidget(QtWidgets.QWidget):
         self.format_label.setVisible(not text_input_hidden)
 
     def update_format(self, format_string, color_lookup, format_order):
+        #print self.format_label.palette().brush(QtGui.QPalette.Base).color().getRgb()
+        #self.format_label.setStyleSheet('background-color: rgb(20,20,20);')
+        #QtGui.QPalette.All
+        #print 'stylin', '%r' % QtWidgets.QApplication.instance().styleSheet()
+        #print 'ff', self.format_label.palette().brush(QtGui.QPalette.Window).color().getRgb()
         last_position = 0
         for format_token in format_order:
             #print 'workong on token ', format_token, len(format_string)

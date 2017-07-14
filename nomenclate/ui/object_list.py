@@ -191,8 +191,10 @@ class FileListWidget(DefaultWidget):
             message_box = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Warning,
                                                 "Rename Items",
                                                 "Do you want to rename %d items" % len(selected_items),
-                                                [QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No],
-                                                self)
+                                                parent=self)
+
+            message_box.addButton(QtWidgets.QMessageBox.Yes)
+            message_box.addButton(QtWidgets.QMessageBox.No)
             # message_box.setInformativeText("Do you really want to disable safety enforcement?")
             ret = message_box.exec_()
             if ret:

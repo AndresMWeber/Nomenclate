@@ -1,6 +1,7 @@
 import PyQt5.QtWidgets as QtWidgets
 import PyQt5.QtCore as QtCore
 import nomenclate
+import nomenclate.ui.utils as utils
 import nomenclate.ui.token_widget as token_wgt
 import nomenclate.ui.format_widget as format_wgt
 import nomenclate.settings as settings
@@ -18,7 +19,7 @@ class InstanceHandlerWidget(DefaultWidget):
     LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
 
     nomenclate_output = QtCore.pyqtSignal(str)
-    format_updated = QtCore.pyqtSignal(str, list)
+    format_updated = QtCore.pyqtSignal(str, list, bool)
     token_colors_updated = QtCore.pyqtSignal(str, dict, list)
 
     def create_controls(self):
@@ -56,9 +57,11 @@ class InstanceHandlerWidget(DefaultWidget):
     def connect_controls(self):
         self.input_format.returnPressed.connect(self.set_format)
         self.format_updated.connect(self.generate_token_colors)
+
         self.token_colors_updated.connect(self.color_token_widgets)
         self.token_colors_updated.connect(self.input_format.update_format)
-        self.format_updated.emit(self.NOM.format, self.NOM.format_order)
+
+        self.format_updated.emit(self.NOM.format, self.NOM.format_order, True)
 
     @property
     def user_format_override(self):
@@ -139,7 +142,7 @@ class InstanceHandlerWidget(DefaultWidget):
         try:
             self.NOM.format = self.input_format.text
             self.refresh()
-            self.format_updated.emit(self.NOM.format, self.NOM.format_order)
+            self.format_updated.emit(self.NOM.format, self.NOM.format_order, True)
         except nomenclate.core.errors.BalanceError as e:
             fix_msg = '\nYou need to fix it before you can input this format.'
             message_box = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Warning,
@@ -184,15 +187,21 @@ class InstanceHandlerWidget(DefaultWidget):
         return False
 
     def generate_token_colors(self, format_string, format_order):
-        def gen_color(seed):
-            random.seed(seed)
-            r = lambda: random.randint(0, 255)
-            return '#%02X%02X%02X' % (r(), r(), r())
-
+        last_color = None
         for format_token in format_order:
             if not self.TOKEN_COLORS.get(format_token):
-                color = gen_color(hash(format_token))
+                color = None
+                bg_score, color_score = 0, 7
+
+                while bg_score < 5 and color_score > 3:
+                    color = utils.gen_color()#hash(format_token))
+                    contrast_against = (0,0,0) if self.parent().dark else (1,1,1)
+                    bg_score = utils.get_contrast_ratio(utils.hex_to_rgb(color), contrast_against)
+                    if last_color:
+                        color_score = utils.get_contrast_ratio(utils.hex_to_rgb(color), utils.hex_to_rgb(last_color))
+
                 rich_color = '<span style="color:{COLOR};">{TOKEN}</span>'.format(COLOR=color, TOKEN=format_token)
                 self.TOKEN_COLORS[format_token] = (color, rich_color)
+                last_color = color
 
         self.token_colors_updated.emit(format_string, self.TOKEN_COLORS, format_order)

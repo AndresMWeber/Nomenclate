@@ -1,4 +1,4 @@
-from PyQt5 import QtWidgets
+import PyQt5.QtWidgets as QtWidgets
 
 
 class Default(object):

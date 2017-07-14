@@ -2,18 +2,18 @@ QTextEdit, QLineEdit, QLabel, QListView, QWidget {
     padding: 1px;
     color: rgb(200, 200, 200);
     font-family: "Lato";
-    background: rgba(1,1,1,.2);
+    background: rgb(20,20,20);
     border-radius: 0;
 }
 
 QListView, QTreeView {
-    alternate-background-color: rgba(200,200,200,.1);
-    background-color: rgba(200,200,200,.05);
+    alternate-background-color: rgb(75,75,75);
+    background-color: rgb(50,50,50);
 }
 
 QListView::item:selected:!active, QTreeView::item:selected:!active{
-    color: rgba(200,200,200,.5);
-    background: rgba(35, 107, 178, .3);
+    color: rgb(150,150,150);
+    background: rgb(35, 107, 178);
 }
 
 QMenuBar, QMenuBar::item, QMenu, QMenu::item {
@@ -26,7 +26,7 @@ QMenu::item:selected {
 
 QLabel#TokenLabel {
     color: #0288d1;
-    background-color: transparent;
+    background: rgb(40,40,40);
     font-weight: 400;
     qproperty-alignment: AlignCenter;
     font-size: 10pt;
@@ -37,7 +37,7 @@ QLabel#DragLabel {
 }
 
 QWidget#OutputWidget {
-    background: rgba(200, 200, 200, .1);
+    background: rgb(80, 80, 80);
 }
 
 QLabel#OutputTitle {
@@ -47,18 +47,18 @@ QLabel#OutputTitle {
 }
 
 QLabel#OutputLabel {
-    color: #FFA552;
-    background: transparent;
+    background: rgb(120, 120, 120);
     font-weight: 400;
     qproperty-alignment: AlignCenter;
 }
 
 QWidget#MainFrame{
-    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0 #656D78, stop: 1 #263238);
+    /*background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0 #656D78, stop: 1 #263238);*/
+    background: rgb(120, 120, 120);
 }
 
 QFrame{
-    background: rgba(1,1,1,.1);
+    background: rgb(40,40,40);
     border: 0px;
 }
 
@@ -78,11 +78,11 @@ QPushButton {
 }
 
 QPushButton::pressed {
-    background: rgba(0.4, 0.4, 0.4, .3);
+    background: rgb(160, 160, 160);
 }
 
 QPushButton:focus {
-    background: rgba(0.5, 0.5, 0.5, .3);
+    background: rgb(100, 100, 100);
 }
 
 QCheckBox::indicator {
@@ -117,10 +117,6 @@ QComboBox {
     border: 1px solid DarkSlateGray;
     border-radius: 2px;
     padding: 1px 1px 1px 3px;
-}
-
-QComboBox:!editable, QComboBox::drop-down:editable {
-     background: transparent;
 }
 
 QComboBox:editable {
