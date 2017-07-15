@@ -48,7 +48,7 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
     DEFAULT_QSS = 'default.qss'
     DARK_TEXT_QSS = 'text-on-light.qss'
     LIGHT_TEXT_QSS = 'text-on-dark.qss'
-    MAIN_QSS = 'darkseas.qss'
+    MAIN_QSS = 'darkTooCool.qss'
     QSS_GLOB = '*.qss'
 
     default_css_cache = None

@@ -1,29 +1,51 @@
+/*
+Headers: #151723
+Backgrounds: #0E0E19
+Label: transparent
+Fields: #1F1F2B
+Alt-fields: #161628
+Buttons: #050510
+Selected: #29162A
+MiscA: #ECCD2A
+MiscB: #E2327F
+MiscC: #5DABAE
+
+*/
+
+QWidget#MainFrame{
+    background: #0E0E19;
+}
+
 QTextEdit, QLineEdit, QLabel, QListView, QWidget {
     padding: 1px;
     font-family: "Lato";
-    background: rgb(20,20,20);
+    background: #1F1F2B;
     border-radius: 0;
 }
 
 QListView, QTreeView {
-    alternate-background-color: rgb(75,75,75);
-    background-color: rgb(50,50,50);
+    alternate-background-color: #0E0E19;
+    background-color: #161628;
 }
 
-QListView::item:selected:!active, QTreeView::item:selected:!active{
-    background: rgb(35, 107, 178);
-}
 
 QMenuBar, QMenuBar::item, QMenu, QMenu::item {
-    background-color: #2e343d;
+    background-color: #151723;
 }
 
-QMenu::item:selected {
-    background-color: #263238;
+QMenu::item:selected, QAccordionTreeWidget::item:selected {
+    background-color: #29162A;
+    border-left: none;
+}
+
+QListView::item:selected:!active, QTreeView::item:selected:!active, QAccordionTreeWidget::item:!selected {
+    border: none;
+    border-left: none;
+    border-top: none;
+    background: #161628;
 }
 
 QLabel#TokenLabel {
-    background: rgb(40,40,40);
     font-weight: 400;
     qproperty-alignment: AlignCenter;
     font-size: 10pt;
@@ -34,33 +56,27 @@ QLabel#DragLabel {
 }
 
 QWidget#OutputWidget {
-    background: rgb(80, 80, 80);
+    background-color: transparent;
 }
 
 QLabel#OutputTitle {
-    background: transparent;
-    font-weight: 800;
+    color: #5DABAE;
     qproperty-alignment: AlignCenter;
 }
 
 QLabel#OutputLabel {
-    background: rgb(120, 120, 120);
     font-weight: 400;
     qproperty-alignment: AlignCenter;
 }
 
-QWidget#MainFrame{
-    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0 #656D78, stop: 1 #263238);
-    background: rgb(120, 120, 120);
-}
 
 QFrame{
-    background: rgb(40,40,40);
+    background: transparent;
     border: 0px;
 }
 
 QPushButton, QCheckBox {
-    background: transparent;
+    background: #682976;
     padding: 3px;
     font-family: "Lato", sans-serif;
     padding-left: 5px;
@@ -68,7 +84,6 @@ QPushButton, QCheckBox {
 }
 
 QPushButton {
-    border: 1px solid #656D78;
     font-weight: bold;
     font-size: 12px;
 }
@@ -97,16 +112,6 @@ QAccordionTreeWidget {
 
 QAccordionTreeWidget::QScrollArea {
     border: none;
-}
-
-QAccordionTreeWidget::item:!selected {
-    border: none;
-    border-left: none;
-    border-top: none;
-}
-
-QAccordionTreeWidget::item:selected {
-    border-left: none;
 }
 
 QComboBox {
