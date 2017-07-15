@@ -10,6 +10,35 @@ RESOURCES_PATH = os.path.join(os.path.dirname(__file__), 'resource')
 FONTS_PATH = os.path.join(RESOURCES_PATH, 'fonts')
 
 
+def cache_function(func):
+    func.cacheable = True
+    return func
+
+
+class Cacheable(object):
+    __CACHE__ = {}
+
+    def cache_method(self, func):
+        def wrapper(*args, **kw):
+            name = "%s%r%r" % (func.__name__, args, kw)
+            if name not in self.__CACHE__:
+                self.__CACHE__[name] = func(*args, **kw)
+
+            return self.__CACHE__[name]
+
+        wrapper.__name__ = func.__name__
+
+        return wrapper
+
+    def __getattribute__(self, attr):
+        function = super(Cacheable, self).__getattribute__(attr)
+
+        if attr != 'cache_method' and callable(function) and hasattr(function, 'cacheable'):
+            return self.cache_method(function)
+
+        return function
+
+
 def walk_search(text, start_position, match_list, direction='backward'):
     end_pos = 0 if direction == 'backward' else len(text) - 1
     slice = text[start_position:] if direction == 'forward' else reversed(text[0:start_position])
@@ -132,5 +161,4 @@ def get_contrast_ratio(color_a, color_b, mode=0):
 
 
 def nudge_color_value(rgb_color, nudge_val):
-    print rgb_color
     return [color + nudge_val for color in rgb_color]

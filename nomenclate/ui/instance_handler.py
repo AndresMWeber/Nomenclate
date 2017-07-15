@@ -186,33 +186,49 @@ class InstanceHandlerWidget(DefaultWidget):
                 return True
         return False
 
-    def generate_token_colors(self, format_string=None, format_order=None):
-        dark = self.parent().dark
-
+    def generate_token_colors(self, format_string=None, format_order=None, swapped=False):
+        dark = self.parent().dark.get()
+        color_coded = self.parent().color_coded.get()
         format_string = format_string or self.NOM.format
         format_order = format_order or self.NOM.format_order
 
         last_color = None
+
         for format_token in format_order:
-            if not self.TOKEN_COLORS.get(format_token):
-                color = None
-                bg_score, color_score = 0, 0
+            if color_coded:
+                color, rich_color = None, None
+                try:
+                    color, rich_color = self.TOKEN_COLORS.get(format_token, None)
+                except TypeError:
+                    pass
 
-                while bg_score < 8 and color_score < 3:
-                    nudge_value = 5 if dark else -5
-                    if color is None:
-                        color = utils.hex_to_rgb(utils.gen_color(hash(format_token)))
-                    else:
-                        color = utils.nudge_color_value(utils.hex_to_rgb(color), nudge_value)
-                    contrast_against = (0,0,0) if dark else (1,1,1)
+                if color is None or rich_color is None or swapped:
+                    color = self.get_safe_color(format_token, last_color, dark)
+                    color = (abs(color[0]), abs(color[1]), abs(color[2]))
+                    rich_color = '<span style="color:{COLOR};">{TOKEN}</span>'.format(COLOR=utils.rgb_to_hex(color),
+                                                                                      TOKEN=format_token)
+            else:
+                color = (0,0,0)
+                rich_color = format_token
 
-                    bg_score = utils.get_contrast_ratio(color, contrast_against)
-                    if last_color:
-                        color_score = utils.get_contrast_ratio(color, last_color)
-
-                rich_color = '<span style="color:{COLOR};">{TOKEN}</span>'.format(COLOR=utils.rgb_to_hex(color),
-                                                                                  TOKEN=format_token)
-                self.TOKEN_COLORS[format_token] = (color, rich_color)
-                last_color = color
+            self.TOKEN_COLORS[format_token] = (color, rich_color)
+            last_color = color
 
         self.token_colors_updated.emit(format_string, self.TOKEN_COLORS, format_order)
+
+    def get_safe_color(self, format_token, last_color, dark):
+        color = None
+        bg_score, color_score = 0, 0
+
+        while bg_score < 8 and color_score < 3:
+            nudge_value = 5 if dark else -5
+            if color is None:
+                color = utils.hex_to_rgb(utils.gen_color(hash(format_token)))
+            else:
+                color = utils.nudge_color_value(utils.hex_to_rgb(color), nudge_value)
+            contrast_against = (0, 0, 0) if dark else (1, 1, 1)
+            bg_score = utils.get_contrast_ratio(color, contrast_against)
+            if last_color:
+                color_score = utils.get_contrast_ratio(color, last_color)
+
+        return color

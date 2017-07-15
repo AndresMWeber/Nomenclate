@@ -17,7 +17,7 @@ QListView::item:selected:!active, QTreeView::item:selected:!active{
 }
 
 QMenuBar, QMenuBar::item, QMenu, QMenu::item {
-    background-color: #656D78;
+    background-color: #2e343d;
 }
 
 QMenu::item:selected {
