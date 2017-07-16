@@ -11,13 +11,11 @@ QTextEdit, QLineEdit, QPlainTextEdit, QLabel {
 }
 
 QWidget#HeaderWidget, QWidget#OutputWidget{
-    background: rgba(1, 1, 1, .3);
     min-height: 50;
     max-height: 50;
 }
 
 QWidget#OutputWidget {
-    background: rgba(1, 1, 1, .3);
     min-height: 75;
     max-height: 75;
 }
@@ -31,6 +29,7 @@ QLabel#HeaderLabel {
 QLabel#TokenLabel {
     font-weight: 400;
     font-size: 10pt;
+    border-bottom: 2px solid #3CA2DF;
 }
 
 QLabel#OutputTitle {
@@ -40,7 +39,6 @@ QLabel#OutputTitle {
 }
 
 QLabel#OutputLabel {
-    color: #FFA552;
     qproperty-alignment: AlignCenter;
     font-size: 12pt;
 }

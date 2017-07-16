@@ -1,4 +1,5 @@
 /*
+Top: #1C1D25
 Headers: #151723
 Backgrounds: #0E0E19
 Label: transparent
@@ -16,6 +17,10 @@ QWidget#MainFrame{
     background: #0E0E19;
 }
 
+QWidget#HeaderWidget{
+    background: #1C1D25;
+}
+
 QTextEdit, QLineEdit, QLabel, QListView, QWidget {
     padding: 1px;
     font-family: "Lato";
@@ -24,10 +29,9 @@ QTextEdit, QLineEdit, QLabel, QListView, QWidget {
 }
 
 QListView, QTreeView {
-    alternate-background-color: #0E0E19;
+    alternate-background-color: #17172d;
     background-color: #161628;
 }
-
 
 QMenuBar, QMenuBar::item, QMenu, QMenu::item {
     background-color: #151723;
@@ -59,8 +63,8 @@ QWidget#OutputWidget {
     background-color: transparent;
 }
 
-QLabel#OutputTitle {
-    color: #5DABAE;
+QLabel#OutputLabel {
+    color: #E2327F;
     qproperty-alignment: AlignCenter;
 }
 
@@ -69,9 +73,16 @@ QLabel#OutputLabel {
     qproperty-alignment: AlignCenter;
 }
 
+QAccordionTreeWidget::item:!active {
+    background-color: 0E0E19;
+}
+
+QAccordionTreeWidget::item:active {
+    background-color: 0E0E19;
+}
 
 QFrame{
-    background: transparent;
+    background: #0E0E19;
     border: 0px;
 }
 
@@ -107,10 +118,6 @@ QCheckBox::indicator:checked {
 }
 
 QAccordionTreeWidget {
-    border: none;
-}
-
-QAccordionTreeWidget::QScrollArea {
     border: none;
 }
 
