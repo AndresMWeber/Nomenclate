@@ -1,5 +1,5 @@
 import os
-from default import DefaultWidget
+from default import DefaultFrame
 import PyQt5.QtWidgets as QtWidgets
 import PyQt5.QtCore as QtCore
 import PyQt5.QtGui as QtGui
@@ -112,7 +112,6 @@ class QFileRenameTreeView(QtWidgets.QTreeView):
         self.proxy_model.setSourceModel(self.base_model)
         self.setModel(self.proxy_model)
         self.proxy_model.setFilterRegExp(self.filter_regex)
-
         self.setHeaderHidden(True)
         self.header().setStretchLastSection(False)
         self.header().setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
@@ -148,7 +147,7 @@ class QFileRenameTreeView(QtWidgets.QTreeView):
         self.model().sort(QtCore.Qt.AscendingOrder)
 
 
-class FileListWidget(DefaultWidget):
+class FileListWidget(DefaultFrame):
     TITLE = 'File List View'
 
     @property
@@ -158,8 +157,9 @@ class FileListWidget(DefaultWidget):
     def create_controls(self):
         self.layout_main = QtWidgets.QVBoxLayout(self)
         self.wgt_list_view = QFileRenameTreeView()
-        self.btn_widget = QtWidgets.QWidget()
+        self.btn_widget = QtWidgets.QFrame()
         self.btn_layout = QtWidgets.QHBoxLayout(self.btn_widget)
+        self.btn_layout.setContentsMargins(0,0,0,0)
         self.wgt_filter_list = QtWidgets.QLineEdit(placeholderText='filter...')
         self.btn_clear = QtWidgets.QPushButton('Clear')
         self.btn_remove = QtWidgets.QPushButton('Remove')
@@ -173,6 +173,8 @@ class FileListWidget(DefaultWidget):
         self.layout_main.addWidget(self.btn_widget)
         self.layout_main.addWidget(self.btn_rename)
 
+        self.setObjectName('ObjectListFrame')
+        self.setContentsMargins(0, 0, 0, 0)
         self.btn_layout.addWidget(self.btn_clear)
         self.btn_layout.addWidget(self.btn_full)
         self.btn_layout.addWidget(self.btn_remove)

@@ -1,40 +1,56 @@
 /*
-Top: #1C1D25
+Top: #2D2F42
 Headers: #151723
-Backgrounds: #0E0E19
+High: #22222A
+Mid: #1A1B25
+Backgrounds: #0D0E19
+Bottom: #0B0C17
 Label: transparent
+Separators: #161823
+
 Fields: #1F1F2B
 Alt-fields: #161628
 Buttons: #050510
 Selected: #29162A
+
 MiscA: #ECCD2A
 MiscB: #E2327F
 MiscC: #5DABAE
-
 */
 
 QWidget#MainFrame{
-    background: #0E0E19;
+    background: #0D0E19;
 }
 
-QWidget#HeaderWidget{
-    background: #1C1D25;
-}
-
-QTextEdit, QLineEdit, QLabel, QListView, QWidget {
-    padding: 1px;
+QTextEdit, QLineEdit, QLabel, QWidget {
     font-family: "Lato";
-    background: #1F1F2B;
-    border-radius: 0;
+    background: #1A1B25;
+    border: none;
 }
 
-QListView, QTreeView {
-    alternate-background-color: #17172d;
-    background-color: #161628;
+#InstanceHandler, #ObjectListFrame{
+    background-color: #0B0C17;
+}
+
+#TokenWidget{
+    border: 1px solid #161823;
+}
+
+#TokenWidget, #SeeThrough, QFrame#fold_widget, #OutputTitle{
+    background: transparent;
+}
+
+QWidget#HeaderWidget, QLabel#HeaderLabel{
+    background: #1F212B;
+}
+
+QListView, QFileRenameTreeView {
+    alternate-background-color: #1A1B25;
+    background: #0D0E19;
 }
 
 QMenuBar, QMenuBar::item, QMenu, QMenu::item {
-    background-color: #151723;
+    background-color: #2D2F42;
 }
 
 QMenu::item:selected, QAccordionTreeWidget::item:selected {
@@ -49,27 +65,19 @@ QListView::item:selected:!active, QTreeView::item:selected:!active, QAccordionTr
     background: #161628;
 }
 
-QLabel#TokenLabel {
-    font-weight: 400;
-    qproperty-alignment: AlignCenter;
-    font-size: 10pt;
+
+#TokenLabel {
+    border-radius: 2;
+    border-bottom: 1px solid #451A37;
 }
 
-QLabel#DragLabel {
+QWidget#OutputWidget  {
     background: transparent;
 }
 
-QWidget#OutputWidget {
-    background-color: transparent;
-}
-
-QLabel#OutputLabel {
-    color: #E2327F;
-    qproperty-alignment: AlignCenter;
-}
-
 QLabel#OutputLabel {
     font-weight: 400;
+    color: #E2327F;
     qproperty-alignment: AlignCenter;
 }
 
@@ -81,10 +89,6 @@ QAccordionTreeWidget::item:active {
     background-color: 0E0E19;
 }
 
-QFrame{
-    background: #0E0E19;
-    border: 0px;
-}
 
 QPushButton, QCheckBox {
     background: #682976;
@@ -100,11 +104,7 @@ QPushButton {
 }
 
 QPushButton::pressed {
-    background: rgb(160, 160, 160);
-}
-
-QPushButton:focus {
-    background: rgb(100, 100, 100);
+    background: 22222A;
 }
 
 QCheckBox::indicator {
@@ -115,10 +115,6 @@ QCheckBox::indicator {
 QCheckBox::indicator:checked {
     border: 1px solid #E2E9FF;
     background: #B4BACC;
-}
-
-QAccordionTreeWidget {
-    border: none;
 }
 
 QComboBox {
@@ -155,5 +151,5 @@ QComboBox::down-arrow:on {
 }
 
 QCompleter {
-    background-color: transparent;
+    background-color: #0D0E19;
 }

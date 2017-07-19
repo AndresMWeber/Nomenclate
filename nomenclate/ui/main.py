@@ -7,7 +7,7 @@ import PyQt5.QtGui as QtGui
 import nomenclate.ui.utils as utils
 import nomenclate.settings as settings
 import nomenclate.ui.instance_handler as instance_handler
-import nomenclate.ui.object_list as file_list
+import nomenclate.ui.object_list as object_list
 import nomenclate.ui.default as default
 
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
@@ -103,7 +103,7 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         self.files_layout = QtWidgets.QHBoxLayout()
 
         self.instance_handler = instance_handler.InstanceHandlerWidget(parent=self)
-        self.file_list_view = file_list.FileListWidget()
+        self.file_list_view = object_list.FileListWidget()
 
     def connect_controls(self):
         self.setLayout(self.layout_main)
@@ -114,13 +114,10 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         self.layout_main.addWidget(self.menu_bar)
         self.layout_main.addWidget(self.wgt_header)
         self.layout_main.addWidget(self.instance_handler)
-        self.layout_main.addWidget(self.wgt_files)
+        self.layout_main.addWidget(self.wgt_stack)
 
         self.wgt_stack.addWidget(self.file_list_view)
         self.wgt_stack.addWidget(self.wgt_drop_area)
-
-        self.wgt_files.setLayout(self.files_layout)
-        self.files_layout.addWidget(self.wgt_stack)
 
         self.dropped_files.connect(self.update_names)
         self.instance_handler.nomenclate_output.connect(self.update_names)
@@ -131,7 +128,7 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         font = QtWidgets.QApplication.font()
         font.setStyleStrategy(font.PreferAntialias)
         QtWidgets.QApplication.setFont(font)
-        # self.setWindowOpacity(0.8)
+        #self.setWindowOpacity(0.96)
 
         self.setFocus(QtCore.Qt.PopupFocusReason)
         self.load_stylesheet(stylesheet=self.MAIN_QSS)
@@ -140,6 +137,7 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.setAcceptDrops(True)
 
+        self.wgt_stack.setObjectName('Stack')
         self.wgt_header.setObjectName('HeaderWidget')
         self.header_label.setObjectName('HeaderLabel')
 
@@ -148,6 +146,7 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         self.layout_main.setSpacing(0)
         self.setBaseSize(self.WIDTH, self.HEIGHT)
         self.layout_main.setAlignment(QtCore.Qt.AlignTop)
+        self.instance_handler.fold()
 
     def setup_hotkeys(self):
         # self.hotkey_close = QtWidgets.QShortcut(QtGui.QKeySequence("Escape"), self)
@@ -173,7 +172,7 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
 
         view_action = self.view_menu.addAction('Expand/Collapse Tokens')
         view_action.setShortcut('Ctrl+H')
-        view_action.triggered.connect(lambda: self.run_action(self.instance_handler.fold))
+        view_action.triggered.connect(lambda: self.run_action(self.instance_handler.fold, None))
 
         view_action = self.view_menu.addAction('Swap Light/Dark Text')
         view_action.setShortcut('Ctrl+W')

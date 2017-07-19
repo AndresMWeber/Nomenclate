@@ -41,7 +41,9 @@ class TokenLineEdit(QtWidgets.QLineEdit):
 
 
 class CompleterTextEntry(QtWidgets.QLineEdit):
+    escapePressed = QtCore.pyqtSignal(QtCore.QEvent, name='escapePressed')
     returnPressed = QtCore.pyqtSignal(QtCore.QEvent, name='returnPressed')
+    focusLost = QtCore.pyqtSignal(QtWidgets.QLineEdit)
     MODS = (QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return, QtCore.Qt.Key_Escape, QtCore.Qt.Key_Tab, QtCore.Qt.Key_Backtab)
 
     def __init__(self, parent=None):
@@ -139,8 +141,16 @@ class CompleterTextEntry(QtWidgets.QLineEdit):
             self.returnPressed.emit(event)
             return
 
+        elif event.key() == QtCore.Qt.Key_Escape:
+            self.escapePressed.emit(event)
+            return
+
         cursor_position = self.cursorPosition()
         start_text = self.text_utf
         super(CompleterTextEntry, self).keyPressEvent(event)
         self.filter_validator(start_text, cursor_position, event)
         self.filter_completer(event)
+
+    def focusOutEvent(self, focus_event):
+        self.focusLost.emit(self)
+        super(CompleterTextEntry, self).focusOutEvent(focus_event)

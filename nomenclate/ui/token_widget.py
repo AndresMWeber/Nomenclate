@@ -4,7 +4,7 @@ import PyQt5.QtGui as QtGui
 import nomenclate.ui.utils as utils
 import nomenclate.settings as settings
 import nomenclate.ui.input_widgets as input_widgets
-import nomenclate.ui.accordion_tree as accordion_tree
+import nomenclate.ui.accordion_widget as accordion_tree
 from default import DefaultFrame
 
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
@@ -20,7 +20,7 @@ class TokenWidget(DefaultFrame):
         self.add_fields()
 
     def create_controls(self):
-        self.accordion_tree = accordion_tree.QAccordionTreeWidget(self)
+        self.accordion_tree = accordion_tree.QAccordionWidget(self)
         self.layout_main = QtWidgets.QVBoxLayout(self)
         self.value_widget = input_widgets.CompleterTextEntry(self.value)
 
@@ -28,14 +28,10 @@ class TokenWidget(DefaultFrame):
         self.accordion_tree.set_title(category, title)
 
     def initialize_controls(self):
-        self.setMinimumWidth(50)
-        self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Fixed)
-
-        self.setFrameShape(QtWidgets.QFrame.Box)
-        self.setFrameShadow(QtWidgets.QFrame.Sunken)
-
-        self.layout_main.setContentsMargins(1, 0, 1, 0)
-        self.layout_main.setSpacing(0)
+        self.setObjectName('TokenWidget')
+        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.layout().setContentsMargins(0, 0, 0, 0)
+        self.layout().setSpacing(0)
 
         self.setFocusPolicy(QtCore.Qt.NoFocus)
         self.value_widget.setFocusPolicy(QtCore.Qt.StrongFocus)
@@ -43,8 +39,8 @@ class TokenWidget(DefaultFrame):
 
     def connect_controls(self):
         self.value_widget.textChanged.connect(self.on_change)
+        self.layout_main.addWidget(self.accordion_tree, 0, QtCore.Qt.AlignTop)
         self.layout_main.addWidget(self.value_widget)
-        self.layout_main.insertWidget(0, self.accordion_tree)
 
     def add_fields(self):
         # TODO: modify version/var specific rollouts here.
@@ -73,24 +69,6 @@ class TokenWidget(DefaultFrame):
         self.accordion_tree.add_widget_to_category(self.token, self.capital)
         self.accordion_tree.add_widget_to_category(self.token, self.prefix)
         self.accordion_tree.add_widget_to_category(self.token, self.suffix)
-        self.accordion_tree.sizer()
-
-    def resizeEvent(self, QResizeEvent):
-        try:
-            size = QResizeEvent.size()
-        except TypeError:
-            size = QResizeEvent.size
-        size.setHeight(self.sizeHint().height())
-        QResizeEvent.size = size
-
-        self.setFixedHeight(self.sizeHint().height())
-        QtWidgets.QWidget.resizeEvent(self, QResizeEvent)
-
-    def sizeHint(self):
-        size = QtCore.QSize()
-        size.setHeight(self.value_widget.sizeHint().height() + self.accordion_tree.sizeHint().height())
-        size.setWidth(super(TokenWidget, self).sizeHint().width())
-        return size
 
     def on_change(self, *args, **kwargs):
         capital = self.capital.currentText() if self.capital.currentText != 'caps' else ''

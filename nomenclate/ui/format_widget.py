@@ -6,7 +6,6 @@ import nomenclate.ui.utils as utils
 import nomenclate.core.tools as tools
 
 
-
 class FormatLabel(QtWidgets.QLabel):
     doubleClick = QtCore.pyqtSignal(QtCore.QEvent)
 
@@ -15,7 +14,7 @@ class FormatLabel(QtWidgets.QLabel):
         super(FormatLabel, self).mouseDoubleClickEvent(QMousePressEvent)
 
 
-class FormatWidget(QtWidgets.QWidget):
+class FormatWidget(QtWidgets.QStackedWidget):
     COLOR_LOOKUP = {}
 
     def __init__(self, starting_format='', *args, **kwargs):
@@ -24,49 +23,47 @@ class FormatWidget(QtWidgets.QWidget):
         self.text_input.set_validation(utils.TOKEN_VALUE_VALIDATOR)
         self.format_label = FormatLabel(starting_format)
 
+        self.escapePressed = self.text_input.escapePressed
         self.returnPressed = self.text_input.returnPressed
         self.doubleClick = self.format_label.doubleClick
         self.setPlaceholderText = self.text_input.setPlaceholderText
         self.setText = self.text_input.setText
 
-        QtWidgets.QHBoxLayout(self)
-        self.layout().addWidget(self.text_input)
-        self.layout().addWidget(self.format_label)
+        self.addWidget(self.text_input)
+        self.addWidget(self.format_label)
+
+        self.setContentsMargins(0, 0, 0, 0)
+        self.format_label.setContentsMargins(0,0,50,0)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
 
         self.returnPressed.connect(self.swap_visible_widget)
+        self.text_input.focusLost.connect(self.swap_visible_widget)
         self.format_label.doubleClick.connect(self.swap_visible_widget)
         self.text_input.setPalette(self.format_label.palette())
         self.swap_visible_widget()
+
+        self.text_input.setObjectName('FormatWidgetInput')
+        self.format_label.setObjectName('FormatWidgetOutput')
+        self.setObjectName('FormatWidgetStack')
 
     @property
     def text(self):
         return self.text_input.text_utf
 
     def swap_visible_widget(self):
-        text_input_hidden = self.text_input.isHidden()
-        self.text_input.setVisible(text_input_hidden)
-        self.format_label.setVisible(not text_input_hidden)
+        self.setCurrentIndex(not self.layout().currentIndex())
 
     def update_format(self, format_string, color_lookup, format_order):
-        #print self.format_label.palette().brush(QtGui.QPalette.Base).color().getRgb()
-        #self.format_label.setStyleSheet('background-color: rgb(20,20,20);')
-        #QtGui.QPalette.All
-        #print 'stylin', '%r' % QtWidgets.QApplication.instance().styleSheet()
-        #print 'ff', self.format_label.palette().brush(QtGui.QPalette.Window).color().getRgb()
         last_position = 0
         for format_token in format_order:
-            #print 'workong on token ', format_token, len(format_string)
             color, rich_color = color_lookup[format_token]
             pre_slice = format_string[:last_position]
             work_slice = format_string[last_position:]
             old_length = len(format_string)
-            #print 'pre', pre_slice, 'work', work_slice
+
             last_position = len(pre_slice) + work_slice.index(format_token) + len(format_token)
-            #print ('New "last" position is %d' % last_position)
             format_string = pre_slice + work_slice.replace(format_token, rich_color, 1)
-            #print 'last pos %d, new len %d, adjust pos by: %d' % (last_position, len(format_string), last_position - len(format_string))
             last_position += len(format_string) - old_length
-            #print last_position
         self.format_label.setText(format_string)
 
     def set_options(self, options):

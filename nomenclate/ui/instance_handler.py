@@ -5,14 +5,14 @@ import nomenclate.ui.utils as utils
 import nomenclate.ui.token_widget as token_wgt
 import nomenclate.ui.format_widget as format_wgt
 import nomenclate.settings as settings
-from default import DefaultWidget
+from default import DefaultFrame
 import random
 from six import iteritems
 
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
-class InstanceHandlerWidget(DefaultWidget):
+class InstanceHandlerWidget(DefaultFrame):
     TITLE = 'File List View'
     TOKEN_COLORS = {}
     NOM = nomenclate.Nom()
@@ -24,22 +24,29 @@ class InstanceHandlerWidget(DefaultWidget):
 
     def create_controls(self):
         self.layout_main = QtWidgets.QVBoxLayout(self)
+
         self.wgt_output = QtWidgets.QWidget()
+        self.input_format = format_wgt.FormatWidget(starting_format=self.NOM.format)
+
         self.output_layout = QtWidgets.QVBoxLayout(self.wgt_output)
         self.output_title = QtWidgets.QLabel('Output Base Name')
         self.output_name = QtWidgets.QLabel()
-        self.input_format = format_wgt.FormatWidget(starting_format=self.NOM.format)
+
         self.token_frame = QtWidgets.QFrame()
         self.token_layout = QtWidgets.QHBoxLayout(self.token_frame)
-        self.token_layout.setContentsMargins(0, 0, 0, 0)
-        self.token_layout.setSpacing(0)
+
         self.token_widget_lookup = {}
         self.fold_state = True
 
     def initialize_controls(self):
+        for layout in [self.output_layout, self.token_layout]:
+            layout.setSpacing(0)
+            layout.setContentsMargins(0, 0, 0, 0)
+
         self.output_layout.addWidget(self.output_title)
         self.output_layout.addWidget(self.output_name)
-        self.layout_main.addWidget(self.input_format)
+
+        self.layout_main.addWidget(self.input_format, QtCore.Qt.AlignLeft)
         self.layout_main.addWidget(self.token_frame)
         self.layout_main.addWidget(self.wgt_output)
 
@@ -50,12 +57,16 @@ class InstanceHandlerWidget(DefaultWidget):
         self.wgt_output.setObjectName('OutputWidget')
         self.output_title.setObjectName('OutputTitle')
         self.output_name.setObjectName('OutputLabel')
+        self.token_frame.setObjectName('SeeThrough')
+
+        self.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.nomenclate_output.connect(self.set_output)
 
         self.input_format.set_options(self.get_options_list('naming_formats', return_type=dict))
 
     def connect_controls(self):
         self.input_format.returnPressed.connect(self.set_format)
+        self.input_format.escapePressed.connect(lambda: self.setFocus())
         self.format_updated.connect(self.generate_token_colors)
 
         self.token_colors_updated.connect(self.color_token_widgets)
@@ -92,7 +103,7 @@ class InstanceHandlerWidget(DefaultWidget):
     def fold(self):
         self.fold_state = not self.fold_state
         for token_widget in self.active_token_widgets:
-            token_widget.accordion_tree.fold(self.fold_state)
+            token_widget.accordion_tree.fold(None, fold_override=self.fold_state)
 
     def get_options_list(self, search_path, return_type=list):
         return self.NOM.cfg.get(search_path, return_type)
