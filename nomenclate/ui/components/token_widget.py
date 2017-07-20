@@ -115,6 +115,7 @@ class DefaultTokenWidget(TokenWidget):
         self.suffix.setValidator(QtGui.QRegExpValidator(utils.TOKEN_VALUE_VALIDATOR, self.suffix))
 
         self.accordion_tree.add_widgets_to_category(self.token, [self.capital, self.prefix, self.suffix, self.length])
+
         # Register with internal token settings dictionary to allow auto-serialization
         self.SETTINGS['value'] = self.value_widget.text
         self.SETTINGS['%s_len' % self.token] = self.length.value
