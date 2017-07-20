@@ -1,13 +1,13 @@
-import PyQt5.QtWidgets as QtWidgets
 import PyQt5.QtCore as QtCore
-import nomenclate
-import nomenclate.ui.utils as utils
-import nomenclate.ui.token_widget as token_wgt
-import nomenclate.ui.format_widget as format_wgt
-import nomenclate.settings as settings
-from default import DefaultFrame
-import random
+import PyQt5.QtWidgets as QtWidgets
+from nomenclate.ui.components.token_widget import TokenWidgetFactory
 from six import iteritems
+
+import nomenclate
+import nomenclate.settings as settings
+import nomenclate.ui.utils as utils
+import ui.components.format_widget as format_wgt
+from default import DefaultFrame
 
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
@@ -123,10 +123,13 @@ class InstanceHandlerWidget(DefaultFrame):
         token_widget = self.token_widget_lookup.get(token, None)
         if token_widget is None:
             self.LOG.debug('No preexisting token widget...creating and adding to %s.token_widget_lookup.' % self)
-            token_widget = token_wgt.TokenWidget(token, value)
+            token_widget = TokenWidgetFactory.get_token_widget(token, value)
             self.token_widget_lookup[token] = token_widget
             options = self.get_completion_from_config(token)
-            token_widget.value_widget.set_completer_items(options)
+            try:
+                token_widget.value_widget.set_completer_items(options)
+            except AttributeError:
+                pass
         else:
             self.token_layout.addWidget(token_widget)
         return token_widget
@@ -165,18 +168,23 @@ class InstanceHandlerWidget(DefaultFrame):
     def refresh(self):
         self.clear_stale_token_widgets()
         self.refresh_active_token_widgets()
-        self.update_instance("", "", "", "", "")
+        self.update_instance({})
 
-    def update_instance(self, token, value, capitalized='', prefix='', suffix=''):
-        update_dict = {'token': token, 'value': value, 'capitalized': capitalized, 'prefix': prefix, 'suffix': suffix}
-        self.LOG.info('Updating instance with %s' % update_dict)
-        if any([token, capitalized, prefix, suffix]):
-            self.NOM.merge_dict({token.encode('utf-8'): value.encode('utf-8')})
+    def update_instance(self, serialized_token_data):
+        token = serialized_token_data.pop('token', None)
+        value = serialized_token_data.pop('value', None)
+
+        self.LOG.info('Updating instance with %s' % serialized_token_data)
+        if value is not None and token is not None:
+            self.NOM.merge_dict({token: value})
+
+        if serialized_token_data:
             token_attr = getattr(self.NOM, token)
-            self.LOG.info('Obtained TokenAttr: %r, now modifying with new settings' % token_attr)
-            token_attr.case_setting = capitalized
-            token_attr.prefix_setting = prefix
-            token_attr.suffix_setting = suffix
+            for setting, value in iteritems(serialized_token_data):
+                self.LOG.info('Obtained TokenAttr: %r, now modifying with new settings' % token_attr)
+                set_on_object = token_attr if 'setting' in setting else self.NOM
+                setattr(set_on_object, setting, value)
+
         self.nomenclate_output.emit(self.NOM.get())
 
     def set_output(self, input_name):
@@ -219,7 +227,7 @@ class InstanceHandlerWidget(DefaultFrame):
                     rich_color = '<span style="color:{COLOR};">{TOKEN}</span>'.format(COLOR=utils.rgb_to_hex(color),
                                                                                       TOKEN=format_token)
             else:
-                color = (0,0,0)
+                color = (0, 0, 0)
                 rich_color = format_token
 
             self.TOKEN_COLORS[format_token] = (color, rich_color)

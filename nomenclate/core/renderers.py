@@ -185,11 +185,9 @@ class RenderVar(RenderBase):
 
     @classmethod
     def render(cls, var, token, nomenclate_object, **filter_kwargs):
-        if var:
-            var_index = filter_kwargs.get('%s_index' % cls.token, 0)
-            return cls._get_variation_id(var_index, var.isupper())
-        else:
-            return var
+        var_format = filter_kwargs.get('%s_format' % cls.token, 'A')
+        var = cls._get_variation_id(var, var_format.isupper())
+        return cls.process_token_augmentations(var, token_attr=getattr(nomenclate_object, token))
 
     @staticmethod
     def _get_variation_id(integer, capital=False):
@@ -225,7 +223,8 @@ class RenderVersion(RenderBase):
         padding = filter_kwargs.get('%s_padding' % token, 4)
         format = filter_kwargs.get('%s_format' % token, '#')
         version_string = format.replace('#', '%0{0}d')
-        return version_string.format(padding) % int(version)
+        version = version_string.format(padding) % int(version)
+        return cls.process_token_augmentations(version, token_attr=getattr(nomenclate_object, token))
 
 
 class RenderType(RenderBase):

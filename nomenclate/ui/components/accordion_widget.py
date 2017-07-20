@@ -1,7 +1,7 @@
 import PyQt5.QtWidgets as QtWidgets
 import PyQt5.QtCore as QtCore
 import PyQt5.QtGui as QtGui
-from default import DefaultFrame, DefaultWidget
+from ui.default import DefaultFrame, DefaultWidget
 from six import iteritems
 
 
@@ -32,7 +32,7 @@ class QAccordionCategory(DefaultFrame):
         self.layout().setSpacing(0)
         self.layout().setContentsMargins(0,0,0,0)
         self.fold_widget.layout().setSpacing(2)
-        self.fold_widget.layout().setContentsMargins(1,0,1,5)
+        self.fold_widget.layout().setContentsMargins(5,0,5,5)
         self.fold_widget.setObjectName('fold_widget')
         self.title.setObjectName('TokenLabel')
         self.setObjectName('SeeThrough')
@@ -96,5 +96,6 @@ class QAccordionWidget(DefaultFrame):
         self.category_widget_lookup[label] = category
         self.fold_event.emit()
 
-    def add_widget_to_category(self, category, widget):
-        self.category_widget_lookup[category].fold_widget.layout().addWidget(widget)
+    def add_widgets_to_category(self, category, widgets):
+        for widget in widgets:
+            self.category_widget_lookup[category].fold_widget.layout().addWidget(widget)

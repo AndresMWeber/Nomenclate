@@ -24,7 +24,7 @@ class InputRenderer(type):
     def render_unique_tokens(cls, nomenclate_object, input_dict):
         cls.LOG.info('Current list of render functions: %s' % list(cls.RENDER_FUNCTIONS))
         cls.LOG.info('Checking against input dictionary %s' % input_dict)
-        non_empty_token_entries = {_k: _v for _k, _v in iteritems(input_dict) if _v}
+        non_empty_token_entries = {_k: _v for _k, _v in iteritems(input_dict) if not _v == ''}
 
         for token, value in iteritems(non_empty_token_entries):
             cls.LOG.info('Checking for unique token on token %s:%r' % (token, value))
@@ -40,7 +40,9 @@ class InputRenderer(type):
                     cls.LOG.info('render_unique_tokens() - Rendering token %r: %r, token settings=%s' %
                                  (token, value, nomenclate_object.get_token_settings(token)))
 
-                    rendered_token = renderer.render(value, token, nomenclate_object,
+                    rendered_token = renderer.render(value,
+                                                     token,
+                                                     nomenclate_object,
                                                      **nomenclate_object.get_token_settings(token))
                     cls.LOG.info('Unique token %s rendered as: %s' % (token, rendered_token))
 

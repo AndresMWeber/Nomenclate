@@ -3,7 +3,7 @@ QTextEdit, QLineEdit, QLabel, QListView, QWidget {
     font-family: "Lato";
 }
 
-QTextEdit, QLineEdit, QPlainTextEdit, QLabel {
+QTextEdit, QLineEdit, QPlainTextEdit, QLabel, QSpinBox, QComboBox {
     min-height: 25;
     max-height: 25;
 }
