@@ -1,37 +1,37 @@
 import PyQt5.QtWidgets as QtWidgets
 
-SET = 'SET'
-GET = 'GET'
+SETTER = 'SET'
+GETTER = 'GET'
 
 
 class WidgetState(object):
     WIDGETS = {
-        QtWidgets.QComboBox: {GET: QtWidgets.QComboBox.currentIndex,
-                              SET: QtWidgets.QComboBox.setCurrentIndex},
+        QtWidgets.QComboBox: {GETTER: QtWidgets.QComboBox.currentIndex,
+                              SETTER: QtWidgets.QComboBox.setCurrentIndex},
 
-        QtWidgets.QLineEdit: {GET: QtWidgets.QLineEdit.text,
-                              SET: QtWidgets.QLineEdit.setText},
+        QtWidgets.QLineEdit: {GETTER: QtWidgets.QLineEdit.text,
+                              SETTER: QtWidgets.QLineEdit.setText},
 
-        QtWidgets.QCheckBox: {GET: QtWidgets.QCheckBox.checkState,
-                              SET: QtWidgets.QCheckBox.setCheckState},
+        QtWidgets.QCheckBox: {GETTER: QtWidgets.QCheckBox.checkState,
+                              SETTER: QtWidgets.QCheckBox.setCheckState},
 
-        QtWidgets.QSpinBox: {GET: QtWidgets.QSpinBox.value,
-                             SET: QtWidgets.QSpinBox.setValue},
+        QtWidgets.QSpinBox: {GETTER: QtWidgets.QSpinBox.value,
+                             SETTER: QtWidgets.QSpinBox.setValue},
 
-        QtWidgets.QTimeEdit: {GET: QtWidgets.QTimeEdit.setTime,
-                              SET: QtWidgets.QTimeEdit.time},
+        QtWidgets.QTimeEdit: {GETTER: QtWidgets.QTimeEdit.setTime,
+                              SETTER: QtWidgets.QTimeEdit.time},
 
-        QtWidgets.QDateEdit: {GET: QtWidgets.QDateEdit.date,
-                              SET: QtWidgets.QDateEdit.setDate},
+        QtWidgets.QDateEdit: {GETTER: QtWidgets.QDateEdit.date,
+                              SETTER: QtWidgets.QDateEdit.setDate},
 
-        QtWidgets.QDateTimeEdit: {GET: QtWidgets.QDateTimeEdit.dateTime,
-                                  SET: QtWidgets.QDateTimeEdit.setDateTime},
+        QtWidgets.QDateTimeEdit: {GETTER: QtWidgets.QDateTimeEdit.dateTime,
+                                  SETTER: QtWidgets.QDateTimeEdit.setDateTime},
 
-        QtWidgets.QRadioButton: {GET: QtWidgets.QRadioButton.isChecked,
-                                 SET: QtWidgets.QRadioButton.checkStateSet},
+        QtWidgets.QRadioButton: {GETTER: QtWidgets.QRadioButton.isChecked,
+                                 SETTER: QtWidgets.QRadioButton.checkStateSet},
 
-        QtWidgets.QSlider: {GET: QtWidgets.QSlider.value,
-                            SET: QtWidgets.QSlider.setValue},
+        QtWidgets.QSlider: {GETTER: QtWidgets.QSlider.value,
+                            SETTER: QtWidgets.QSlider.setValue},
     }
 
     @property
@@ -55,11 +55,11 @@ class WidgetState(object):
 
     @classmethod
     def serialize_widget_settings(cls, widget):
-        return cls.get_widget_method(type(widget), GET)(widget)
+        return cls.get_widget_method(type(widget), GETTER)(widget)
 
     @classmethod
     def deserialize_widget_settings(cls, widget, settings):
-        return cls.get_widget_method(widget, SET)(widget, settings[widget.objectName()])
+        return cls.get_widget_method(widget, SETTER)(widget, settings[widget.objectName()])
 
     @classmethod
     def generate_state(cls, ui):
