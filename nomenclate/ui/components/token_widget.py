@@ -1,9 +1,8 @@
+from six import add_metaclass, iteritems
 import PyQt5.QtCore as QtCore
 import PyQt5.QtGui as QtGui
 import PyQt5.QtWidgets as QtWidgets
 import nomenclate.ui.components.input_widgets as input_widgets
-from six import add_metaclass, iteritems
-
 import nomenclate.settings as settings
 import nomenclate.ui.utils as utils
 import ui.components.accordion_widget as accordion_tree
@@ -28,7 +27,6 @@ class TokenWidgetFactory(QtCore.pyqtWrapperType):
         for handles_token in list(cls.TOKEN_WIDGETS):
             if handles_token in token.lower():
                 WidgetToken = cls.TOKEN_WIDGETS[handles_token]
-        print 'getting token %s-%r as class %s' % (token, value, WidgetToken)
         return WidgetToken(token, value)
 
 

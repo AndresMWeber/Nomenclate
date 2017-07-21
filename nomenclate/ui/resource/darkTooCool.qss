@@ -22,10 +22,13 @@ QWidget#MainFrame{
     background: #0D0E19;
 }
 
-QTextEdit, QLineEdit, QLabel, QWidget {
+QTextEdit, QLineEdit, QLabel, QSpinBox {
     font-family: "Lato";
     background: #1A1B25;
-    border: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    border-bottom: 1px solid #2D2F42;
 }
 
 #InstanceHandler, #ObjectListFrame{
@@ -36,7 +39,7 @@ QTextEdit, QLineEdit, QLabel, QWidget {
     border: 1px solid #161823;
 }
 
-#TokenWidget, #SeeThrough, QFrame#fold_widget, #OutputTitle{
+#TokenWidget, #SeeThrough, QFrame#fold_widget {
     background: transparent;
 }
 
@@ -47,6 +50,10 @@ QWidget#HeaderWidget, QLabel#HeaderLabel{
 QListView, QFileRenameTreeView {
     alternate-background-color: #1A1B25;
     background: #0D0E19;
+    border-right: 1px solid #2D2F42;
+    border-left: 1px solid #2D2F42;
+    border-top: none;
+    border-bottom: none;
 }
 
 QMenuBar, QMenuBar::item, QMenu, QMenu::item {
@@ -65,19 +72,19 @@ QListView::item:selected:!active, QTreeView::item:selected:!active, QAccordionTr
     background: #161628;
 }
 
-
 #TokenLabel {
     border-radius: 2;
     border-bottom: 1px solid #451A37;
 }
 
-QWidget#OutputWidget  {
-    background: transparent;
-}
-
-QLabel#OutputLabel {
+QWidget#OutputWidget, QLabel#OutputLabel {
     font-weight: 400;
     color: #E2327F;
+    background: transparent;
+    border: none;
+}
+
+OutputLabel{
     qproperty-alignment: AlignCenter;
 }
 
@@ -88,7 +95,6 @@ QAccordionTreeWidget::item:!active {
 QAccordionTreeWidget::item:active {
     background-color: 0E0E19;
 }
-
 
 QPushButton, QCheckBox {
     background: #682976;

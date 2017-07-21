@@ -18,7 +18,7 @@ class QClickLabel(QtWidgets.QLabel):
 class QAccordionCategory(DefaultFrame):
     def __init__(self, title, parent, *args, **kwargs):
         self.label_title = title
-        self.parent = parent
+        self.parent_widget = parent
         self.folded = False
         super(QAccordionCategory, self).__init__(*args, **kwargs)
 
@@ -31,11 +31,11 @@ class QAccordionCategory(DefaultFrame):
     def initialize_controls(self):
         self.layout().setSpacing(0)
         self.layout().setContentsMargins(0,0,0,0)
-        self.fold_widget.layout().setSpacing(2)
+        self.fold_widget.layout().setSpacing(0)
         self.fold_widget.layout().setContentsMargins(5,0,5,5)
         self.fold_widget.setObjectName('fold_widget')
         self.title.setObjectName('TokenLabel')
-        self.setObjectName('SeeThrough')
+        self.setObjectName('AccordionCategory%s' % self.label_title)
 
     def connect_controls(self):
         self.layout().addWidget(self.title)

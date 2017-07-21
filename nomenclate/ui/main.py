@@ -1,6 +1,7 @@
 import os
 from glob import glob
 from functools import partial
+from pprint import pprint
 import PyQt5.QtWidgets as QtWidgets
 import PyQt5.QtCore as QtCore
 import PyQt5.QtGui as QtGui
@@ -9,8 +10,10 @@ import nomenclate.settings as settings
 import nomenclate.ui.instance_handler as instance_handler
 import nomenclate.ui.object_list as object_list
 import nomenclate.ui.default as default
+import nomenclate.ui.components.gui_save as gui_save
 
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
+
 
 
 class UISetting(object):
@@ -182,11 +185,18 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         repeat_action.setShortcut('Ctrl+G')
         repeat_action.triggered.connect(self.repeat_last_action)
 
+        exit_action = self.file_menu.addAction('Save Window Settings')
+        exit_action.setShortcut('Ctrl+S')
+        exit_action.triggered.connect(lambda: self.run_action(self.save_state, None))
+
         exit_action = self.file_menu.addAction('Exit')
         exit_action.setShortcut('Ctrl+Q')
         exit_action.triggered.connect(self.close)
 
         self.populate_qss_styles()
+
+    def save_state(self):
+        pprint(gui_save.WidgetState.generate_state(self))
 
     def run_action(self, action_function, qevent, *args, **kwargs):
         self.last_action_cache = {'function': action_function, 'args': args, 'kwargs': kwargs, 'event': qevent}
