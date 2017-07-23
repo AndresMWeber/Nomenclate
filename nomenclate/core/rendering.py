@@ -6,7 +6,7 @@ import string
 import nomenclate.settings as settings
 from . import processing
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
 class InputRenderer(type):
@@ -114,19 +114,23 @@ class InputRenderer(type):
         """
         # Remove whitespace
         result = formatted_string.replace(' ', '')
+        cls.LOG.debug('Removed whitespace, now %s' % result)
         # Remove any static token parentheses
         result = re.sub(settings.REGEX_PARENTHESIS, '', result)
+        cls.LOG.debug('Removed parenthesis around static tokens, now %s' % result)
         # Remove any multiple separator characters
         multi_character_matches = re.finditer('[%s]{2,}' % settings.SEPARATORS, result)
         for multi_character_match in sorted(multi_character_matches, key=lambda x: len(x.group()), reverse=True):
             match = multi_character_match.group()
             most_common_separator = Counter(list(multi_character_match.group())).most_common(1)[0][0]
             result = result.replace(match, most_common_separator)
-        result = re.sub('_+', '_', result)
+        cls.LOG.debug('Removed multi-line characters, now %s' % result)
         # Remove trailing or preceding non letter characters
         result = re.sub(settings.REGEX_ADJACENT_UNDERSCORE, '', result)
+        cls.LOG.debug('leading/trailing underscore characters, now %s' % result)
         #  not sure what this one was...but certainly not it.
         result = re.sub(settings.REGEX_SINGLE_PARENTHESIS, '', result)
+        cls.LOG.debug('single parenthesis characters, now %s' % result)
         return result
 
     @staticmethod

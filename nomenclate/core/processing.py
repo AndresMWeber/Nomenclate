@@ -3,7 +3,7 @@ from . import errors as exceptions
 import nomenclate.settings as settings
 
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
 class TokenMatch(object):
@@ -92,6 +92,10 @@ class Nomenclative(object):
     def process_matches(self):
         build_str = self.raw_formatted_string
         for token_match in self.token_matches:
+            # Do not process static token matches
+            if token_match.match.startswith('(') or token_match.match.endswith(')'):
+                continue
+
             if token_match.match == build_str[token_match.start:token_match.end]:
                 self.LOG.debug('Processing: %s - %s - %s\n\t%s' % (token_match.match,
                                                                    token_match.sub,
