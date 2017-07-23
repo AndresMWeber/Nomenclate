@@ -23,6 +23,7 @@ class FormatWidget(QtWidgets.QStackedWidget):
         self.text_input.set_validation(utils.TOKEN_VALUE_VALIDATOR)
         self.format_label = FormatLabel(starting_format)
         self._last_text = ''
+        self.text_input.setText(starting_format)
 
         self.escapePressed = self.text_input.escapePressed
         self.returnPressed = self.text_input.returnPressed

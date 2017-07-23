@@ -9,7 +9,7 @@ import nomenclate.ui.utils as utils
 import ui.components.format_widget as format_wgt
 from default import DefaultFrame
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.DEBUG
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
 class InstanceHandlerWidget(DefaultFrame):

@@ -99,7 +99,7 @@ class Nomenclate(object):
             self.LOG.info('Looking in config for format target: %r' % format_target)
             format_target = self.cfg.get(format_target, return_type=str, throw_null_return_error=True)
             self.LOG.info('Found entry: %r' % format_target)
-        except errors.ResourceNotFoundError:
+        except (errors.ResourceNotFoundError, KeyError):
             pass
 
         self.LOG.info('Format target not found in config, validating as a format string...')

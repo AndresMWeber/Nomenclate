@@ -3,7 +3,7 @@ import nomenclate.ui.utils as utils
 import tempfile
 import json
 import os
-from pprint import pprint
+from pprint import pformat
 
 
 class NomenclateFileContext(object):
@@ -50,7 +50,7 @@ class NomenclateFileContext(object):
             os.makedirs(os.path.dirname(save_file_path))
 
         with open(save_file_path, 'w') as f:
-            json.dump(data, f)
+            json.dump(data, f, indent=4, separators=(',', ': '))
             self.data_cache = data
 
         self.FILE_HISTORY.append(save_file_path)
@@ -71,6 +71,7 @@ class NomenclateFileContext(object):
 class WidgetState(object):
     WIDGETS = utils.INPUT_WIDGETS.copy()
     FILE_CONTEXT = NomenclateFileContext('ui_state.json')
+    STORE_WITH_HASH = True
 
     @classmethod
     def generate_state(cls, ui, filename=None):
@@ -81,8 +82,10 @@ class WidgetState(object):
         for widget in cls.get_ui_members(ui):
             try:
                 widget_path = cls.get_widget_path(widget)
+                widget_path = widget_path if not cls.STORE_WITH_HASH else hash(widget_path)
+                print 'storing with hash %s' % widget_path
                 if cls.is_unique_widget_path(widget_path, settings):
-                    settings[cls.get_widget_path(widget)] = cls.serialize_widget_settings(widget)
+                    settings[widget_path] = cls.serialize_widget_settings(widget)
                 else:
                     parent = widget.parent()
                     print('{0} needs an objectName, siblings of same class exist under parent {1}'.format(widget,
@@ -104,7 +107,8 @@ class WidgetState(object):
                 for supported_widget_type in list(cls.WIDGETS):
                     if issubclass(type(widget), supported_widget_type):
                         widget_path = cls.get_widget_path(widget)
-                        setting = settings.get(widget_path, None)
+                        widget_path =  widget_path if not cls.STORE_WITH_HASH else hash(widget_path)
+                        setting = settings.get(hash(widget_path), None)
                         if setting is not None:
                             setter = cls.WIDGETS[supported_widget_type][utils.SETTER]
                             setter(widget, setting)

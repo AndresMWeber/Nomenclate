@@ -37,7 +37,7 @@ class QAccordionCategory(DefaultFrame):
         self.fold_widget.layout().setContentsMargins(5, 0, 5, 5)
         self.fold_widget.setObjectName('fold_widget')
         self.category_label.setObjectName('TokenLabel')
-        self.setObjectName('AccordionCategory%s' % self.label_title)
+        self.setObjectName('AccordionCategory%s' % (self.label_title.capitalize()))
 
     def connect_controls(self):
         self.layout().addWidget(self.category_label)
@@ -102,7 +102,6 @@ class QAccordionWidget(DefaultFrame):
         self.fold_event.emit()
 
     def add_widgets_to_category(self, category, widgets):
-        print self.category_widget_lookup
         for widget in widgets:
             self.category_widget_lookup[category].fold_widget.layout().addWidget(widget)
         self.items_added.emit()

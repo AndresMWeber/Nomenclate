@@ -43,6 +43,7 @@ class TokenWidget(DefaultFrame):
         self.value = value
         self.value_widget = None
         super(TokenWidget, self).__init__()
+        self.value_widget.setObjectName(self.token + 'ValueInput')
 
     def create_controls(self):
         self.accordion_tree = accordion_tree.QAccordionWidget(self)
@@ -53,7 +54,6 @@ class TokenWidget(DefaultFrame):
 
     def initialize_controls(self):
         self.setObjectName('TokenWidget')
-        self.value_widget.setObjectName(self.token + 'ValueInput')
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.layout().setContentsMargins(0, 0, 0, 0)
         self.layout().setSpacing(0)
