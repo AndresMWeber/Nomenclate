@@ -3,12 +3,15 @@ import nomenclate.ui.utils as utils
 import tempfile
 import json
 import os
+from pprint import pprint
 
 
 class NomenclateFileContext(object):
-    BASE_DIR = 'nomenclate'
+    BASE_DIR = '.nomenclate'
     TEMP_DIR = tempfile.gettempdir()
     HOME_DIR = os.path.expanduser("~")
+    DEFAULT_DIR = os.path.join(HOME_DIR, BASE_DIR)
+
     FILE_HISTORY = []
 
     def __init__(self, filename):
@@ -81,7 +84,6 @@ class WidgetState(object):
                 if cls.is_unique_widget_path(widget_path, settings):
                     settings[cls.get_widget_path(widget)] = cls.serialize_widget_settings(widget)
                 else:
-                    print(widget_path)
                     parent = widget.parent()
                     print('{0} needs an objectName, siblings of same class exist under parent {1}'.format(widget,
                                                                                                           parent))
@@ -96,17 +98,25 @@ class WidgetState(object):
         """ restore "ui" controls with values stored in registry "settings"
         """
         settings = cls.FILE_CONTEXT.load(filename=filename)
-
-        for widget in cls.get_ui_members(ui):
-
-
-            for supported_widget_type in list(cls.WIDGETS):
-                if issubclass(type(widget), supported_widget_type):
-                    widget_path = cls.get_widget_path(widget)
-                    setting = settings.get(widget_path, None)
-
-
-
+        failed_load = []
+        if settings:
+            for widget in cls.get_ui_members(ui):
+                for supported_widget_type in list(cls.WIDGETS):
+                    if issubclass(type(widget), supported_widget_type):
+                        widget_path = cls.get_widget_path(widget)
+                        setting = settings.get(widget_path, None)
+                        if setting is not None:
+                            setter = cls.WIDGETS[supported_widget_type][utils.SETTER]
+                            setter(widget, setting)
+                        else:
+                            failed_load.append(widget_path)
+                        break
+        for widget_path in failed_load:
+            #print('unsuccessful load settings for ', widget_path)
+            pass
+        if failed_load:
+            #pprint(settings)
+            pass
         return settings
 
     @property

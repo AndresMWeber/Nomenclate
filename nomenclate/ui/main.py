@@ -68,6 +68,7 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         self.setup_hotkeys()
         self.update_stylesheet.emit()
         QtWidgets.QApplication.instance().installEventFilter(self)
+        self.load_state()
 
     @property
     def focused_widget(self):
@@ -202,26 +203,34 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
 
         exit_action = self.file_menu.addAction('Exit')
         exit_action.setShortcut('Ctrl+Q')
-        exit_action.triggered.connect(self.close)
+        exit_action.triggered.connect(lambda: self.run_action(self.close, None, True))
+
+        exit_no_save_action = self.file_menu.addAction('Exit without GUI state save')
+        exit_no_save_action.setShortcut('Ctrl+Alt+Q')
+        exit_no_save_action.triggered.connect(lambda: self.run_action(self.close, None, False))
 
         self.populate_qss_styles()
 
-    def save_state(self, mode):
+    def save_state(self, mode=False):
         filename = None if not mode else QtWidgets.QFileDialog.getSaveFileName(self, 'Save UI Settings',
                                                                                gui_save.NomenclateFileContext.HOME_DIR,
                                                                                filter='*.json')
         gui_save.WidgetState.generate_state(self, filename=filename)
         print('Successfully wrote state to file %s' % gui_save.NomenclateFileContext.FILE_HISTORY[-1])
 
-    def load_state(self, mode):
+    def load_state(self, mode=False):
         filename = None if not mode else QtWidgets.QFileDialog.getSaveFileName(self, 'Load UI Settings',
-                                                                               gui_save.NomenclateFileContext.HOME_DIR,
+                                                                               gui_save.NomenclateFileContext.DEFAULT_DIR,
                                                                                filter='*.json')
-        data = gui_save.WidgetState.restore_state(self, filename=filename)
-        if data:
-            print('Successfully Loaded state from file %s' % gui_save.WidgetState.FILE_CONTEXT.FILE_HISTORY[-1])
-        else:
-            print('No data was found from dirs %s' % gui_save.WidgetState.FILE_CONTEXT.get_valid_dirs())
+        try:
+            data = gui_save.WidgetState.restore_state(self, filename=filename)
+            if data:
+                print('Successfully Loaded state from file %s' % gui_save.WidgetState.FILE_CONTEXT.FILE_HISTORY[-1])
+                return
+            else:
+                print('No data was found from dirs %s' % gui_save.WidgetState.FILE_CONTEXT.get_valid_dirs())
+        except AttributeError:
+            pass
 
     def run_action(self, action_function, qevent, *args, **kwargs):
         self.last_action_cache = {'function': action_function, 'args': args, 'kwargs': kwargs, 'event': qevent}
@@ -330,8 +339,12 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
             focused_widget.clearFocus()
         super(MainDialog, self).mousePressEvent(event)
 
+    def close(self, save_state=True):
+        if save_state:
+            self.save_state()
+        super(MainDialog, self).close()
+
     def closeEvent(self, e):
-        self.LOG.debug('Widget %s has focus during escape press' % self.focused_widget)
         if not issubclass(type(self.focused_widget), QtWidgets.QLineEdit):
             self.LOG.info('closeEvent and not within a QLineEdit, exiting.')
             QtWidgets.QApplication.instance().removeEventFilter(self)

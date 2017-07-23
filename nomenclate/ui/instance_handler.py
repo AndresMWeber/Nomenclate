@@ -20,7 +20,7 @@ class InstanceHandlerWidget(DefaultFrame):
 
     nomenclate_output = QtCore.pyqtSignal(str)
     format_updated = QtCore.pyqtSignal(str, list, bool)
-    token_colors_updated = QtCore.pyqtSignal(str, dict, list)
+    token_colors_updated = QtCore.pyqtSignal(str, str, dict, list)
 
     def create_controls(self):
         self.layout_main = QtWidgets.QVBoxLayout(self)
@@ -65,12 +65,12 @@ class InstanceHandlerWidget(DefaultFrame):
         self.input_format.set_options(self.get_options_list('naming_formats', return_type=dict))
 
     def connect_controls(self):
-        self.input_format.returnPressed.connect(self.set_format)
+        self.input_format.format_updated.connect(self.set_format)
         self.input_format.escapePressed.connect(lambda: self.setFocus())
         self.format_updated.connect(self.generate_token_colors)
 
         self.token_colors_updated.connect(self.color_token_widgets)
-        self.token_colors_updated.connect(self.input_format.update_format)
+        self.token_colors_updated.connect(self.input_format.update_format_colors)
 
         self.format_updated.emit(self.NOM.format, self.NOM.format_order, True)
 
@@ -87,7 +87,7 @@ class InstanceHandlerWidget(DefaultFrame):
     def token_widgets(self):
         return [self.token_widget_lookup[token] for token in list(self.token_widget_lookup)]
 
-    def color_token_widgets(self, format_string, color_dict):
+    def color_token_widgets(self, format_string, richtext_format_string, color_dict):
         # Need to ensure lower case tokens from the color dict since we lower cased in the TokenWidgets
         color_dict = {k.lower(): v for k, v in iteritems(color_dict)}
         for token_widget in self.active_token_widgets:
@@ -154,7 +154,7 @@ class InstanceHandlerWidget(DefaultFrame):
 
     def set_format(self):
         try:
-            self.NOM.format = self.input_format.text
+            self.NOM.format = self.input_format.text_utf()
             self.refresh()
             self.format_updated.emit(self.NOM.format, self.NOM.format_order, True)
         except nomenclate.core.errors.BalanceError as e:
@@ -205,14 +205,15 @@ class InstanceHandlerWidget(DefaultFrame):
                 return True
         return False
 
-    def generate_token_colors(self, format_string=None, format_order=None, swapped=False):
+    def generate_token_colors(self, richtext_format_string=None, format_order=None, swapped=False):
         dark = self.parent().dark.get()
         color_coded = self.parent().color_coded.get()
-        format_string = format_string or self.NOM.format
+        richtext_format_string = richtext_format_string or self.NOM.format
         format_order = format_order or self.NOM.format_order
+        original_format = richtext_format_string
 
         last_color = None
-
+        """
         for format_token in format_order:
             if color_coded:
                 color, rich_color = None, None
@@ -232,8 +233,9 @@ class InstanceHandlerWidget(DefaultFrame):
 
             self.TOKEN_COLORS[format_token] = (color, rich_color)
             last_color = color
-
-        self.token_colors_updated.emit(format_string, self.TOKEN_COLORS, format_order)
+        """
+        print 'emitting colors', original_format, richtext_format_string
+        self.token_colors_updated.emit(original_format, richtext_format_string, self.TOKEN_COLORS, format_order)
 
     def get_safe_color(self, format_token, last_color, dark):
         color = None
