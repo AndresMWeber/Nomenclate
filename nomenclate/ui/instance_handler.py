@@ -2,7 +2,6 @@ import PyQt5.QtCore as QtCore
 import PyQt5.QtWidgets as QtWidgets
 from nomenclate.ui.components.token_widget import TokenWidgetFactory
 from six import iteritems
-
 import nomenclate
 import nomenclate.settings as settings
 import nomenclate.ui.utils as utils
