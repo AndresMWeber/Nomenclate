@@ -1,12 +1,14 @@
 import PyQt5.QtWidgets as QtWidgets
 import PyQt5.QtCore as QtCore
 import PyQt5.QtGui as QtGui
+import nomenclate.ui.utils as utils
 from ui.default import DefaultFrame, DefaultWidget
 from six import iteritems
 
 
 class QClickLabel(QtWidgets.QLabel):
     clicked = QtCore.pyqtSignal(QtWidgets.QLabel)
+
     def __init__(self, *args):
         super(QClickLabel, self).__init__(*args)
 
@@ -24,23 +26,23 @@ class QAccordionCategory(DefaultFrame):
 
     def create_controls(self):
         QtWidgets.QVBoxLayout(self)
-        self.title = QClickLabel(self.label_title)
+        self.category_label = QClickLabel(self.label_title)
         self.fold_widget = QtWidgets.QFrame()
         QtWidgets.QVBoxLayout(self.fold_widget)
 
     def initialize_controls(self):
         self.layout().setSpacing(0)
-        self.layout().setContentsMargins(0,0,0,0)
+        self.layout().setContentsMargins(0, 0, 0, 0)
         self.fold_widget.layout().setSpacing(0)
-        self.fold_widget.layout().setContentsMargins(5,0,5,5)
+        self.fold_widget.layout().setContentsMargins(5, 0, 5, 5)
         self.fold_widget.setObjectName('fold_widget')
-        self.title.setObjectName('TokenLabel')
+        self.category_label.setObjectName('TokenLabel')
         self.setObjectName('AccordionCategory%s' % self.label_title)
 
     def connect_controls(self):
-        self.layout().addWidget(self.title)
+        self.layout().addWidget(self.category_label)
         self.layout().addWidget(self.fold_widget)
-        self.title.clicked.connect(self.fold)
+        self.category_label.clicked.connect(self.fold)
 
     def fold(self, event, fold_override=None):
         fold_override = fold_override if fold_override is not None else self.folded
@@ -48,10 +50,12 @@ class QAccordionCategory(DefaultFrame):
         self.folded = not self.folded
 
 
+
 class QAccordionWidget(DefaultFrame):
     fold_event = QtCore.pyqtSignal()
     itemExpanded = QtCore.pyqtSignal()
     itemCollapsed = QtCore.pyqtSignal()
+    items_added = QtCore.pyqtSignal()
 
     def __init__(self, parent_widget, *args, **kwargs):
         self.category_widget_lookup = {}
@@ -65,7 +69,7 @@ class QAccordionWidget(DefaultFrame):
         self.setObjectName('SeeThrough')
         self.setFocusPolicy(QtCore.Qt.NoFocus)
         self.layout().setSpacing(0)
-        self.layout().setContentsMargins(0,0,0,0)
+        self.layout().setContentsMargins(0, 0, 0, 0)
 
     def connect_controls(self):
         pass
@@ -84,7 +88,7 @@ class QAccordionWidget(DefaultFrame):
     def set_title(self, category, title):
         target_widget = self.category_widget_lookup.get(category.lower(), None)
         if target_widget:
-            target_widget.title.setText(title)
+            target_widget.category_label.setText(title)
 
     def fold(self, folded_objects, fold_override=None):
         for category_widget in self.category_widgets:
@@ -92,6 +96,7 @@ class QAccordionWidget(DefaultFrame):
 
     def add_category(self, label):
         category = QAccordionCategory(label, self)
+        self.items_added.connect(lambda: utils.give_children_unique_names(category))
         self.layout().addWidget(category, QtCore.Qt.AlignTop)
         self.category_widget_lookup[label] = category
         self.fold_event.emit()
@@ -99,3 +104,4 @@ class QAccordionWidget(DefaultFrame):
     def add_widgets_to_category(self, category, widgets):
         for widget in widgets:
             self.category_widget_lookup[category].fold_widget.layout().addWidget(widget)
+        self.items_added.emit()

@@ -1,38 +1,113 @@
 import PyQt5.QtWidgets as QtWidgets
+import nomenclate.ui.utils as utils
+import tempfile
+import json
+import os
 
-SETTER = 'SET'
-GETTER = 'GET'
+
+class NomenclateFileContext(object):
+    BASE_DIR = 'nomenclate'
+    TEMP_DIR = tempfile.gettempdir()
+    HOME_DIR = os.path.expanduser("~")
+    FILE_HISTORY = []
+
+    def __init__(self, filename):
+        self.filename = filename
+        self.data_cache = {}
+
+        self.modes = {0: 'HOME_DIR',
+                      1: 'TEMP_DIR'}
+        self.mode = self.modes[0]
+
+    @property
+    def valid_write_dirs(self):
+        return [os.path.dirname(path) for path in self.FILE_HISTORY if os.path.exists(os.path.dirname(path))]
+
+    @property
+    def valid_temp_dirs(self):
+        return [path for path in [getattr(self, self.modes[mode]) for mode in self.modes] if
+                os.path.exists(path) and os.path.isdir(path)]
+
+    def get_valid_dirs(self):
+        return self.valid_write_dirs + self.valid_temp_dirs
+
+    def swap_mode(self, mode_int):
+        self.mode = self.modes.get(mode_int, 0)
+
+    def get_mode_dir(self):
+        return getattr(self, self.mode)
+
+    def save(self, data=None, temp_dir=None, filename=None):
+        data = self.data_cache if data is None else data
+        temp_dir = self.get_mode_dir() if temp_dir is None else temp_dir
+        filename = self.filename if filename is None else filename
+        save_file_path = os.path.join(temp_dir, self.BASE_DIR, filename)
+
+        if not os.path.exists(os.path.dirname(save_file_path)):
+            os.makedirs(os.path.dirname(save_file_path))
+
+        with open(save_file_path, 'w') as f:
+            json.dump(data, f)
+            self.data_cache = data
+
+        self.FILE_HISTORY.append(save_file_path)
+
+    def load(self, filename=None):
+        filename = self.filename if filename is None else filename
+        for settings_file in [os.path.join(dir, self.BASE_DIR, filename) for dir in self.get_valid_dirs()]:
+            if os.path.exists(settings_file) and os.path.isfile(settings_file):
+                with open(settings_file, 'r') as f:
+                    data = json.load(f)
+                    self.FILE_HISTORY.append(settings_file)
+                    self.data_cache = data
+                    return data
+
+        return {}
 
 
 class WidgetState(object):
-    WIDGETS = {
-        QtWidgets.QComboBox: {GETTER: QtWidgets.QComboBox.currentIndex,
-                              SETTER: QtWidgets.QComboBox.setCurrentIndex},
+    WIDGETS = utils.INPUT_WIDGETS.copy()
+    FILE_CONTEXT = NomenclateFileContext('ui_state.json')
 
-        QtWidgets.QLineEdit: {GETTER: QtWidgets.QLineEdit.text,
-                              SETTER: QtWidgets.QLineEdit.setText},
+    @classmethod
+    def generate_state(cls, ui, filename=None):
+        """ save "ui" controls and values to registry "setting"
+        """
+        settings = {}
+        unhandled_types = []
+        for widget in cls.get_ui_members(ui):
+            try:
+                widget_path = cls.get_widget_path(widget)
+                if cls.is_unique_widget_path(widget_path, settings):
+                    settings[cls.get_widget_path(widget)] = cls.serialize_widget_settings(widget)
+                else:
+                    print(widget_path)
+                    parent = widget.parent()
+                    print('{0} needs an objectName, siblings of same class exist under parent {1}'.format(widget,
+                                                                                                          parent))
+            except AttributeError:
+                unhandled_types.append(type(widget))
 
-        QtWidgets.QCheckBox: {GETTER: QtWidgets.QCheckBox.checkState,
-                              SETTER: QtWidgets.QCheckBox.setCheckState},
+        cls.FILE_CONTEXT.save(data=settings, filename=filename)
+        return settings
 
-        QtWidgets.QSpinBox: {GETTER: QtWidgets.QSpinBox.value,
-                             SETTER: QtWidgets.QSpinBox.setValue},
+    @classmethod
+    def restore_state(cls, ui, filename=None):
+        """ restore "ui" controls with values stored in registry "settings"
+        """
+        settings = cls.FILE_CONTEXT.load(filename=filename)
 
-        QtWidgets.QTimeEdit: {GETTER: QtWidgets.QTimeEdit.setTime,
-                              SETTER: QtWidgets.QTimeEdit.time},
+        for widget in cls.get_ui_members(ui):
 
-        QtWidgets.QDateEdit: {GETTER: QtWidgets.QDateEdit.date,
-                              SETTER: QtWidgets.QDateEdit.setDate},
 
-        QtWidgets.QDateTimeEdit: {GETTER: QtWidgets.QDateTimeEdit.dateTime,
-                                  SETTER: QtWidgets.QDateTimeEdit.setDateTime},
+            for supported_widget_type in list(cls.WIDGETS):
+                if issubclass(type(widget), supported_widget_type):
+                    widget_path = cls.get_widget_path(widget)
+                    setting = settings.get(widget_path, None)
 
-        QtWidgets.QRadioButton: {GETTER: QtWidgets.QRadioButton.isChecked,
-                                 SETTER: QtWidgets.QRadioButton.checkStateSet},
 
-        QtWidgets.QSlider: {GETTER: QtWidgets.QSlider.value,
-                            SETTER: QtWidgets.QSlider.setValue},
-    }
+
+        return settings
 
     @property
     def supported_widget_types(self):
@@ -40,40 +115,30 @@ class WidgetState(object):
 
     @staticmethod
     def get_ui_members(ui):
-        return get_all_widget_children(ui)
-        # Shitty web-found implementation that only gets immediate children:
-        # return inspect.getmembers(ui, lambda a: not (inspect.isroutine(a)))
+        return utils.get_all_widget_children(ui)
+
+    @classmethod
+    def serialize_widget_settings(cls, widget):
+        return cls.get_widget_method(type(widget), utils.GETTER)(widget)
 
     @classmethod
     def get_widget_method(cls, widget_type, type):
         if not widget_type in list(cls.WIDGETS):
             for supported_widget_type in list(cls.WIDGETS):
                 if issubclass(widget_type, supported_widget_type):
-                    #print 'detected subclassed object %s of supported type %s' % (widget_type, supported_widget_type)
                     widget_type = supported_widget_type
         return cls.WIDGETS.get(widget_type).get(type)
 
     @classmethod
-    def serialize_widget_settings(cls, widget):
-        return cls.get_widget_method(type(widget), GETTER)(widget)
-
-    @classmethod
     def deserialize_widget_settings(cls, widget, settings):
-        return cls.get_widget_method(widget, SETTER)(widget, settings[widget.objectName()])
+        return cls.get_widget_method(widget, utils.SETTER)(widget, settings[widget.objectName()])
 
     @classmethod
-    def generate_state(cls, ui):
-        """ save "ui" controls and values to registry "setting"
-        """
-        settings = {}
-        unhandled_types = []
-        for widget in cls.get_ui_members(ui):
-            try:
-                settings[cls.get_widget_path(widget)] = cls.serialize_widget_settings(widget)
-            except AttributeError:
-                unhandled_types.append(type(widget))
-        #pprint(list(set(unhandled_types)))
-        return settings
+    def is_unique_widget_path(self, widget_path, settings):
+        if settings.get(widget_path, None) is None:
+            return True
+        else:
+            return False
 
     def get_ui_custom_attributes(self):
         pass
@@ -81,37 +146,18 @@ class WidgetState(object):
         # inspect.getmembers(MyClass, lambda a: not (inspect.isroutine(a)))
 
     @classmethod
-    def restore_state(cls, ui, settings):
-        """ restore "ui" controls with values stored in registry "settings"
-        """
-        for name, widget in cls.get_ui_members(ui):
-            try:
-                cls.deserialize_widget_settings(widget)
-            except IndexError:
-                pass
-
-    @classmethod
     def get_widget_path(cls, qwidget):
         widget_path = cls.get_widget_name(qwidget)
         while qwidget.parent():
-            widget_path = cls.get_widget_name(qwidget.parent()) + ' -> ' + widget_path
+            widget_path = cls.get_widget_name(qwidget.parent()) + utils.OBJECT_PATH_SEPARATOR + widget_path
             qwidget = qwidget.parent()
-        return widget_path
+        return str(widget_path)
+
+    @classmethod
+    def get_widget_name(cls, widget):
+        object_name = '#' + widget.objectName() if widget.objectName() else ''
+        return cls.strip_instance_formatting(widget) + object_name
 
     @staticmethod
-    def get_widget_name(widget):
-        object_name = '#' + widget.objectName() if widget.objectName() else ''
-        return str(type(widget)) + object_name
-
-
-def get_all_widget_children(widget, path=None):
-    if path is None:
-        path = []
-    path.append(widget)
-
-    if widget.children():
-        for child in widget.children():
-            get_all_widget_children(child, path)
-    else:
-        pass
-    return path
+    def strip_instance_formatting(widget):
+        return str(type(widget)).replace("<class \'", '').replace("\'>", "").split('.')[-1]

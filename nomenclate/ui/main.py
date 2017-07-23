@@ -15,7 +15,6 @@ import nomenclate.ui.components.gui_save as gui_save
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
-
 class UISetting(object):
     def __init__(self, default_value=None):
         self.default_value = default_value
@@ -131,7 +130,7 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         font = QtWidgets.QApplication.font()
         font.setStyleStrategy(font.PreferAntialias)
         QtWidgets.QApplication.setFont(font)
-        #self.setWindowOpacity(0.96)
+        # self.setWindowOpacity(0.96)
 
         self.setFocus(QtCore.Qt.PopupFocusReason)
         self.load_stylesheet(stylesheet=self.MAIN_QSS)
@@ -185,9 +184,21 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         repeat_action.setShortcut('Ctrl+G')
         repeat_action.triggered.connect(self.repeat_last_action)
 
-        exit_action = self.file_menu.addAction('Save Window Settings')
-        exit_action.setShortcut('Ctrl+S')
-        exit_action.triggered.connect(lambda: self.run_action(self.save_state, None))
+        save_action = self.file_menu.addAction('Save Window Settings')
+        save_action.setShortcut('Ctrl+S')
+        save_action.triggered.connect(lambda: self.run_action(self.save_state, None, False))
+
+        save_as_action = self.file_menu.addAction('Save Window Settings As...')
+        save_as_action.setShortcut('Ctrl+Alt+S')
+        save_as_action.triggered.connect(lambda: self.run_action(self.save_state, None, True))
+
+        load_action = self.file_menu.addAction('Load Last Window Settings ')
+        load_action.setShortcut('Ctrl+L')
+        load_action.triggered.connect(lambda: self.run_action(self.load_state, None, False))
+
+        load_as_action = self.file_menu.addAction('Load Window Settings From File...')
+        load_as_action.setShortcut('Ctrl+Alt+L')
+        load_as_action.triggered.connect(lambda: self.run_action(self.load_state, None, True))
 
         exit_action = self.file_menu.addAction('Exit')
         exit_action.setShortcut('Ctrl+Q')
@@ -195,8 +206,22 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
 
         self.populate_qss_styles()
 
-    def save_state(self):
-        pprint(gui_save.WidgetState.generate_state(self))
+    def save_state(self, mode):
+        filename = None if not mode else QtWidgets.QFileDialog.getSaveFileName(self, 'Save UI Settings',
+                                                                               gui_save.NomenclateFileContext.HOME_DIR,
+                                                                               filter='*.json')
+        gui_save.WidgetState.generate_state(self, filename=filename)
+        print('Successfully wrote state to file %s' % gui_save.NomenclateFileContext.FILE_HISTORY[-1])
+
+    def load_state(self, mode):
+        filename = None if not mode else QtWidgets.QFileDialog.getSaveFileName(self, 'Load UI Settings',
+                                                                               gui_save.NomenclateFileContext.HOME_DIR,
+                                                                               filter='*.json')
+        data = gui_save.WidgetState.restore_state(self, filename=filename)
+        if data:
+            print('Successfully Loaded state from file %s' % gui_save.WidgetState.FILE_CONTEXT.FILE_HISTORY[-1])
+        else:
+            print('No data was found from dirs %s' % gui_save.WidgetState.FILE_CONTEXT.get_valid_dirs())
 
     def run_action(self, action_function, qevent, *args, **kwargs):
         self.last_action_cache = {'function': action_function, 'args': args, 'kwargs': kwargs, 'event': qevent}
@@ -289,7 +314,8 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
                         return True
 
         if event.type() == QtCore.QEvent.Close:
-            self.LOG.debug('Close event %s detected from widget %s with parent %s' % (event, source, source.parent()))
+            self.LOG.debug(
+                'Close event %s detected from widget %s with parent %s' % (event, source, source.parent()))
 
         return super(MainDialog, self).eventFilter(source, event)
 

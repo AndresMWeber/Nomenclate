@@ -10,7 +10,7 @@ class Default(object):
 
     def __init__(self):
         super(Default, self).__init__()
-        self.title = self.TITLE
+        self.category_label = self.TITLE
         self.setup()
 
     def setup(self):

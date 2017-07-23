@@ -1,6 +1,5 @@
 import PyQt5.QtCore as QtCore
 import PyQt5.QtWidgets as QtWidgets
-
 import nomenclate.core.tools as tools
 import nomenclate.ui.utils as utils
 import ui.components.input_widgets as input_widgets

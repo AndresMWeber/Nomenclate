@@ -1,4 +1,5 @@
 import PyQt5.QtCore as QtCore
+import PyQt5.QtWidgets as QtWidgets
 import os
 import operator
 import nomenclate
@@ -8,6 +9,40 @@ ALPHANUMERIC_VALIDATOR = QtCore.QRegExp('[A-Za-z0-9_]*')
 TOKEN_VALUE_VALIDATOR = QtCore.QRegExp('^(?!^_)(?!.*__+|\.\.+.*)[a-zA-Z0-9_\.]+(?!_)$')
 RESOURCES_PATH = os.path.join(os.path.dirname(__file__), 'resource')
 FONTS_PATH = os.path.join(RESOURCES_PATH, 'fonts')
+
+SETTER = 'SET'
+GETTER = 'GET'
+
+OBJECT_PATH_SEPARATOR = '|'
+
+INPUT_WIDGETS = {
+    QtWidgets.QComboBox: {GETTER: QtWidgets.QComboBox.currentIndex,
+                          SETTER: QtWidgets.QComboBox.setCurrentIndex},
+
+    QtWidgets.QLineEdit: {GETTER: QtWidgets.QLineEdit.text,
+                          SETTER: QtWidgets.QLineEdit.setText},
+
+    QtWidgets.QCheckBox: {GETTER: QtWidgets.QCheckBox.checkState,
+                          SETTER: QtWidgets.QCheckBox.setCheckState},
+
+    QtWidgets.QSpinBox: {GETTER: QtWidgets.QSpinBox.value,
+                         SETTER: QtWidgets.QSpinBox.setValue},
+
+    QtWidgets.QTimeEdit: {GETTER: QtWidgets.QTimeEdit.setTime,
+                          SETTER: QtWidgets.QTimeEdit.time},
+
+    QtWidgets.QDateEdit: {GETTER: QtWidgets.QDateEdit.date,
+                          SETTER: QtWidgets.QDateEdit.setDate},
+
+    QtWidgets.QDateTimeEdit: {GETTER: QtWidgets.QDateTimeEdit.dateTime,
+                              SETTER: QtWidgets.QDateTimeEdit.setDateTime},
+
+    QtWidgets.QRadioButton: {GETTER: QtWidgets.QRadioButton.isChecked,
+                             SETTER: QtWidgets.QRadioButton.checkStateSet},
+
+    QtWidgets.QSlider: {GETTER: QtWidgets.QSlider.value,
+                        SETTER: QtWidgets.QSlider.setValue},
+}
 
 
 def cache_function(func):
@@ -37,6 +72,28 @@ class Cacheable(object):
             return self.cache_method(function)
 
         return function
+
+
+def get_all_widget_children(widget, path=None):
+    if path is None:
+        path = []
+    path.append(widget)
+
+    if widget.children():
+        for child in widget.children():
+            get_all_widget_children(child, path)
+    else:
+        pass
+    return path
+
+
+def give_children_unique_names(widget):
+    for index, child_widget in enumerate(get_all_widget_children(widget)):
+        for input_widget_type in list(INPUT_WIDGETS):
+            if issubclass(type(child_widget), input_widget_type):
+                widget_title = getattr(widget, 'category_title', '')
+                child_name = '%sChild%s%d' % (widget.__class__.__name__, widget_title, index)
+                child_widget.setObjectName(child_name)
 
 
 def walk_search(text, start_position, match_list, direction='backward'):

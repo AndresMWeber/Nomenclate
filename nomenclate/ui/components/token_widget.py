@@ -39,6 +39,7 @@ class TokenWidget(DefaultFrame):
         self.SETTINGS = {}
         self.token = token.lower()
         self.value = value
+        self.value_widget = None
         super(TokenWidget, self).__init__()
 
     def create_controls(self):
@@ -50,6 +51,7 @@ class TokenWidget(DefaultFrame):
 
     def initialize_controls(self):
         self.setObjectName('TokenWidget')
+        self.value_widget.setObjectName(self.token+'ValueInput')
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.layout().setContentsMargins(0, 0, 0, 0)
         self.layout().setSpacing(0)
@@ -79,6 +81,7 @@ class TokenWidget(DefaultFrame):
 
     def is_selected(self):
         return self.value_widget.hasFocus()
+
 
     def __repr__(self):
         return super(TokenWidget, self).__repr__().replace('>', ' %r>' % self.token.lower())

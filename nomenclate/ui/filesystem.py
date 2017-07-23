@@ -15,7 +15,7 @@ class FileSystemWidget(DefaultWidget):
 
     def initialize_controls(self):
         self.tree.setWindowTitle("Dir")
-        self.setWindowTitle(self.title)
+        self.setWindowTitle(self.category_label)
 
         self.model.setRootPath('')
 
