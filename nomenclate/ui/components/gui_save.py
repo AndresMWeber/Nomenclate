@@ -112,10 +112,10 @@ class WidgetState(object):
                             failed_load.append(widget_path)
                         break
         for widget_path in failed_load:
-            #print('unsuccessful load settings for ', widget_path)
+            # print('unsuccessful load settings for ', widget_path)
             pass
         if failed_load:
-            #pprint(settings)
+            # pprint(settings)
             pass
         return settings
 

@@ -1,7 +1,6 @@
 import os
 from glob import glob
 from functools import partial
-from pprint import pprint
 import PyQt5.QtWidgets as QtWidgets
 import PyQt5.QtCore as QtCore
 import PyQt5.QtGui as QtGui
@@ -189,7 +188,7 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         save_action.setShortcut('Ctrl+S')
         save_action.triggered.connect(lambda: self.run_action(self.save_state, None, False))
 
-        save_as_action = self.file_menu.addAction('Save Window Settings As...')
+        save_as_action = self.file_menu.addAction('   Save Window Settings As...')
         save_as_action.setShortcut('Ctrl+Alt+S')
         save_as_action.triggered.connect(lambda: self.run_action(self.save_state, None, True))
 
@@ -197,7 +196,7 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         load_action.setShortcut('Ctrl+L')
         load_action.triggered.connect(lambda: self.run_action(self.load_state, None, False))
 
-        load_as_action = self.file_menu.addAction('Load Window Settings From File...')
+        load_as_action = self.file_menu.addAction('   Load Window Settings From File...')
         load_as_action.setShortcut('Ctrl+Alt+L')
         load_as_action.triggered.connect(lambda: self.run_action(self.load_state, None, True))
 
@@ -205,7 +204,7 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         exit_action.setShortcut('Ctrl+Q')
         exit_action.triggered.connect(lambda: self.run_action(self.close, None, True))
 
-        exit_no_save_action = self.file_menu.addAction('Exit without GUI state save')
+        exit_no_save_action = self.file_menu.addAction('   Exit without saving settings...')
         exit_no_save_action.setShortcut('Ctrl+Alt+Q')
         exit_no_save_action.triggered.connect(lambda: self.run_action(self.close, None, False))
 
@@ -213,24 +212,23 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
 
     def save_state(self, mode=False):
         filename = None if not mode else QtWidgets.QFileDialog.getSaveFileName(self, 'Save UI Settings',
-                                                                               gui_save.NomenclateFileContext.HOME_DIR,
+                                                                               gui_save.NomenclateFileContext.DEFAULT_DIR,
                                                                                filter='*.json')
-        gui_save.WidgetState.generate_state(self, filename=filename)
-        print('Successfully wrote state to file %s' % gui_save.NomenclateFileContext.FILE_HISTORY[-1])
+        if not isinstance(filename, tuple):
+            gui_save.WidgetState.generate_state(self, filename=filename)
+            print('Successfully wrote state to file %s' % gui_save.NomenclateFileContext.FILE_HISTORY[-1])
 
     def load_state(self, mode=False):
         filename = None if not mode else QtWidgets.QFileDialog.getSaveFileName(self, 'Load UI Settings',
                                                                                gui_save.NomenclateFileContext.DEFAULT_DIR,
                                                                                filter='*.json')
-        try:
+        if not isinstance(filename, tuple):
             data = gui_save.WidgetState.restore_state(self, filename=filename)
             if data:
                 print('Successfully Loaded state from file %s' % gui_save.WidgetState.FILE_CONTEXT.FILE_HISTORY[-1])
                 return
             else:
                 print('No data was found from dirs %s' % gui_save.WidgetState.FILE_CONTEXT.get_valid_dirs())
-        except AttributeError:
-            pass
 
     def run_action(self, action_function, qevent, *args, **kwargs):
         self.last_action_cache = {'function': action_function, 'args': args, 'kwargs': kwargs, 'event': qevent}

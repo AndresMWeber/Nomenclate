@@ -43,6 +43,7 @@ class TokenLineEdit(QtWidgets.QLineEdit):
 class CompleterTextEntry(QtWidgets.QLineEdit):
     escapePressed = QtCore.pyqtSignal(QtCore.QEvent, name='escapePressed')
     returnPressed = QtCore.pyqtSignal(QtCore.QEvent, name='returnPressed')
+
     focusLost = QtCore.pyqtSignal(QtWidgets.QLineEdit)
     MODS = (QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return, QtCore.Qt.Key_Escape, QtCore.Qt.Key_Tab, QtCore.Qt.Key_Backtab)
 
@@ -54,6 +55,7 @@ class CompleterTextEntry(QtWidgets.QLineEdit):
         self.perform_completer_filter = True
         self.regex = None
         self.validator = None
+        self._last_entry = ''
         self.set_completer_items = (lambda: None)
 
     def text_utf(self):
@@ -88,15 +90,16 @@ class CompleterTextEntry(QtWidgets.QLineEdit):
         self.completer = CustomCompleter(items, parent=self)
         self.completer.setWidget(self)
         self.setCompleter(self.completer)
-        #self.completer.insertText.connect(self.insertCompletion)
+        # self.completer.insertText.connect(self.insertCompletion)
         self.set_completer_items = self.completer.set_items
         self.set_completer_items(items)
+        self.returnPressed.connect(self.completer.popup().hide)
 
     def insertCompletion(self, completion):
         if self.completer:
             start, end = utils.find_whole_word_span(self.text_utf(), self.cursorPosition())
-            #self.setCursorPosition(start)
-            #self.setText(utils.replace_str_absolute(self.text_utf, completion, start, end))
+            # self.setCursorPosition(start)
+            # self.setText(utils.replace_str_absolute(self.text_utf, completion, start, end))
             self.completer.popup().hide()
 
     def mouse_completer_event(self, event):
@@ -111,9 +114,9 @@ class CompleterTextEntry(QtWidgets.QLineEdit):
                 word = utils.find_whole_word(self.text_utf(), self.cursorPosition())
                 if len(word) > 0:
                     self.completer.setCompletionPrefix(word)
-            #self.completer.complete()
-            #else:
-            #   self.completer.popup().hide()
+                    # self.completer.complete()
+                    # else:
+                    #   self.completer.popup().hide()
 
     def filter_validator(self, start_text, orig_start, event):
         if self.validator:
@@ -152,6 +155,8 @@ class CompleterTextEntry(QtWidgets.QLineEdit):
             self.filter_validator(start_text, cursor_position, event)
         if self.perform_completer_filter:
             self.filter_completer(event)
+
+        self._last_entry = self.text_utf()
 
     def focusOutEvent(self, focus_event):
         self.focusLost.emit(self)

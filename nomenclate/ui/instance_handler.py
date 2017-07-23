@@ -68,10 +68,10 @@ class InstanceHandlerWidget(DefaultFrame):
         self.input_format.format_updated.connect(self.set_format)
         self.input_format.escapePressed.connect(lambda: self.setFocus())
         self.format_updated.connect(self.generate_token_colors)
+        self.format_updated.connect(lambda: self.fold(False))
 
         self.token_colors_updated.connect(self.color_token_widgets)
         self.token_colors_updated.connect(self.input_format.update_format_colors)
-
         self.format_updated.emit(self.NOM.format, self.NOM.format_order, True)
 
     @property
@@ -100,8 +100,8 @@ class InstanceHandlerWidget(DefaultFrame):
     def get_index(self, index):
         return self.NOM.get() + str(index)
 
-    def fold(self):
-        self.fold_state = not self.fold_state
+    def fold(self, fold_override=None):
+        self.fold_state = not self.fold_state if fold_override is None else fold_override
         for token_widget in self.active_token_widgets:
             token_widget.accordion_tree.fold(None, fold_override=self.fold_state)
 
@@ -153,17 +153,18 @@ class InstanceHandlerWidget(DefaultFrame):
                 self.token_layout.removeWidget(token_widget)
 
     def set_format(self):
-        try:
-            self.NOM.format = self.input_format.text_utf()
-            self.refresh()
-            self.format_updated.emit(self.NOM.format, self.NOM.format_order, True)
-        except nomenclate.core.errors.BalanceError as e:
-            fix_msg = '\nYou need to fix it before you can input this format.'
-            message_box = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Warning,
-                                                "Format Error",
-                                                e.message + fix_msg,
-                                                QtWidgets.QMessageBox.Ok, self)
-            message_box.exec_()
+        if self.input_format.text_utf:
+            try:
+                self.NOM.format = self.input_format.text_utf
+                self.refresh()
+                self.format_updated.emit(self.NOM.format, self.NOM.format_order, True)
+            except nomenclate.core.errors.BalanceError as e:
+                fix_msg = '\nYou need to fix it before you can input this format.'
+                message_box = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Warning,
+                                                    "Format Error",
+                                                    e.message + fix_msg,
+                                                    QtWidgets.QMessageBox.Ok, self)
+                message_box.exec_()
 
     def refresh(self):
         self.clear_stale_token_widgets()
@@ -213,7 +214,7 @@ class InstanceHandlerWidget(DefaultFrame):
         original_format = richtext_format_string
 
         last_color = None
-        """
+
         for format_token in format_order:
             if color_coded:
                 color, rich_color = None, None
@@ -233,8 +234,7 @@ class InstanceHandlerWidget(DefaultFrame):
 
             self.TOKEN_COLORS[format_token] = (color, rich_color)
             last_color = color
-        """
-        print 'emitting colors', original_format, richtext_format_string
+
         self.token_colors_updated.emit(original_format, richtext_format_string, self.TOKEN_COLORS, format_order)
 
     def get_safe_color(self, format_token, last_color, dark):
