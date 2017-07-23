@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 from six import iteritems
+from collections import Counter
 import re
 import string
 import nomenclate.settings as settings
 from . import processing
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
 
 
 class InputRenderer(type):
@@ -29,12 +30,12 @@ class InputRenderer(type):
         for token, value in iteritems(non_empty_token_entries):
             cls.LOG.info('Checking for unique token on token %s:%r' % (token, value))
             for func in cls.get_valid_render_functions(token):
-                cls.LOG.info('Finding render function for token %s in functions: %s' % (func, list(cls.RENDER_FUNCTIONS)))
+                cls.LOG.info(
+                    'Finding render function for token %s in functions: %s' % (func, list(cls.RENDER_FUNCTIONS)))
                 renderer = cls.RENDER_FUNCTIONS.get(func, None)
                 if func == 'default':
                     renderer.token = token
                 cls.LOG.info('Finding token specific render function for token %r with renderer %s' % (token, renderer))
-
 
                 if callable(getattr(renderer, 'render')):
                     cls.LOG.info('render_unique_tokens() - Rendering token %r: %r, token settings=%s' %
@@ -73,7 +74,7 @@ class InputRenderer(type):
         for token, match_value in iteritems(token_values):
             nomenclative.add_match(*match_value)
 
-        cls.LOG.info('Before processing state has been updated to %s' % nomenclative)
+        cls.LOG.info('Before processing state has been updated to:\n%s' % nomenclative)
         rendered_nomenclative = cls.cleanup_formatted_string(nomenclative.process_matches())
         cls.LOG.info('Finally converted to %s' % rendered_nomenclative)
         return rendered_nomenclative
@@ -81,8 +82,12 @@ class InputRenderer(type):
     @classmethod
     def _prepend_token_match_objects(cls, token_values, incomplete_nomenclative):
         for token, value in iteritems(token_values):
-            re_token = settings.REGEX_TOKEN_SEARCH.format(TOKEN=token,
-                                                     TOKEN_CAPITALIZED=token[0].upper() + token[1:])
+            regex_token = token.replace('(', '\(').replace(')', '\)')
+            re_token = settings.REGEX_TOKEN_SEARCH.format(TOKEN=regex_token,
+                                                          TOKEN_CAPITALIZED=regex_token.capitalize())
+            cls.LOG.info('Searching through string %s for token %s with regex %s' % (incomplete_nomenclative,
+                                                                                     token,
+                                                                                     re_token))
             re_matches = re.finditer(re_token, incomplete_nomenclative, 0)
 
             for re_match in re_matches:
@@ -111,7 +116,12 @@ class InputRenderer(type):
         result = formatted_string.replace(' ', '')
         # Remove any static token parentheses
         result = re.sub(settings.REGEX_PARENTHESIS, '', result)
-        # Remove any multiple underscores
+        # Remove any multiple separator characters
+        multi_character_matches = re.finditer('[%s]{2,}' % settings.SEPARATORS, result)
+        for multi_character_match in sorted(multi_character_matches, key=lambda x: len(x.group()), reverse=True):
+            match = multi_character_match.group()
+            most_common_separator = Counter(list(multi_character_match.group())).most_common(1)[0][0]
+            result = result.replace(match, most_common_separator)
         result = re.sub('_+', '_', result)
         # Remove trailing or preceding non letter characters
         result = re.sub(settings.REGEX_ADJACENT_UNDERSCORE, '', result)

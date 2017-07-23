@@ -41,6 +41,7 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
     dropped_files = QtCore.pyqtSignal(list)
     update_stylesheet = QtCore.pyqtSignal()
     update_color_coded = QtCore.pyqtSignal(str, list, bool)
+
     NAME = 'Nomenclate'
     LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
     WIDTH = 800
@@ -59,6 +60,8 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
     color_coded = UISetting(True)
     loaded_stylesheet = ''
     key_list = []
+
+    format_history = []
 
     def __init__(self):
         super(MainDialog, self).__init__()
@@ -122,6 +125,7 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         self.wgt_stack.addWidget(self.wgt_drop_area)
 
         self.dropped_files.connect(self.update_names)
+        self.instance_handler.format_updated.connect(self.update_format_history)
         self.instance_handler.nomenclate_output.connect(self.update_names)
         self.update_stylesheet.connect(self.set_stylesheet)
         self.update_color_coded.connect(self.instance_handler.format_updated)
@@ -163,6 +167,11 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         self.view_menu = self.menu_bar.addMenu('View')
         self.settings_menu = self.menu_bar.addMenu('Settings')
         self.style_menu = self.settings_menu.addMenu('Set Style')
+        self.format_menu = self.edit_menu.addMenu('Previous Formats')
+
+        edit_action_load_last_format = self.edit_menu.addAction('Load last format')
+        edit_action_load_last_format.setShortcut('Ctrl+D')
+        edit_action_load_last_format.triggered.connect(lambda: self.load_format(None))
 
         view_action_color_code = self.view_menu.addAction('Color code tokens')
         view_action_color_code.setShortcut('Ctrl+E')
@@ -209,6 +218,31 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         exit_no_save_action.triggered.connect(lambda: self.run_action(self.close, None, False))
 
         self.populate_qss_styles()
+
+    def load_format(self, format, *args):
+        if format is None:
+            # Swap two last formats
+            self.format_history = [self.format_history[1], self.format_history[0]] + self.format_history[2:]
+            format = self.format_history[0]
+        else:
+            self.format_history.remove(format)
+            self.format_history.insert(0, format)
+
+        if format != self.instance_handler.input_format.text_utf:
+            self.instance_handler.input_format.setText(format)
+        self.refresh_format_history_menu()
+
+    def update_format_history(self, format_string, format_order, swapped):
+        if not format_string in self.format_history:
+            self.format_history.insert(0, format_string)
+        self.refresh_format_history_menu()
+
+    def refresh_format_history_menu(self):
+        self.format_menu.clear()
+        for format_history in self.format_history:
+            menu_action = self.format_menu.addAction(format_history)
+            action = partial(self.run_action, self.load_format, None, format_history)
+            menu_action.triggered.connect(action)
 
     def save_state(self, mode=False):
         filename = None if not mode else QtWidgets.QFileDialog.getSaveFileName(self, 'Save UI Settings',

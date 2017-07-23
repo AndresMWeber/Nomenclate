@@ -9,7 +9,7 @@ import nomenclate.ui.utils as utils
 import ui.components.format_widget as format_wgt
 from default import DefaultFrame
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.DEBUG
 
 
 class InstanceHandlerWidget(DefaultFrame):
@@ -87,7 +87,7 @@ class InstanceHandlerWidget(DefaultFrame):
     def token_widgets(self):
         return [self.token_widget_lookup[token] for token in list(self.token_widget_lookup)]
 
-    def color_token_widgets(self, format_string, richtext_format_string, color_dict):
+    def color_token_widgets(self, format_string, richtext_format_string, color_dict, swapped):
         # Need to ensure lower case tokens from the color dict since we lower cased in the TokenWidgets
         color_dict = {k.lower(): v for k, v in iteritems(color_dict)}
         for token_widget in self.active_token_widgets:
@@ -109,6 +109,8 @@ class InstanceHandlerWidget(DefaultFrame):
         return self.NOM.cfg.get(search_path, return_type)
 
     def refresh_active_token_widgets(self):
+        self.LOG.info('(refresh active token widgets) Current state and format order \n%s\n%s' % (self.NOM.state,
+                                                                                                  self.NOM.format_order))
         for token, value in [(token, self.NOM.state[token.lower()]) for token in self.NOM.format_order]:
             token = token.lower()
             self.LOG.info('Running through token value pair %s:%s' % (token, value))
@@ -175,7 +177,7 @@ class InstanceHandlerWidget(DefaultFrame):
         token = serialized_token_data.pop('token', None)
         value = serialized_token_data.pop('value', None)
 
-        self.LOG.info('Updating instance with %s' % serialized_token_data)
+        self.LOG.debug('Updating instance with %s' % serialized_token_data)
         if value is not None and token is not None:
             self.NOM.merge_dict({token: value})
 
@@ -186,6 +188,7 @@ class InstanceHandlerWidget(DefaultFrame):
                 set_on_object = token_attr if 'setting' in setting else self.NOM
                 setattr(set_on_object, setting, value)
 
+        self.LOG.debug('Updated Nomenclate state: %s\n%s' % (self.NOM.state, self.NOM.format))
         self.nomenclate_output.emit(self.NOM.get())
 
     def set_output(self, input_name):

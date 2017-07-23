@@ -102,6 +102,7 @@ class QAccordionWidget(DefaultFrame):
         self.fold_event.emit()
 
     def add_widgets_to_category(self, category, widgets):
+        print self.category_widget_lookup
         for widget in widgets:
             self.category_widget_lookup[category].fold_widget.layout().addWidget(widget)
         self.items_added.emit()

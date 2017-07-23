@@ -3,7 +3,7 @@ from . import errors as exceptions
 import nomenclate.settings as settings
 
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
 
 
 class TokenMatch(object):

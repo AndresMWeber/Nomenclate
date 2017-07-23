@@ -32,7 +32,7 @@ REGEX_PARENTHESIS = r'([\(\)]+)'
 REGEX_BRACKETS = r'([\{\}]+)'
 REGEX_STATIC_TOKEN = '(\(\w+\))'
 REGEX_BRACKET_TOKEN = r'(\{\w+\})'
-REGEX_TOKEN_SEARCH = r'(?P<token>((?<![a-z]){TOKEN}(?![0-9]))|((?<=[a-z_]){TOKEN_CAPITALIZED}(?![0-9])))'
+REGEX_TOKEN_SEARCH = r'(?P<token>((?<![a-z\(\)]){TOKEN}(?![0-9]))|((?<=[a-z_\(\)]){TOKEN_CAPITALIZED}(?![0-9])))'
 REGEX_ADJACENT_UNDERSCORE = r'(^[\W_]+)|([\W_]+$)'
 REGEX_SINGLE_LETTER = r'[a-zA-Z]'
 REGEX_TOKEN = r'[A-Za-z0-9][^A-Z\W{SEP}]+'.format(SEP=SEPARATORS)

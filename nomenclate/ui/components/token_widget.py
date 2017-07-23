@@ -25,8 +25,10 @@ class TokenWidgetFactory(QtCore.pyqtWrapperType):
     def get_token_widget(cls, token, value):
         WidgetToken = cls.TOKEN_WIDGETS.get('default')
         for handles_token in list(cls.TOKEN_WIDGETS):
-            if handles_token in token.lower():
+            query_token = token
+            if handles_token in query_token.lower() or ('(' in token and ')' in token and handles_token == 'static'):
                 WidgetToken = cls.TOKEN_WIDGETS[handles_token]
+                break
         return WidgetToken(token, value)
 
 
@@ -51,7 +53,7 @@ class TokenWidget(DefaultFrame):
 
     def initialize_controls(self):
         self.setObjectName('TokenWidget')
-        self.value_widget.setObjectName(self.token+'ValueInput')
+        self.value_widget.setObjectName(self.token + 'ValueInput')
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.layout().setContentsMargins(0, 0, 0, 0)
         self.layout().setSpacing(0)
@@ -81,7 +83,6 @@ class TokenWidget(DefaultFrame):
 
     def is_selected(self):
         return self.value_widget.hasFocus()
-
 
     def __repr__(self):
         return super(TokenWidget, self).__repr__().replace('>', ' %r>' % self.token.lower())
@@ -223,37 +224,64 @@ class DateTokenWidget(TokenWidget):
 
     def create_controls(self):
         super(DateTokenWidget, self).create_controls()
-        self.identifier = QtWidgets.QComboBox()
-        self.padding = QtWidgets.QSpinBox()
+        self.capital = QtWidgets.QComboBox()
         self.prefix = QtWidgets.QLineEdit()
         self.suffix = QtWidgets.QLineEdit()
-        self.value_widget = QtWidgets.QSpinBox()
+        self.length = QtWidgets.QSpinBox()
+        self.value_widget = input_widgets.CompleterTextEntry(self.value)
 
     def initialize_controls(self):
         super(DateTokenWidget, self).initialize_controls()
-        self.identifier.addItems(['0-9', 'A-Z', 'a-z'])
-        list_view = QtWidgets.QListView(self.identifier)
+        self.value_widget.setFocusPolicy(QtCore.Qt.StrongFocus)
+        self.value_widget.setPlaceholderText(self.token)
+        self.value_widget.add_completer([])
+        self.value_widget.set_validation(utils.TOKEN_VALUE_VALIDATOR)
+        self.setFocusProxy(self.value_widget)
+
+        self.length.setMinimum(1)
+        self.capital.addItems(self.CAPITAL_OPTIONS)
+        list_view = QtWidgets.QListView(self.capital)
         list_view.setObjectName('drop_down_list_view')
-        self.identifier.setView(list_view)
+        self.capital.setView(list_view)
 
         self.prefix.setPlaceholderText('prefix')
         self.suffix.setPlaceholderText('suffix')
         self.prefix.setValidator(QtGui.QRegExpValidator(utils.TOKEN_VALUE_VALIDATOR, self.prefix))
         self.suffix.setValidator(QtGui.QRegExpValidator(utils.TOKEN_VALUE_VALIDATOR, self.suffix))
 
-        self.accordion_tree.add_widgets_to_category(self.token,
-                                                    [self.identifier, self.padding, self.prefix, self.suffix])
+        self.accordion_tree.add_widgets_to_category(self.token, [self.capital, self.prefix, self.suffix, self.length])
+
         # Register with internal token settings dictionary to allow auto-serialization
-        self.SETTINGS['value'] = self.value_widget.value
+        self.SETTINGS['value'] = self.value_widget.text
+        self.SETTINGS['%s_len' % self.token] = self.length.value
         self.SETTINGS['prefix_setting'] = self.prefix.text
         self.SETTINGS['suffix_setting'] = self.suffix.text
-        self.SETTINGS['identifier_setting'] = self.identifier.currentText
-        self.SETTINGS['padding_setting'] = self.padding.value
+        self.SETTINGS['case_setting'] = lambda: self.capital.currentText() if self.capital.currentIndex() != 0 else ""
 
     def connect_controls(self):
         super(DateTokenWidget, self).connect_controls()
-        self.value_widget.valueChanged.connect(self.on_change)
-        self.identifier.currentIndexChanged.connect(self.on_change)
-        self.padding.valueChanged.connect(self.on_change)
+        self.value_widget.textChanged.connect(self.on_change)
+        self.value_widget.setReadOnly(True)
+        self.length.valueChanged.connect(self.on_change)
+        self.capital.currentIndexChanged.connect(self.on_change)
         self.prefix.textChanged.connect(self.on_change)
         self.suffix.textChanged.connect(self.on_change)
+
+
+class StaticTokenWidget(TokenWidget):
+    HANDLES_TOKEN = 'static'
+
+    def create_controls(self):
+        super(StaticTokenWidget, self).create_controls()
+        self.value_widget = QtWidgets.QLineEdit()
+        self.disabled_label = QtWidgets.QLabel('Cannot change')
+
+    def initialize_controls(self):
+        super(StaticTokenWidget, self).initialize_controls()
+        self.accordion_tree.add_widgets_to_category(self.token, [self.disabled_label])
+
+    def connect_controls(self):
+        super(StaticTokenWidget, self).connect_controls()
+        self.value_widget.selectionChanged.connect(lambda: self.value_widget.deselect())
+        self.value_widget.setText(self.token)
+        self.value_widget.setReadOnly(True)
