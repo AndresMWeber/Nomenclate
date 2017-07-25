@@ -83,7 +83,7 @@ class WidgetState(object):
             try:
                 widget_path = cls.get_widget_path(widget)
                 widget_path = widget_path if not cls.STORE_WITH_HASH else hash(widget_path)
-                
+
                 if cls.is_unique_widget_path(widget_path, settings):
                     settings[widget_path] = cls.serialize_widget_settings(widget)
                 else:
@@ -107,7 +107,7 @@ class WidgetState(object):
                 for supported_widget_type in list(cls.WIDGETS):
                     if issubclass(type(widget), supported_widget_type):
                         widget_path = cls.get_widget_path(widget)
-                        widget_path =  widget_path if not cls.STORE_WITH_HASH else hash(widget_path)
+                        widget_path = widget_path if not cls.STORE_WITH_HASH else hash(widget_path)
                         setting = settings.get(hash(widget_path), None)
                         if setting is not None:
                             setter = cls.WIDGETS[supported_widget_type][utils.SETTER]

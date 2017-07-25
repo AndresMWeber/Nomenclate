@@ -50,7 +50,6 @@ class QAccordionCategory(DefaultFrame):
         self.folded = not self.folded
 
 
-
 class QAccordionWidget(DefaultFrame):
     fold_event = QtCore.pyqtSignal()
     itemExpanded = QtCore.pyqtSignal()

@@ -200,6 +200,11 @@ class CompleterTextEntry(QLineEditContextTree):
         self.focusLost.emit(self)
         super(CompleterTextEntry, self).focusOutEvent(focus_event)
 
-    def set_options(self, options):
-        self.build_menu_from_dict(options.copy())
-        self.add_completer(list(set(tools.flattenDictToLeaves(options))))
+    def set_options(self, options, remove_final_branch=True):
+        # TODO: figure out how to remove final end of dict.
+        self.build_menu_from_dict(options)
+        flattened_options = list(set(tools.flattenDictToLeaves(options)))
+        if self.completer:
+            self.set_options(flattened_options)
+        else:
+            self.add_completer(flattened_options)

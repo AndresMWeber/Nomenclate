@@ -1,6 +1,5 @@
 import PyQt5.QtCore as QtCore
 import PyQt5.QtWidgets as QtWidgets
-import nomenclate.core.tools as tools
 import nomenclate.ui.utils as utils
 import ui.components.input_widgets as input_widgets
 
@@ -89,15 +88,5 @@ class FormatWidget(QtWidgets.QStackedWidget):
             last_position = len(pre_slice) + work_slice.index(format_token) + len(format_token)
             format_string = pre_slice + work_slice.replace(format_token, rich_color, 1)
             last_position += len(format_string) - old_length
-            
+
         self.format_label.setText(format_string)
-
-    def set_options(self, options, remove_final_branch=True):
-        # TODO: figure out how to remove final end of dict.
-        self.text_input.build_menu_from_dict(options)
-        flattened_options = list(set(tools.flattenDictToLeaves(options)))
-        if self.completer:
-            self.set_options(flattened_options)
-        else:
-            self.text_input.add_completer(flattened_options)
-
