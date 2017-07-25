@@ -231,7 +231,7 @@ class VersionTokenWidget(TokenWidget):
         self.SETTINGS['suffix_setting'] = {utils.GETTER: self.suffix.text, utils.SETTER: self.suffix.setText}
         self.SETTINGS['value'] = {utils.GETTER: self.value_widget.value, utils.SETTER: self.value_widget.setValue}
         self.SETTINGS['identifier_setting'] = {utils.GETTER: self.identifier.currentText,
-                                               utils.SETTER: self.capital.setCurrentText}
+                                               utils.SETTER: self.identifier.setCurrentText}
         self.SETTINGS['%s_padding' % self.token] = {utils.GETTER: self.padding.value,
                                                     utils.SETTER: self.padding.setValue}
         self.SETTINGS['%s_format' % self.token] = {utils.GETTER: lambda: '#', utils.SETTER: lambda x: None}

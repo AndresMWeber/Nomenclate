@@ -47,8 +47,10 @@ class FormatWidget(QtWidgets.QStackedWidget):
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         self.text_input.setPalette(self.format_label.palette())
 
+        self.format_label.rightClick.connect(self.swap_visible_widget)
         self.text_input.context_menu_insertion.connect(self.swap_visible_widget)
         self.text_input.textChanged.connect(self.text_changed)
+        self.escapePressed.connect(self.swap_visible_widget)
         self.returnPressed.connect(self.swap_visible_widget)
         self.format_label.doubleClick.connect(self.swap_visible_widget)
         self.swap_visible_widget()

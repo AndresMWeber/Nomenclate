@@ -43,11 +43,14 @@ class NomenclateFileContext(object):
     def get_mode_dir(self):
         return getattr(self, self.mode)
 
-    def save(self, data=None, temp_dir=None, filename=None):
+    def save(self, data=None, temp_dir=None, filename=None, fullpath_override=None):
         data = self.data_cache if data is None else data
         temp_dir = self.get_mode_dir() if temp_dir is None else temp_dir
         filename = self.filename if filename is None else filename
         save_file_path = os.path.join(temp_dir, self.BASE_DIR, filename)
+
+        if fullpath_override:
+            save_file_path = fullpath_override
 
         if not os.path.exists(os.path.dirname(save_file_path)):
             os.makedirs(os.path.dirname(save_file_path))
@@ -59,16 +62,25 @@ class NomenclateFileContext(object):
         self.FILE_HISTORY.append(save_file_path)
         LOG.info('Successfully wrote state to file %s' % self.FILE_HISTORY[-1])
 
-    def load(self, filename=None):
-        filename = self.filename if filename is None else filename
-        for settings_file in [os.path.join(dir, self.BASE_DIR, filename) for dir in self.get_valid_dirs()]:
-            if os.path.exists(settings_file) and os.path.isfile(settings_file):
-                with open(settings_file, 'r') as f:
-                    data = json.load(f)
-                    self.FILE_HISTORY.append(settings_file)
-                    self.data_cache = data
-                    return data
+    def load(self, filename=None, fullpath_override=None):
+        if fullpath_override is None:
+            filename = self.filename if filename is None else filename
+            matches = []
+            for settings_file in [os.path.join(dir, self.BASE_DIR, filename) for dir in self.get_valid_dirs()]:
+                if os.path.exists(settings_file) and os.path.isfile(settings_file):
+                    matches.append(settings_file)
+        else:
+            matches = [fullpath_override]
 
+        for settings_file in matches:
+            with open(settings_file, 'r') as f:
+                data = json.load(f)
+                self.FILE_HISTORY.append(settings_file)
+                self.data_cache = data
+                return data
+
+        if fullpath_override:
+            save_file_path = fullpath_override
         return {}
 
 
@@ -78,7 +90,7 @@ class WidgetState(object):
     STORE_WITH_HASH = True
 
     @classmethod
-    def generate_state(cls, ui, filename=None):
+    def generate_state(cls, ui, filename=None, fullpath_override=None):
         """ save "ui" controls and values to registry "setting"
         """
         settings = {}
@@ -97,14 +109,15 @@ class WidgetState(object):
             except AttributeError:
                 unhandled_types.append(type(widget))
 
-        cls.FILE_CONTEXT.save(data=settings, filename=filename)
+        cls.FILE_CONTEXT.save(data=settings, filename=filename, fullpath_override=fullpath_override)
         return settings
 
     @classmethod
-    def restore_state(cls, ui, filename=None):
+    def restore_state(cls, ui, filename=None, fullpath_override=None):
         """ restore "ui" controls with values stored in registry "settings"
         """
-        settings = cls.FILE_CONTEXT.load(filename=filename)
+        settings = cls.FILE_CONTEXT.load(filename=filename, fullpath_override=fullpath_override)
+        print settings, filename, fullpath_override
         failed_load = []
         if settings:
             for widget in cls.get_ui_members(ui):

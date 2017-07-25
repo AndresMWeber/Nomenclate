@@ -224,6 +224,8 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         self.populate_qss_styles()
 
     def load_format(self, format, *args):
+        if not self.format_history:
+            return
         if format is None:
             # Swap two last formats
             self.format_history = [self.format_history[1], self.format_history[0]] + self.format_history[2:]
@@ -252,15 +254,20 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         filename = None if not mode else QtWidgets.QFileDialog.getSaveFileName(self, 'Save UI Settings',
                                                                                gui_save.NomenclateFileContext.DEFAULT_DIR,
                                                                                filter='*.json')
-        if not isinstance(filename, tuple):
-            gui_save.WidgetState.generate_state(self, filename=filename)
+        if filename:
+            file, ext = filename
+            file = os.path.normpath(file)
+            if file:
+                ext = ext.replace('*', '')
+                file = file if file.endswith(ext) else file + ext
+                gui_save.WidgetState.generate_state(self, fullpath_override=file)
 
     def load_state(self, mode=False):
-        filename = None if not mode else QtWidgets.QFileDialog.getSaveFileName(self, 'Load UI Settings',
+        filename = None if not mode else QtWidgets.QFileDialog.getOpenFileName(self, 'Load UI Settings',
                                                                                gui_save.NomenclateFileContext.DEFAULT_DIR,
                                                                                filter='*.json')
-        if not isinstance(filename, tuple):
-            data = gui_save.WidgetState.restore_state(self, filename=filename)
+        if filename:
+            gui_save.WidgetState.restore_state(self, fullpath_override=filename[0])
 
     def run_action(self, action_function, qevent, *args, **kwargs):
         self.last_action_cache = {'function': action_function, 'args': args, 'kwargs': kwargs, 'event': qevent}
