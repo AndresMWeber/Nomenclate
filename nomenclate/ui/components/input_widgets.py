@@ -70,7 +70,7 @@ class QLineEditContextTree(QtWidgets.QLineEdit):
         self.context_menu_insertion.emit()
         self.setText(text)
 
-    def build_menu_from_dict(self, menu_iterable, parent_menu=None):
+    def build_menu_from_dict(self, menu_iterable, parent_menu=None, ignore_end_list=False):
         if parent_menu is None:
             parent_menu = QtWidgets.QMenu()
         else:
@@ -79,10 +79,15 @@ class QLineEditContextTree(QtWidgets.QLineEdit):
         for key, value in iteritems(menu_iterable):
             sub_menu = parent_menu.addMenu(key)
             if isinstance(value, dict):
-                self.build_menu_from_dict(value, parent_menu=sub_menu)
+                parent_menu.addSeparator()
+                self.build_menu_from_dict(value, parent_menu=sub_menu, ignore_end_list=ignore_end_list)
             elif isinstance(value, list):
-                for action_text in [str(_) for _ in value]:
-                    self.add_menu_item(sub_menu, action_text)
+                if ignore_end_list:
+                    sub_menu.deleteLater()
+                    self.add_menu_item(parent_menu, key)
+                else:
+                    for action_text in [str(_) for _ in value]:
+                        self.add_menu_item(sub_menu, action_text)
             else:
                 self.add_menu_item(sub_menu, str(value))
 
@@ -201,8 +206,7 @@ class CompleterTextEntry(QLineEditContextTree):
         super(CompleterTextEntry, self).focusOutEvent(focus_event)
 
     def set_options(self, options, remove_final_branch=True):
-        # TODO: figure out how to remove final end of dict.
-        self.build_menu_from_dict(options)
+        self.build_menu_from_dict(options, ignore_end_list=remove_final_branch)
         flattened_options = list(set(tools.flattenDictToLeaves(options)))
         if self.completer:
             self.set_options(flattened_options)
