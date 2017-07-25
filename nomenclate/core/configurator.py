@@ -304,7 +304,6 @@ class DictToList(BaseFormatter):
         keys.sort()
         return keys
 
-
 class DictToOrderedDict(BaseFormatter):
     converts = {'accepted_input_type': dict,
                 'accepted_return_type': OrderedDict}

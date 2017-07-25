@@ -211,9 +211,13 @@ class CompleterTextEntry(QLineEditContextTree):
         super(CompleterTextEntry, self).focusOutEvent(focus_event)
 
     def set_options(self, options, for_token=True):
+        if options is None:
+            return
+
         self.build_menu_from_dict(options, for_token=for_token)
         flattened_options = list(set(tools.flattenDictToLeaves(options)))
+
         if self.completer:
-            self.set_options(flattened_options)
+            self.completer.set_items(flattened_options)
         else:
             self.add_completer(flattened_options)

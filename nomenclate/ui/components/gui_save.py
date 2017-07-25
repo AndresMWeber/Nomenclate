@@ -1,9 +1,12 @@
-import PyQt5.QtWidgets as QtWidgets
 import nomenclate.ui.utils as utils
 import tempfile
 import json
 import os
-from pprint import pformat
+import nomenclate.settings as settings
+
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
+
+LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
 
 
 class NomenclateFileContext(object):
@@ -88,8 +91,8 @@ class WidgetState(object):
                     settings[widget_path] = cls.serialize_widget_settings(widget)
                 else:
                     parent = widget.parent()
-                    print('{0} needs an objectName, siblings of same class exist under parent {1}'.format(widget,
-                                                                                                          parent))
+                    LOG.warning('{0} needs an objectName, siblings of same class exist under parent {1}'.format(widget,
+                                                                                                                parent))
             except AttributeError:
                 unhandled_types.append(type(widget))
 
@@ -108,7 +111,7 @@ class WidgetState(object):
                     if issubclass(type(widget), supported_widget_type):
                         widget_path = cls.get_widget_path(widget)
                         widget_path = widget_path if not cls.STORE_WITH_HASH else hash(widget_path)
-                        setting = settings.get(hash(widget_path), None)
+                        setting = settings.get(str(hash(widget_path)), None)
                         if setting is not None:
                             setter = cls.WIDGETS[supported_widget_type][utils.SETTER]
                             setter(widget, setting)

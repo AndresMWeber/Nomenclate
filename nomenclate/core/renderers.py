@@ -132,36 +132,26 @@ class RenderBase(object):
         :param filter_kwargs: dict(str: str), dictionary of {<token>_<__builtin__ function>: compare value}
         :return:
         """
-        options = [options] if isinstance(options, str) else options
+        options = list(options)
         criteria_matches = list(options)
 
-        for token_criteria, criteria_value in iteritems(filter_kwargs):
-            builtin_func = token_criteria.replace('%s_' % token, '')
+        for criteria_function_name, criteria in iteritems(filter_kwargs):
+            if not criteria_function_name and not criteria:
+                continue
+            criteria_function_name = criteria_function_name.replace('%s_' % token, '')
+
             try:
-                builtin_func = getattr(moves.builtins, builtin_func)
-                cls.LOG.info('Filtering options: %s with criteria: %s' % (options, token_criteria))
-
-                for option in options:
-                    cls.LOG.info('Running through criteria: %s: %s(%s) == %s' %
-                                 (token_criteria, builtin_func, option, criteria_value))
-                    if token_criteria and criteria_value:
-                        try:
-                            if not builtin_func(option) == criteria_value:
-                                cls.LOG.info(
-                                    'Non criteria match for %s(%s)=%s' % (builtin_func, option, criteria_value))
-                                criteria_matches.remove(option)
-                        except ValueError:
-                            cls.LOG.warning(
-                                'Criteria option %s caused function %s to error...ignoring' % (option, builtin_func))
-
+                builtin_func = getattr(moves.builtins, criteria_function_name)
+                cls.LOG.info('Filtering options: %s with criteria: %s' % (options, criteria_function_name))
+                criteria_matches = [option for option in options if builtin_func(option) == criteria]
             except AttributeError:
-                cls.LOG.warning('Criteria function %r is invalid...skipping' % builtin_func)
+                cls.LOG.warning('Criteria function %r is invalid...skipping' % criteria_function_name)
+
+            if not criteria_matches:
+                criteria_matches = [min(options, key=lambda x: abs(builtin_func(x) - criteria))]
+
         cls.LOG.info('Found criteria matches: %s ...returning first' % criteria_matches)
-        try:
-            return criteria_matches[0]
-        except IndexError:
-            cls.LOG.warning('Nothing from options %s matched the criteria...returning first option' % options)
-            return options[0]
+        return criteria_matches[0] if criteria_matches else options[0]
 
 
 class RenderDate(RenderBase):

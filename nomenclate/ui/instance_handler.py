@@ -61,7 +61,7 @@ class InstanceHandlerWidget(DefaultFrame):
         self.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.nomenclate_output.connect(self.set_output)
 
-        self.input_format.text_input.set_options(self.get_options_list('naming_formats', return_type=dict), for_token=False)
+        self.input_format.text_input.set_options(self.get_options_from_config('naming_formats', return_type=dict), for_token=False)
 
     def connect_controls(self):
         self.input_format.format_updated.connect(self.set_format)
@@ -104,8 +104,11 @@ class InstanceHandlerWidget(DefaultFrame):
         for token_widget in self.active_token_widgets:
             token_widget.accordion_tree.fold(None, fold_override=self.fold_state)
 
-    def get_options_list(self, search_path, return_type=list):
-        return self.NOM.cfg.get(search_path, return_type)
+    def get_options_from_config(self, search_path, return_type=list):
+        try:
+            return self.NOM.cfg.get(search_path, return_type)
+        except nomenclate.core.errors.ResourceNotFoundError:
+            self.LOG.debug('Could not find config entries for token %s' % search_path)
 
     def refresh_active_token_widgets(self):
         self.LOG.info('(refresh active token widgets) Current state and format order \n%s\n%s' % (self.NOM.state,
@@ -124,22 +127,20 @@ class InstanceHandlerWidget(DefaultFrame):
         token_widget = self.token_widget_lookup.get(token, None)
         if token_widget is None:
             self.LOG.debug('No preexisting token widget...creating and adding to %s.token_widget_lookup.' % self)
+
             token_widget = TokenWidgetFactory.get_token_widget(token, value)
+            token_widget.add_default_values_from_config(self.NOM.get_token_settings(token))
+            token_widget.set_options(self.get_options_from_config(token, dict))
             self.token_widget_lookup[token] = token_widget
-            options = self.get_completion_from_config(token)
-            try:
-                token_widget.value_widget.set_options(options, for_token=True)
-            except AttributeError:
-                pass
+
         else:
             self.token_layout.addWidget(token_widget)
+
         return token_widget
 
-    def get_completion_from_config(self, search_string):
-        try:
-            return self.get_options_list(search_string, return_type=dict)
-        except nomenclate.core.errors.ResourceNotFoundError:
-            self.LOG.debug('Could not find config entries for token %s' % search_string)
+    def load_settings_from_config(self):
+        for token, token_widget in iteritems(self.token_widget_lookup):
+            token_widget.add_default_values_from_config(self.NOM.get_token_settings(token))
 
     def clear_stale_token_widgets(self):
         self.LOG.debug('Comparing current token widgets %s against format order %s' % (self.token_widgets,

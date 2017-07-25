@@ -75,14 +75,28 @@ class TokenWidget(DefaultFrame):
 
     def serialize(self):
         settings = {}
-        for setting, getter in iteritems(self.SETTINGS):
-            value = getter()
+        for setting, value in iteritems(self.SETTINGS):
+            if isinstance(value, dict):
+                value = value.get(utils.GETTER)
+            value = value() if callable(value) else value
             settings[setting] = value.encode('utf-8') if hasattr(value, 'encode') else value
 
         return settings
 
     def is_selected(self):
         return self.value_widget.hasFocus()
+
+    def add_default_values_from_config(self, default_values_dict):
+        for default_key, default_value in iteritems(default_values_dict):
+            setter = self.SETTINGS.get(default_key, {}).get(utils.SETTER, None)
+            if setter:
+                setter(default_value)
+
+    def set_options(self, options):
+        if isinstance(options, list):
+            options = {'options': options}
+        if getattr(self.value_widget, 'set_options', None):
+            self.value_widget.set_options(options, for_token=True)
 
     def __repr__(self):
         return super(TokenWidget, self).__repr__().replace('>', ' %r>' % self.token.lower())
@@ -106,6 +120,7 @@ class DefaultTokenWidget(TokenWidget):
         self.setFocusProxy(self.value_widget)
 
         self.length.setMinimum(1)
+
         self.capital.addItems(self.CAPITAL_OPTIONS)
         list_view = QtWidgets.QListView(self.capital)
         list_view.setObjectName('drop_down_list_view')
@@ -119,11 +134,14 @@ class DefaultTokenWidget(TokenWidget):
         self.accordion_tree.add_widgets_to_category(self.token, [self.capital, self.prefix, self.suffix, self.length])
 
         # Register with internal token settings dictionary to allow auto-serialization
-        self.SETTINGS['value'] = self.value_widget.text
-        self.SETTINGS['%s_len' % self.token] = self.length.value
-        self.SETTINGS['prefix_setting'] = self.prefix.text
-        self.SETTINGS['suffix_setting'] = self.suffix.text
-        self.SETTINGS['case_setting'] = lambda: self.capital.currentText() if self.capital.currentIndex() != 0 else ""
+        self.SETTINGS['value'] = {utils.GETTER: self.value_widget.text, utils.SETTER: self.value_widget.setText}
+        self.SETTINGS['%s_len' % self.token] = {utils.GETTER: self.length.value, utils.SETTER: self.length.setValue}
+
+        self.SETTINGS['prefix_setting'] = {utils.GETTER: self.prefix.text, utils.SETTER: self.prefix.setText}
+        self.SETTINGS['suffix_setting'] = {utils.GETTER: self.suffix.text, utils.SETTER: self.suffix.setText}
+        self.SETTINGS['case_setting'] = {
+            utils.GETTER: lambda: self.capital.currentText() if self.capital.currentIndex() != 0 else "",
+            utils.SETTER: self.capital.setCurrentIndex}
 
     def connect_controls(self):
         super(DefaultTokenWidget, self).connect_controls()
@@ -159,10 +177,12 @@ class VarTokenWidget(TokenWidget):
         self.accordion_tree.add_widgets_to_category(self.token,
                                                     [self.capital, self.prefix, self.suffix, self.value_widget])
         # Register with internal token settings dictionary to allow auto-serialization
-        self.SETTINGS['case_setting'] = lambda: self.capital.currentText() if self.capital.currentIndex() != 0 else ""
-        self.SETTINGS['prefix_setting'] = self.prefix.text
-        self.SETTINGS['suffix_setting'] = self.suffix.text
-        self.SETTINGS['value'] = self.value_widget.value
+        self.SETTINGS['case_setting'] = {
+            utils.GETTER: lambda: self.capital.currentText() if self.capital.currentIndex() != 0 else "",
+            utils.SETTER: self.capital.setCurrentText}
+        self.SETTINGS['prefix_setting'] = {utils.GETTER: self.prefix.text, utils.SETTER: self.prefix.setText}
+        self.SETTINGS['suffix_setting'] = {utils.GETTER: self.suffix.text, utils.SETTER: self.suffix.setText}
+        self.SETTINGS['value'] = {utils.GETTER: self.value_widget.value, utils.SETTER: self.value_widget.setValue}
 
     def connect_controls(self):
         super(VarTokenWidget, self).connect_controls()
@@ -203,12 +223,14 @@ class VersionTokenWidget(TokenWidget):
                                                      self.suffix])
         self.padding.setMinimum(1)
         # Register with internal token settings dictionary to allow auto-serialization
-        self.SETTINGS['value'] = self.value_widget.value
-        self.SETTINGS['prefix_setting'] = self.prefix.text
-        self.SETTINGS['suffix_setting'] = self.suffix.text
-        self.SETTINGS['identifier_setting'] = self.identifier.currentText
-        self.SETTINGS['%s_padding' % self.token] = self.padding.value
-        self.SETTINGS['%s_format' % self.token] = lambda: '#'
+        self.SETTINGS['prefix_setting'] = {utils.GETTER: self.prefix.text, utils.SETTER: self.prefix.setText}
+        self.SETTINGS['suffix_setting'] = {utils.GETTER: self.suffix.text, utils.SETTER: self.suffix.setText}
+        self.SETTINGS['value'] = {utils.GETTER: self.value_widget.value, utils.SETTER: self.value_widget.setValue}
+        self.SETTINGS['identifier_setting'] = {utils.GETTER: self.identifier.currentText,
+                                               utils.SETTER: self.capital.setCurrentText}
+        self.SETTINGS['%s_padding' % self.token] = {utils.GETTER: self.padding.value,
+                                                    utils.SETTER: self.padding.setValue}
+        self.SETTINGS['%s_format' % self.token] = {utils.GETTER: lambda: '#', utils.SETTER: lambda x: None}
 
     def connect_controls(self):
         super(VersionTokenWidget, self).connect_controls()

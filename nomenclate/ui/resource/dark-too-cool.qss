@@ -99,14 +99,16 @@ QWidget#OutputWidget, QLabel#OutputLabel {
     color: #E2327F;
     background: transparent;
     border: none;
+    font-size: 16pt;
+}
+
+QLabel#OutputLabel{
     qproperty-alignment: AlignCenter;
-    font-size: 12pt;
 }
 
 QLabel#OutputTitle{
     font-size: 8pt;
 }
-
 
 QAccordionTreeWidget::item:!active {
     background-color: 0E0E19;
