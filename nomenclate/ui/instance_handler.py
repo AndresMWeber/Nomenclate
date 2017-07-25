@@ -204,8 +204,8 @@ class InstanceHandlerWidget(DefaultFrame):
             token_widget = self.token_widget_lookup[token.lower()]
             if token_widget.is_selected() and restart != next_token:
                 next_widget = self.token_widget_lookup[next_token.lower()]
-                self.LOG.debug(
-                    'Selecting from widget %r to next token widget (%s): %r' % (token_widget, next_token, next_widget))
+                self.LOG.debug('Selecting from widget %r to next token widget (%s): %r' %
+                               (token_widget, next_token, next_widget))
                 try:
                     token_widget.value_widget.menu.close()
                 except AttributeError:

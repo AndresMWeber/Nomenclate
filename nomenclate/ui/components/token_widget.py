@@ -122,6 +122,7 @@ class DefaultTokenWidget(TokenWidget):
         self.length.setMinimum(1)
         self.length.setPrefix('length ')
         self.length.setSpecialValueText('short')
+        self.length.hide()
 
         self.capital.addItems(self.CAPITAL_OPTIONS)
         list_view = QtWidgets.QListView(self.capital)
@@ -149,6 +150,7 @@ class DefaultTokenWidget(TokenWidget):
         super(DefaultTokenWidget, self).connect_controls()
         self.value_widget.textChanged.connect(self.on_change)
         self.length.valueChanged.connect(self.on_change)
+        self.value_widget.options_added.connect(self.length.show)
         self.capital.currentIndexChanged.connect(self.on_change)
         self.prefix.textChanged.connect(self.on_change)
         self.suffix.textChanged.connect(self.on_change)

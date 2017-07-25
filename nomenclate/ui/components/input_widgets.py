@@ -99,6 +99,7 @@ class QLineEditContextTree(QtWidgets.QLineEdit):
 class CompleterTextEntry(QLineEditContextTree):
     escapePressed = QtCore.pyqtSignal(QtCore.QEvent, name='escapePressed')
     returnPressed = QtCore.pyqtSignal(QtCore.QEvent, name='returnPressed')
+    options_added = QtCore.pyqtSignal()
 
     focusLost = QtCore.pyqtSignal(QtWidgets.QLineEdit)
     MODS = (QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return, QtCore.Qt.Key_Escape, QtCore.Qt.Key_Tab, QtCore.Qt.Key_Backtab)
@@ -234,3 +235,5 @@ class CompleterTextEntry(QLineEditContextTree):
             self.completer.set_items(flattened_options)
         else:
             self.add_completer(flattened_options)
+
+        self.options_added.emit()
