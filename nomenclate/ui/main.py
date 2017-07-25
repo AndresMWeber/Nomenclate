@@ -250,7 +250,6 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
                                                                                filter='*.json')
         if not isinstance(filename, tuple):
             gui_save.WidgetState.generate_state(self, filename=filename)
-            print('Successfully wrote state to file %s' % gui_save.NomenclateFileContext.FILE_HISTORY[-1])
 
     def load_state(self, mode=False):
         filename = None if not mode else QtWidgets.QFileDialog.getSaveFileName(self, 'Load UI Settings',
@@ -258,11 +257,6 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
                                                                                filter='*.json')
         if not isinstance(filename, tuple):
             data = gui_save.WidgetState.restore_state(self, filename=filename)
-            if data:
-                print('Successfully Loaded state from file %s' % gui_save.WidgetState.FILE_CONTEXT.FILE_HISTORY[-1])
-                return
-            else:
-                print('No data was found from dirs %s' % gui_save.WidgetState.FILE_CONTEXT.get_valid_dirs())
 
     def run_action(self, action_function, qevent, *args, **kwargs):
         self.last_action_cache = {'function': action_function, 'args': args, 'kwargs': kwargs, 'event': qevent}

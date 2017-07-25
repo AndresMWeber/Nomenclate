@@ -120,6 +120,8 @@ class DefaultTokenWidget(TokenWidget):
         self.setFocusProxy(self.value_widget)
 
         self.length.setMinimum(1)
+        self.length.setPrefix('length ')
+        self.length.setSpecialValueText('shortest')
 
         self.capital.addItems(self.CAPITAL_OPTIONS)
         list_view = QtWidgets.QListView(self.capital)

@@ -57,6 +57,7 @@ class NomenclateFileContext(object):
             self.data_cache = data
 
         self.FILE_HISTORY.append(save_file_path)
+        LOG.info('Successfully wrote state to file %s' % self.FILE_HISTORY[-1])
 
     def load(self, filename=None):
         filename = self.filename if filename is None else filename
@@ -118,6 +119,10 @@ class WidgetState(object):
                         else:
                             failed_load.append(widget_path)
                         break
+
+            LOG.info('Successfully Loaded state from file %s' % cls.FILE_CONTEXT.FILE_HISTORY[-1])
+        else:
+            LOG.warning('No data was found from dirs %s' % cls.FILE_CONTEXT.get_valid_dirs())
         return settings
 
     @property

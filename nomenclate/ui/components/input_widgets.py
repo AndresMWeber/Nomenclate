@@ -6,7 +6,6 @@ import nomenclate.ui.utils as utils
 from six import iteritems
 from functools import partial
 import nomenclate.core.tools as tools
-from pprint import pprint
 
 
 class CustomCompleter(QtWidgets.QCompleter):
@@ -221,8 +220,6 @@ class CompleterTextEntry(QLineEditContextTree):
             flattened_options = utils.convert_config_lookup_to_options(options)
         else:
             flattened_options = list(set(tools.flattenDictToLeaves(options)))
-        pprint(options)
-        pprint(flattened_options)
 
         if self.completer:
             self.completer.set_items(flattened_options)
