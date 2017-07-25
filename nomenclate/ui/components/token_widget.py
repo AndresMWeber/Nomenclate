@@ -89,7 +89,7 @@ class TokenWidget(DefaultFrame):
     def add_default_values_from_config(self, default_values_dict):
         for default_key, default_value in iteritems(default_values_dict):
             setter = self.SETTINGS.get(default_key, {}).get(utils.SETTER, None)
-            if setter:
+            if callable(setter):
                 setter(default_value)
 
     def set_options(self, options):
@@ -121,7 +121,7 @@ class DefaultTokenWidget(TokenWidget):
 
         self.length.setMinimum(1)
         self.length.setPrefix('length ')
-        self.length.setSpecialValueText('shortest')
+        self.length.setSpecialValueText('short')
 
         self.capital.addItems(self.CAPITAL_OPTIONS)
         list_view = QtWidgets.QListView(self.capital)

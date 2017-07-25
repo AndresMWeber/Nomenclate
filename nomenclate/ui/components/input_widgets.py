@@ -38,10 +38,6 @@ class TokenLineEdit(QtWidgets.QLineEdit):
         self.setCompleter(self.completer)
         self.set_completer_items = self.completer.set_items
 
-    def mousePressEvent(self, QMouseClickEvent):
-        self.completer.complete()
-        super(TokenLineEdit, self).mousePressEvent(QMouseClickEvent)
-
 
 class QLineEditContextTree(QtWidgets.QLineEdit):
     context_menu_insertion = QtCore.pyqtSignal()
@@ -117,6 +113,7 @@ class CompleterTextEntry(QLineEditContextTree):
         self.validator = None
         self._last_entry = ''
         self.set_completer_items = (lambda: None)
+        self.setToolTip('Right-click for full options list, blank if none')
 
     def text_utf(self):
         return self.text().encode('utf-8')
@@ -180,20 +177,28 @@ class CompleterTextEntry(QLineEditContextTree):
     def mousePressEvent(self, QMouseClickEvent):
         if QMouseClickEvent.button() & QtCore.Qt.RightButton:
             self.completer.popup().hide()
-        else:
-            self.mouse_completer_event(QMouseClickEvent)
         super(CompleterTextEntry, self).mousePressEvent(QMouseClickEvent)
 
     def keyPressEvent(self, event):
         self.set_mode('filtered')
+        ctrl = QtCore.Qt.ControlModifier
+
         if event.key() in [QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter] and self.completer.popup().isVisible():
             super(CompleterTextEntry, self).keyPressEvent(event)
             self.returnPressed.emit(event)
             return
 
+        elif event.key() == QtCore.Qt.Key_Space and int(event.modifiers() & QtCore.Qt.ControlModifier) == ctrl:
+            self.contextMenuEvent(event)
+            return
+
+
         elif event.key() == QtCore.Qt.Key_Escape:
             self.escapePressed.emit(event)
             return
+
+        elif event.key() == QtCore.Qt.Key_Tab:
+            self.menu.close()
 
         cursor_position = self.cursorPosition()
         start_text = self.text_utf()
@@ -205,6 +210,10 @@ class CompleterTextEntry(QLineEditContextTree):
             self.filter_completer(event)
 
         self._last_entry = self.text_utf()
+
+    def focusInEvent(self, focus_event):
+        self.selectAll()
+        super(CompleterTextEntry, self).focusInEvent(focus_event)
 
     def focusOutEvent(self, focus_event):
         self.focusLost.emit(self)

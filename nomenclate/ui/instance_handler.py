@@ -139,6 +139,7 @@ class InstanceHandlerWidget(DefaultFrame):
         return token_widget
 
     def load_settings_from_config(self):
+        self.NOM.initialize_config_settings()
         for token, token_widget in iteritems(self.token_widget_lookup):
             token_widget.add_default_values_from_config(self.NOM.get_token_settings(token))
 
@@ -205,6 +206,11 @@ class InstanceHandlerWidget(DefaultFrame):
                 next_widget = self.token_widget_lookup[next_token.lower()]
                 self.LOG.debug(
                     'Selecting from widget %r to next token widget (%s): %r' % (token_widget, next_token, next_widget))
+                try:
+                    token_widget.value_widget.menu.close()
+                except AttributeError:
+                    pass
+
                 next_widget.value_widget.setFocus()
                 return True
         return False

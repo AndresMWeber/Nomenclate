@@ -20,4 +20,5 @@ QLabel#OutputTitle {
 
 QLabel#OutputLabel {
     qproperty-alignment: AlignCenter;
+    padding: 0 10px 0 10px;
 }

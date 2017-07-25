@@ -1,3 +1,4 @@
+# coding=utf-8
 import os
 from glob import glob
 from functools import partial
@@ -163,13 +164,16 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
 
     def setup_menubar(self):
         self.file_menu = self.menu_bar.addMenu('File')
+        self.presets_menu = self.menu_bar.addMenu('Presets')
         self.edit_menu = self.menu_bar.addMenu('Edit')
         self.view_menu = self.menu_bar.addMenu('View')
-        self.settings_menu = self.menu_bar.addMenu('Settings')
-        self.style_menu = self.settings_menu.addMenu('Set Style')
+        self.themes_menu = self.menu_bar.addMenu('Themes')
         self.format_menu = self.edit_menu.addMenu('Previous Formats')
 
-        edit_action_load_last_format = self.edit_menu.addAction('Load last format')
+        presets_action_load_from_config = self.presets_menu.addAction('Reload defaults from config.yml')
+        presets_action_load_from_config.triggered.connect(lambda: self.instance_handler.load_settings_from_config())
+
+        edit_action_load_last_format = self.presets_menu.addAction('Load last format')
         edit_action_load_last_format.setShortcut('Ctrl+D')
         edit_action_load_last_format.triggered.connect(lambda: self.load_format(None))
 
@@ -193,19 +197,19 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         repeat_action.setShortcut('Ctrl+G')
         repeat_action.triggered.connect(self.repeat_last_action)
 
-        save_action = self.file_menu.addAction('Save Window Settings')
+        save_action = self.presets_menu.addAction('Save Window Settings')
         save_action.setShortcut('Ctrl+S')
         save_action.triggered.connect(lambda: self.run_action(self.save_state, None, False))
 
-        save_as_action = self.file_menu.addAction('   Save Window Settings As...')
+        save_as_action = self.presets_menu.addAction(u' ↳ Save Window Settings As...'.encode('utf-8'))
         save_as_action.setShortcut('Ctrl+Alt+S')
         save_as_action.triggered.connect(lambda: self.run_action(self.save_state, None, True))
 
-        load_action = self.file_menu.addAction('Load Last Window Settings ')
+        load_action = self.presets_menu.addAction('Load Last Window Settings ')
         load_action.setShortcut('Ctrl+L')
         load_action.triggered.connect(lambda: self.run_action(self.load_state, None, False))
 
-        load_as_action = self.file_menu.addAction('   Load Window Settings From File...')
+        load_as_action = self.presets_menu.addAction(u' ↳ Load Window Settings from file...'.encode('utf-8'))
         load_as_action.setShortcut('Ctrl+Alt+L')
         load_as_action.triggered.connect(lambda: self.run_action(self.load_state, None, True))
 
@@ -213,7 +217,7 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         exit_action.setShortcut('Ctrl+Q')
         exit_action.triggered.connect(lambda: self.run_action(self.close, None, True))
 
-        exit_no_save_action = self.file_menu.addAction('   Exit without saving settings...')
+        exit_no_save_action = self.file_menu.addAction(u' ↳ Exit without saving settings...'.encode('utf-8'))
         exit_no_save_action.setShortcut('Ctrl+Alt+Q')
         exit_no_save_action.triggered.connect(lambda: self.run_action(self.close, None, False))
 
@@ -278,13 +282,13 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         self.update_stylesheet.emit()
 
     def populate_qss_styles(self):
-        self.style_menu.clear()
+        self.themes_menu.clear()
         for qss_style in glob(os.path.join(utils.RESOURCES_PATH, self.QSS_GLOB)):
             file_name = os.path.basename(qss_style)
             style_name = os.path.splitext(file_name)[0]
 
             if file_name not in [self.DARK_TEXT_QSS, self.LIGHT_TEXT_QSS]:
-                menu_action = self.style_menu.addAction(style_name.capitalize())
+                menu_action = self.themes_menu.addAction(style_name.capitalize())
                 action = partial(self.run_action, self.load_stylesheet, stylesheet=file_name)
                 menu_action.triggered.connect(action)
 
