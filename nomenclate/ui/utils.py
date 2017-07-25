@@ -2,6 +2,7 @@ import PyQt5.QtCore as QtCore
 import PyQt5.QtWidgets as QtWidgets
 import os
 import operator
+from six import iteritems
 import nomenclate
 import random
 
@@ -219,3 +220,15 @@ def get_contrast_ratio(color_a, color_b, mode=0):
 
 def nudge_color_value(rgb_color, nudge_val):
     return [color + nudge_val for color in rgb_color]
+
+def convert_config_lookup_to_options(config_lookup, result=None, parent=None, index=None):
+    if result is None:
+        result = []
+    if isinstance(config_lookup, (list, tuple)):
+        convert_config_lookup_to_options(parent, result)
+    elif isinstance(config_lookup, dict):
+        for key, value in iteritems(config_lookup):
+            convert_config_lookup_to_options(value, result, parent=key, index=None)
+    else:
+        result.append(config_lookup)
+    return result

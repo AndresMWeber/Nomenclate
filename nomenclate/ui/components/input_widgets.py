@@ -6,6 +6,7 @@ import nomenclate.ui.utils as utils
 from six import iteritems
 from functools import partial
 import nomenclate.core.tools as tools
+from pprint import pprint
 
 
 class CustomCompleter(QtWidgets.QCompleter):
@@ -90,9 +91,9 @@ class QLineEditContextTree(QtWidgets.QLineEdit):
                         self.add_menu_item(sub_menu, action_text)
             else:
                 # Enable this code if you do not want the single values to be under a sub menu
-                #if for_token:
+                # if for_token:
                 self.add_menu_item(sub_menu, str(value))
-                #else:
+                # else:
                 #    sub_menu.deleteLater()
                 #    self.add_menu_item(parent_menu, str(value), override_label='%s <<%s>>' % (str(value), key))
 
@@ -210,12 +211,18 @@ class CompleterTextEntry(QLineEditContextTree):
         self.focusLost.emit(self)
         super(CompleterTextEntry, self).focusOutEvent(focus_event)
 
-    def set_options(self, options, for_token=True):
+    def set_options(self, options, for_token=True, ignore_lists=True):
         if options is None:
             return
 
         self.build_menu_from_dict(options, for_token=for_token)
-        flattened_options = list(set(tools.flattenDictToLeaves(options)))
+
+        if ignore_lists:
+            flattened_options = utils.convert_config_lookup_to_options(options)
+        else:
+            flattened_options = list(set(tools.flattenDictToLeaves(options)))
+        pprint(options)
+        pprint(flattened_options)
 
         if self.completer:
             self.completer.set_items(flattened_options)

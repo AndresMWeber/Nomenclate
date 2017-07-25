@@ -149,7 +149,6 @@ class RenderBase(object):
 
             if not criteria_matches:
                 criteria_matches = [min(options, key=lambda x: abs(builtin_func(x) - criteria))]
-
         cls.LOG.info('Found criteria matches: %s ...returning first' % criteria_matches)
         return criteria_matches[0] if criteria_matches else options[0]
 
