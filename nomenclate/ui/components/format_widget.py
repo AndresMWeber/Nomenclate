@@ -68,12 +68,7 @@ class FormatWidget(QtWidgets.QStackedWidget):
         self._last_text = text
 
     def swap_visible_widget(self):
-        if self.layout().currentIndex() == 0:
-            self.format_updated.emit()
-
-        elif self.layout().currentIndex() == 1:
-            self.format_updated.emit()
-
+        self.format_updated.emit()
         self.setCurrentIndex(not self.layout().currentIndex())
 
     def update_format_colors(self, format_string, rich_text_format_string, color_lookup, format_order):
