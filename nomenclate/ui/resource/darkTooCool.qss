@@ -56,8 +56,14 @@ QListView, QFileRenameTreeView {
     border-bottom: none;
 }
 
-QMenuBar, QMenuBar::item, QMenu, QMenu::item {
+QMenuBar, QMenu {
     background-color: #2D2F42;
+    border: 1px solid #161823;
+    padding: 2px 5px 2px 5px;
+}
+
+QMenuBar::item,  QMenu::item {
+    background-color: transparent;
 }
 
 QMenu::item:selected, QAccordionTreeWidget::item:selected {

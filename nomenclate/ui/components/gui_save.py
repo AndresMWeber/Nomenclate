@@ -83,7 +83,7 @@ class WidgetState(object):
             try:
                 widget_path = cls.get_widget_path(widget)
                 widget_path = widget_path if not cls.STORE_WITH_HASH else hash(widget_path)
-                print 'storing with hash %s' % widget_path
+                
                 if cls.is_unique_widget_path(widget_path, settings):
                     settings[widget_path] = cls.serialize_widget_settings(widget)
                 else:

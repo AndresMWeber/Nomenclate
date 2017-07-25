@@ -3,6 +3,9 @@ import PyQt5.QtCore as QtCore
 import PyQt5.QtGui as QtGui
 import nomenclate
 import nomenclate.ui.utils as utils
+from six import iteritems
+from functools import partial
+import nomenclate.core.tools as tools
 
 
 class CustomCompleter(QtWidgets.QCompleter):
@@ -40,7 +43,54 @@ class TokenLineEdit(QtWidgets.QLineEdit):
         super(TokenLineEdit, self).mousePressEvent(QMouseClickEvent)
 
 
-class CompleterTextEntry(QtWidgets.QLineEdit):
+class QLineEditContextTree(QtWidgets.QLineEdit):
+    context_menu_insertion = QtCore.pyqtSignal()
+
+    def __init__(self, parent=None):
+        self.menu = QtWidgets.QMenu()
+        self.match_width = False
+        super(QLineEditContextTree, self).__init__(parent)
+
+    def resizeEvent(self, event):
+        if self.match_width:
+            self.menu.setMinimumWidth(self.width())
+        super(QLineEditContextTree, self).resizeEvent(event)
+
+    def contextMenuEvent(self, event):
+        if self.match_width:
+            self.menu.setMinimumWidth(self.width())
+        self.menu.exec_(self.mapToGlobal(self.rect().bottomLeft()))
+
+    def add_menu_item(self, menu, action_text):
+        action = menu.addAction(action_text)
+        action.triggered.connect(partial(self.insert_from_context_menu, action_text))
+        menu.addAction(action)
+
+    def insert_from_context_menu(self, text):
+        self.context_menu_insertion.emit()
+        self.setText(text)
+
+    def build_menu_from_dict(self, menu_iterable, parent_menu=None):
+        if parent_menu is None:
+            parent_menu = QtWidgets.QMenu()
+        else:
+            parent_menu.clear()
+
+        for key, value in iteritems(menu_iterable):
+            sub_menu = parent_menu.addMenu(key)
+            if isinstance(value, dict):
+                self.build_menu_from_dict(value, parent_menu=sub_menu)
+            elif isinstance(value, list):
+                for action_text in [str(_) for _ in value]:
+                    self.add_menu_item(sub_menu, action_text)
+            else:
+                self.add_menu_item(sub_menu, str(value))
+
+        if not isinstance(parent_menu.parent(), QtWidgets.QMenu):
+            self.menu = parent_menu
+
+
+class CompleterTextEntry(QLineEditContextTree):
     escapePressed = QtCore.pyqtSignal(QtCore.QEvent, name='escapePressed')
     returnPressed = QtCore.pyqtSignal(QtCore.QEvent, name='returnPressed')
 
@@ -90,17 +140,9 @@ class CompleterTextEntry(QtWidgets.QLineEdit):
         self.completer = CustomCompleter(items, parent=self)
         self.completer.setWidget(self)
         self.setCompleter(self.completer)
-        # self.completer.insertText.connect(self.insertCompletion)
         self.set_completer_items = self.completer.set_items
         self.set_completer_items(items)
         self.returnPressed.connect(self.completer.popup().hide)
-
-    def insertCompletion(self, completion):
-        if self.completer:
-            start, end = utils.find_whole_word_span(self.text_utf(), self.cursorPosition())
-            # self.setCursorPosition(start)
-            # self.setText(utils.replace_str_absolute(self.text_utf, completion, start, end))
-            self.completer.popup().hide()
 
     def mouse_completer_event(self, event):
         if self.completer:
@@ -114,9 +156,6 @@ class CompleterTextEntry(QtWidgets.QLineEdit):
                 word = utils.find_whole_word(self.text_utf(), self.cursorPosition())
                 if len(word) > 0:
                     self.completer.setCompletionPrefix(word)
-                    # self.completer.complete()
-                    # else:
-                    #   self.completer.popup().hide()
 
     def filter_validator(self, start_text, orig_start, event):
         if self.validator:
@@ -129,17 +168,16 @@ class CompleterTextEntry(QtWidgets.QLineEdit):
                 pass
 
     def mousePressEvent(self, QMouseClickEvent):
-        self.mouse_completer_event(QMouseClickEvent)
+        if QMouseClickEvent.button() & QtCore.Qt.RightButton:
+            self.completer.popup().hide()
+        else:
+            self.mouse_completer_event(QMouseClickEvent)
         super(CompleterTextEntry, self).mousePressEvent(QMouseClickEvent)
 
     def keyPressEvent(self, event):
         self.set_mode('filtered')
-        if event.key() == QtCore.Qt.Key_Return and self.completer.popup().isVisible():
-            self.completer.insertText.emit(self.completer.getSelected())
-            event.accept()
-            return
-
-        elif event.key() == QtCore.Qt.Key_Return:
+        if event.key() in [QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter] and self.completer.popup().isVisible():
+            super(CompleterTextEntry, self).keyPressEvent(event)
             self.returnPressed.emit(event)
             return
 
@@ -161,3 +199,7 @@ class CompleterTextEntry(QtWidgets.QLineEdit):
     def focusOutEvent(self, focus_event):
         self.focusLost.emit(self)
         super(CompleterTextEntry, self).focusOutEvent(focus_event)
+
+    def set_options(self, options):
+        self.build_menu_from_dict(options.copy())
+        self.add_completer(list(set(tools.flattenDictToLeaves(options))))

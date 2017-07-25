@@ -61,7 +61,7 @@ class InstanceHandlerWidget(DefaultFrame):
         self.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.nomenclate_output.connect(self.set_output)
 
-        self.input_format.set_options(self.get_options_list('naming_formats', return_type=dict))
+        self.input_format.text_input.set_options(self.get_options_list('naming_formats', return_type=dict))
 
     def connect_controls(self):
         self.input_format.format_updated.connect(self.set_format)
@@ -128,7 +128,7 @@ class InstanceHandlerWidget(DefaultFrame):
             self.token_widget_lookup[token] = token_widget
             options = self.get_completion_from_config(token)
             try:
-                token_widget.value_widget.set_completer_items(options)
+                token_widget.value_widget.set_options(options, remove_final_branch=True)
             except AttributeError:
                 pass
         else:
@@ -137,7 +137,7 @@ class InstanceHandlerWidget(DefaultFrame):
 
     def get_completion_from_config(self, search_string):
         try:
-            return map(str, self.get_options_list(search_string, list))
+            return self.get_options_list(search_string, return_type=dict)
         except nomenclate.core.errors.ResourceNotFoundError:
             self.LOG.debug('Could not find config entries for token %s' % search_string)
 
