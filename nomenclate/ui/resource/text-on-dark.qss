@@ -9,11 +9,6 @@ QPushButton, QRadioButton::indicator:checked, QRadioButton::indicator:unchecked
     color: #b1b1b1;
 }
 
-QMenu::item
-{
-    color: #999999;
-}
-
 QMenu::item:selected
 {
     color: #999999;

@@ -1,36 +1,23 @@
-
-QTextEdit, QLineEdit, QLabel, QListView, QWidget {
-    font-family: "Lato";
-}
-
 QTextEdit, QLineEdit, QPlainTextEdit, QLabel, QSpinBox, QComboBox {
     min-height: 25;
     max-height: 25;
 }
 
 QLabel#HeaderLabel {
-    font-family: "Quicksand";
     font-weight: regular;
     font-size: 20pt;
 }
 
 QLabel#TokenLabel {
     font-weight: 400;
-    font-size: 10pt;
     qproperty-alignment: AlignCenter;
 }
 
 QLabel#OutputTitle {
     qproperty-alignment: AlignCenter;
     font-weight: 400;
-    font-size: 8pt;
 }
 
 QLabel#OutputLabel {
     qproperty-alignment: AlignCenter;
-    font-size: 12pt;
-}
-
-QTreeWidget {
-     border: none;
 }

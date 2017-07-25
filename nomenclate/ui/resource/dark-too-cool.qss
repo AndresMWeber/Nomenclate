@@ -18,8 +18,18 @@ MiscB: #E2327F
 MiscC: #5DABAE
 */
 
+QLabel#HeaderLabel {
+    font-family: "Quicksand";
+    font-weight: regular;
+    font-size: 20pt;
+}
+
 QWidget#MainFrame{
     background: #0D0E19;
+}
+
+QTextEdit, QLineEdit, QLabel, QListView, QSpinBox, QWidget {
+    font-family: "Lato";
 }
 
 QTextEdit, QLineEdit, QLabel, QSpinBox {
@@ -78,8 +88,9 @@ QListView::item:selected:!active, QTreeView::item:selected:!active, QAccordionTr
     background: #161628;
 }
 
-#TokenLabel {
+QLabel#TokenLabel {
     border-radius: 2;
+    font-size: 10pt;
     border-bottom: 1px solid #451A37;
 }
 
@@ -88,11 +99,14 @@ QWidget#OutputWidget, QLabel#OutputLabel {
     color: #E2327F;
     background: transparent;
     border: none;
+    qproperty-alignment: AlignCenter;
+    font-size: 12pt;
 }
 
-OutputLabel{
-    qproperty-alignment: AlignCenter;
+QLabel#OutputTitle{
+    font-size: 8pt;
 }
+
 
 QAccordionTreeWidget::item:!active {
     background-color: 0E0E19;
