@@ -64,7 +64,6 @@ class FormatWidget(QtWidgets.QStackedWidget):
     def text_changed(self, text):
         difference = text.replace(self._last_text, '')
         if len(difference) > 1 and not self.text_input.completer.popup().isVisible():
-            print 'format updated'
             self.format_updated.emit()
         self._last_text = text
 

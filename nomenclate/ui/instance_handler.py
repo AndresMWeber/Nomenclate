@@ -61,7 +61,7 @@ class InstanceHandlerWidget(DefaultFrame):
         self.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.nomenclate_output.connect(self.set_output)
 
-        self.input_format.text_input.set_options(self.get_options_list('naming_formats', return_type=dict))
+        self.input_format.text_input.set_options(self.get_options_list('naming_formats', return_type=dict), for_token=False)
 
     def connect_controls(self):
         self.input_format.format_updated.connect(self.set_format)
@@ -128,7 +128,7 @@ class InstanceHandlerWidget(DefaultFrame):
             self.token_widget_lookup[token] = token_widget
             options = self.get_completion_from_config(token)
             try:
-                token_widget.value_widget.set_options(options, remove_final_branch=True)
+                token_widget.value_widget.set_options(options, for_token=True)
             except AttributeError:
                 pass
         else:

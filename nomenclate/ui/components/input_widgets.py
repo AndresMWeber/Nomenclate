@@ -61,8 +61,8 @@ class QLineEditContextTree(QtWidgets.QLineEdit):
             self.menu.setMinimumWidth(self.width())
         self.menu.exec_(self.mapToGlobal(self.rect().bottomLeft()))
 
-    def add_menu_item(self, menu, action_text):
-        action = menu.addAction(action_text)
+    def add_menu_item(self, menu, action_text, override_label=None):
+        action = menu.addAction(override_label or action_text)
         action.triggered.connect(partial(self.insert_from_context_menu, action_text))
         menu.addAction(action)
 
@@ -70,7 +70,7 @@ class QLineEditContextTree(QtWidgets.QLineEdit):
         self.context_menu_insertion.emit()
         self.setText(text)
 
-    def build_menu_from_dict(self, menu_iterable, parent_menu=None, ignore_end_list=False):
+    def build_menu_from_dict(self, menu_iterable, parent_menu=None, for_token=False):
         if parent_menu is None:
             parent_menu = QtWidgets.QMenu()
         else:
@@ -80,16 +80,21 @@ class QLineEditContextTree(QtWidgets.QLineEdit):
             sub_menu = parent_menu.addMenu(key)
             if isinstance(value, dict):
                 parent_menu.addSeparator()
-                self.build_menu_from_dict(value, parent_menu=sub_menu, ignore_end_list=ignore_end_list)
+                self.build_menu_from_dict(value, parent_menu=sub_menu, for_token=for_token)
             elif isinstance(value, list):
-                if ignore_end_list:
+                if for_token:
                     sub_menu.deleteLater()
                     self.add_menu_item(parent_menu, key)
                 else:
                     for action_text in [str(_) for _ in value]:
                         self.add_menu_item(sub_menu, action_text)
             else:
+                # Enable this code if you do not want the single values to be under a sub menu
+                #if for_token:
                 self.add_menu_item(sub_menu, str(value))
+                #else:
+                #    sub_menu.deleteLater()
+                #    self.add_menu_item(parent_menu, str(value), override_label='%s <<%s>>' % (str(value), key))
 
         if not isinstance(parent_menu.parent(), QtWidgets.QMenu):
             self.menu = parent_menu
@@ -205,8 +210,8 @@ class CompleterTextEntry(QLineEditContextTree):
         self.focusLost.emit(self)
         super(CompleterTextEntry, self).focusOutEvent(focus_event)
 
-    def set_options(self, options, remove_final_branch=True):
-        self.build_menu_from_dict(options, ignore_end_list=remove_final_branch)
+    def set_options(self, options, for_token=True):
+        self.build_menu_from_dict(options, for_token=for_token)
         flattened_options = list(set(tools.flattenDictToLeaves(options)))
         if self.completer:
             self.set_options(flattened_options)
