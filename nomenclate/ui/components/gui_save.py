@@ -113,11 +113,11 @@ class WidgetState(object):
         return settings
 
     @classmethod
-    def restore_state(cls, ui, filename=None, fullpath_override=None):
+    def restore_state(cls, ui, filename=None, fullpath_override=None, defaults=False):
         """ restore "ui" controls with values stored in registry "settings"
         """
         settings = cls.FILE_CONTEXT.load(filename=filename, fullpath_override=fullpath_override)
-        print settings, filename, fullpath_override
+
         failed_load = []
         if settings:
             for widget in cls.get_ui_members(ui):
@@ -125,7 +125,12 @@ class WidgetState(object):
                     if issubclass(type(widget), supported_widget_type):
                         widget_path = cls.get_widget_path(widget)
                         widget_path = widget_path if not cls.STORE_WITH_HASH else hash(widget_path)
-                        setting = settings.get(str(hash(widget_path)), None)
+
+                        if defaults:
+                            setting = getattr(widget, 'default_value', None)
+                        else:
+                            setting = settings.get(str(hash(widget_path)), None)
+
                         if setting is not None:
                             setter = cls.WIDGETS[supported_widget_type][utils.SETTER]
                             setter(widget, setting)

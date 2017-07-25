@@ -164,14 +164,18 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
 
     def setup_menubar(self):
         self.file_menu = self.menu_bar.addMenu('File')
-        self.presets_menu = self.menu_bar.addMenu('Presets')
         self.edit_menu = self.menu_bar.addMenu('Edit')
+        self.presets_menu = self.menu_bar.addMenu('Presets')
         self.view_menu = self.menu_bar.addMenu('View')
         self.themes_menu = self.menu_bar.addMenu('Themes')
         self.format_menu = self.edit_menu.addMenu('Previous Formats')
 
         presets_action_load_from_config = self.presets_menu.addAction('Reload defaults from config.yml')
         presets_action_load_from_config.triggered.connect(lambda: self.instance_handler.load_settings_from_config())
+
+        edit_action_load_last_format = self.presets_menu.addAction('Reset all')
+        edit_action_load_last_format.setShortcut('Ctrl+R')
+        edit_action_load_last_format.triggered.connect(lambda: self.restore_defaults())
 
         edit_action_load_last_format = self.presets_menu.addAction('Load last format')
         edit_action_load_last_format.setShortcut('Ctrl+D')
@@ -182,7 +186,7 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         view_action_color_code.triggered.connect(self.set_color_coded)
 
         view_action_refresh = self.view_menu.addAction('Refresh StyleSheets from Folder')
-        view_action_refresh.setShortcut('Ctrl+R')
+        view_action_refresh.setShortcut('Ctrl+U')
         view_action_refresh.triggered.connect(lambda: self.run_action(self.populate_qss_styles))
 
         view_action = self.view_menu.addAction('Expand/Collapse Tokens')
@@ -261,6 +265,10 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
                 ext = ext.replace('*', '')
                 file = file if file.endswith(ext) else file + ext
                 gui_save.WidgetState.generate_state(self, fullpath_override=file)
+
+    def restore_defaults(self):
+        gui_save.WidgetState.restore_state(self, defaults=True)
+        print self.instance_handler.NOM.state
 
     def load_state(self, mode=False):
         filename = None if not mode else QtWidgets.QFileDialog.getOpenFileName(self, 'Load UI Settings',

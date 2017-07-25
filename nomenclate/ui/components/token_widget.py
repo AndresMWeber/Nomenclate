@@ -98,6 +98,12 @@ class TokenWidget(DefaultFrame):
         if getattr(self.value_widget, 'set_options', None):
             self.value_widget.set_options(options, for_token=True)
 
+    def set_defaults(self, widgets):
+        for widget in widgets:
+            for widget_type in list(utils.INPUT_WIDGETS):
+                if issubclass(type(widget), widget_type):
+                    widget.default_value = utils.INPUT_WIDGETS[widget_type][utils.GETTER](widget)
+
     def __repr__(self):
         return super(TokenWidget, self).__repr__().replace('>', ' %r>' % self.token.lower())
 
@@ -139,12 +145,13 @@ class DefaultTokenWidget(TokenWidget):
         # Register with internal token settings dictionary to allow auto-serialization
         self.SETTINGS['value'] = {utils.GETTER: self.value_widget.text, utils.SETTER: self.value_widget.setText}
         self.SETTINGS['%s_len' % self.token] = {utils.GETTER: self.length.value, utils.SETTER: self.length.setValue}
-
         self.SETTINGS['prefix_setting'] = {utils.GETTER: self.prefix.text, utils.SETTER: self.prefix.setText}
         self.SETTINGS['suffix_setting'] = {utils.GETTER: self.suffix.text, utils.SETTER: self.suffix.setText}
         self.SETTINGS['case_setting'] = {
             utils.GETTER: lambda: self.capital.currentText() if self.capital.currentIndex() != 0 else "",
             utils.SETTER: self.capital.setCurrentIndex}
+
+        self.set_defaults([self.value_widget, self.length, self.prefix, self.suffix, self.capital])
 
     def connect_controls(self):
         super(DefaultTokenWidget, self).connect_controls()
@@ -180,6 +187,8 @@ class VarTokenWidget(TokenWidget):
 
         self.accordion_tree.add_widgets_to_category(self.token,
                                                     [self.capital, self.prefix, self.suffix, self.value_widget])
+
+        self.set_defaults([self.value_widget, self.prefix, self.suffix, self.capital])
         # Register with internal token settings dictionary to allow auto-serialization
         self.SETTINGS['case_setting'] = {
             utils.GETTER: lambda: self.capital.currentText() if self.capital.currentIndex() != 0 else "",
@@ -202,7 +211,6 @@ class VersionTokenWidget(TokenWidget):
 
     def create_controls(self):
         super(VersionTokenWidget, self).create_controls()
-        self.identifier = QtWidgets.QComboBox()
         self.padding = QtWidgets.QSpinBox()
         self.prefix = QtWidgets.QLineEdit()
         self.suffix = QtWidgets.QLineEdit()
@@ -210,28 +218,23 @@ class VersionTokenWidget(TokenWidget):
 
     def initialize_controls(self):
         super(VersionTokenWidget, self).initialize_controls()
-        self.identifier.addItems(['0-9', 'A-Z', 'a-z'])
-        list_view = QtWidgets.QListView(self.identifier)
-        list_view.setObjectName('drop_down_list_view')
-        self.identifier.setView(list_view)
-
         self.prefix.setPlaceholderText('prefix')
         self.suffix.setPlaceholderText('suffix')
         self.prefix.setValidator(QtGui.QRegExpValidator(utils.TOKEN_VALUE_VALIDATOR, self.prefix))
         self.suffix.setValidator(QtGui.QRegExpValidator(utils.TOKEN_VALUE_VALIDATOR, self.suffix))
 
         self.accordion_tree.add_widgets_to_category(self.token,
-                                                    [self.identifier,
-                                                     self.padding,
+                                                    [self.padding,
                                                      self.prefix,
                                                      self.suffix])
         self.padding.setMinimum(1)
+
         # Register with internal token settings dictionary to allow auto-serialization
+        self.set_defaults([self.value_widget, self.padding, self.prefix, self.suffix])
+
         self.SETTINGS['prefix_setting'] = {utils.GETTER: self.prefix.text, utils.SETTER: self.prefix.setText}
         self.SETTINGS['suffix_setting'] = {utils.GETTER: self.suffix.text, utils.SETTER: self.suffix.setText}
         self.SETTINGS['value'] = {utils.GETTER: self.value_widget.value, utils.SETTER: self.value_widget.setValue}
-        self.SETTINGS['identifier_setting'] = {utils.GETTER: self.identifier.currentText,
-                                               utils.SETTER: self.identifier.setCurrentText}
         self.SETTINGS['%s_padding' % self.token] = {utils.GETTER: self.padding.value,
                                                     utils.SETTER: self.padding.setValue}
         self.SETTINGS['%s_format' % self.token] = {utils.GETTER: lambda: '#', utils.SETTER: lambda x: None}
@@ -239,7 +242,6 @@ class VersionTokenWidget(TokenWidget):
     def connect_controls(self):
         super(VersionTokenWidget, self).connect_controls()
         self.value_widget.valueChanged.connect(self.on_change)
-        self.identifier.currentIndexChanged.connect(self.on_change)
         self.padding.valueChanged.connect(self.on_change)
         self.prefix.textChanged.connect(self.on_change)
         self.suffix.textChanged.connect(self.on_change)
