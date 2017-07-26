@@ -5,13 +5,18 @@ import PyQt5.QtWidgets as QtWidgets
 import nomenclate.ui.components.input_widgets as input_widgets
 import nomenclate.settings as settings
 import nomenclate.ui.utils as utils
-import ui.components.accordion_widget as accordion_tree
+import nomenclate.ui.components.accordion_widget as accordion_tree
 from nomenclate.ui.default import DefaultFrame
 
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
+try:
+    UNICODE_EXISTS = bool(type(unicode))
+except NameError:
+    unicode = lambda s: str(s)
 
-class TokenWidgetFactory(QtCore.pyqtWrapperType):
+
+class TokenWidgetFactory(type(QtCore.QObject)):
     TOKEN_WIDGETS = {}
 
     def __new__(mcs, name, bases, dct):
@@ -79,7 +84,10 @@ class TokenWidget(DefaultFrame):
             if isinstance(value, dict):
                 value = value.get(utils.GETTER)
             value = value() if callable(value) else value
-            settings[setting] = value.encode('utf-8') if hasattr(value, 'encode') else value
+            if isinstance(value, bytes):
+                value = unicode(value)
+
+            settings[setting] = value
 
         return settings
 
@@ -175,27 +183,30 @@ class VarTokenWidget(TokenWidget):
 
     def initialize_controls(self):
         super(VarTokenWidget, self).initialize_controls()
+        widgets = [self.capital, self.prefix, self.suffix]
         self.capital.addItems(self.CAPITAL_OPTIONS)
         list_view = QtWidgets.QListView(self.capital)
         list_view.setObjectName('drop_down_list_view')
         self.capital.setView(list_view)
+        self.value_widget.setMinimum(-1)
 
         self.prefix.setPlaceholderText('prefix')
         self.suffix.setPlaceholderText('suffix')
         self.prefix.setValidator(QtGui.QRegExpValidator(utils.TOKEN_VALUE_VALIDATOR, self.prefix))
         self.suffix.setValidator(QtGui.QRegExpValidator(utils.TOKEN_VALUE_VALIDATOR, self.suffix))
 
-        self.accordion_tree.add_widgets_to_category(self.token,
-                                                    [self.capital, self.prefix, self.suffix, self.value_widget])
+        self.accordion_tree.add_widgets_to_category(self.token, widgets)
+        self.set_defaults(widgets + [self.value_widget])
 
-        self.set_defaults([self.value_widget, self.prefix, self.suffix, self.capital])
         # Register with internal token settings dictionary to allow auto-serialization
+        self.SETTINGS['prefix_setting'] = {utils.GETTER: self.prefix.text, utils.SETTER: self.prefix.setText}
+        self.SETTINGS['suffix_setting'] = {utils.GETTER: self.suffix.text, utils.SETTER: self.suffix.setText}
         self.SETTINGS['case_setting'] = {
             utils.GETTER: lambda: self.capital.currentText() if self.capital.currentIndex() != 0 else "",
             utils.SETTER: self.capital.setCurrentText}
-        self.SETTINGS['prefix_setting'] = {utils.GETTER: self.prefix.text, utils.SETTER: self.prefix.setText}
-        self.SETTINGS['suffix_setting'] = {utils.GETTER: self.suffix.text, utils.SETTER: self.suffix.setText}
-        self.SETTINGS['value'] = {utils.GETTER: self.value_widget.value, utils.SETTER: self.value_widget.setValue}
+        self.SETTINGS['value'] = {
+            utils.GETTER: lambda: self.value_widget.value() if self.value_widget.value() >= 0 else "",
+            utils.SETTER: self.value_widget.setValue}
 
     def connect_controls(self):
         super(VarTokenWidget, self).connect_controls()
@@ -205,6 +216,8 @@ class VarTokenWidget(TokenWidget):
         self.prefix.textChanged.connect(self.on_change)
         self.suffix.textChanged.connect(self.on_change)
 
+class LodTokenWidget(VarTokenWidget):
+    HANDLES_TOKEN = 'lod'
 
 class VersionTokenWidget(TokenWidget):
     HANDLES_TOKEN = 'version'
@@ -218,26 +231,27 @@ class VersionTokenWidget(TokenWidget):
 
     def initialize_controls(self):
         super(VersionTokenWidget, self).initialize_controls()
+        widgets = [self.padding, self.prefix, self.suffix]
         self.prefix.setPlaceholderText('prefix')
         self.suffix.setPlaceholderText('suffix')
         self.prefix.setValidator(QtGui.QRegExpValidator(utils.TOKEN_VALUE_VALIDATOR, self.prefix))
         self.suffix.setValidator(QtGui.QRegExpValidator(utils.TOKEN_VALUE_VALIDATOR, self.suffix))
 
-        self.accordion_tree.add_widgets_to_category(self.token,
-                                                    [self.padding,
-                                                     self.prefix,
-                                                     self.suffix])
+        self.accordion_tree.add_widgets_to_category(self.token, widgets)
         self.padding.setMinimum(1)
+        self.value_widget.setMinimum(-1)
 
         # Register with internal token settings dictionary to allow auto-serialization
-        self.set_defaults([self.value_widget, self.padding, self.prefix, self.suffix])
+        self.set_defaults(widgets + [self.value_widget])
 
         self.SETTINGS['prefix_setting'] = {utils.GETTER: self.prefix.text, utils.SETTER: self.prefix.setText}
         self.SETTINGS['suffix_setting'] = {utils.GETTER: self.suffix.text, utils.SETTER: self.suffix.setText}
-        self.SETTINGS['value'] = {utils.GETTER: self.value_widget.value, utils.SETTER: self.value_widget.setValue}
         self.SETTINGS['%s_padding' % self.token] = {utils.GETTER: self.padding.value,
                                                     utils.SETTER: self.padding.setValue}
         self.SETTINGS['%s_format' % self.token] = {utils.GETTER: lambda: '#', utils.SETTER: lambda x: None}
+        self.SETTINGS['value'] = {
+            utils.GETTER: lambda: self.value_widget.value() if self.value_widget.value() >= 0 else "",
+            utils.SETTER: self.value_widget.setValue}
 
     def connect_controls(self):
         super(VersionTokenWidget, self).connect_controls()

@@ -1,14 +1,19 @@
+from six import iteritems
 import PyQt5.QtCore as QtCore
 import PyQt5.QtWidgets as QtWidgets
-from nomenclate.ui.components.token_widget import TokenWidgetFactory
-from six import iteritems
 import nomenclate
 import nomenclate.settings as settings
 import nomenclate.ui.utils as utils
-import ui.components.format_widget as format_wgt
-from default import DefaultFrame
+import nomenclate.ui.components.format_widget as format_wgt
+from nomenclate.ui.default import DefaultFrame
+from nomenclate.ui.components.token_widget import TokenWidgetFactory
 
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
+
+try:
+    UNICODE_EXISTS = bool(type(unicode))
+except NameError:
+    unicode = lambda s: str(s)
 
 
 class InstanceHandlerWidget(DefaultFrame):
@@ -61,7 +66,8 @@ class InstanceHandlerWidget(DefaultFrame):
         self.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.nomenclate_output.connect(self.set_output)
 
-        self.input_format.text_input.set_options(self.get_options_from_config('naming_formats', return_type=dict), for_token=False)
+        self.input_format.text_input.set_options(self.get_options_from_config('naming_formats', return_type=dict),
+                                                 for_token=False)
 
     def connect_controls(self):
         self.input_format.format_updated.connect(self.set_format)
@@ -184,6 +190,7 @@ class InstanceHandlerWidget(DefaultFrame):
 
         if serialized_token_data:
             token_attr = getattr(self.NOM, token)
+
             for setting, value in iteritems(serialized_token_data):
                 self.LOG.info('Obtained TokenAttr: %r, now modifying with new settings' % token_attr)
                 set_on_object = token_attr if 'setting' in setting else self.NOM
@@ -253,7 +260,7 @@ class InstanceHandlerWidget(DefaultFrame):
         while bg_score < 8 and color_score < 3:
             nudge_value = 5 if dark else -5
             if color is None:
-                color = utils.hex_to_rgb(utils.gen_color(hash(format_token)))
+                color = utils.hex_to_rgb(utils.gen_color(utils.persistent_hash(format_token)))
             else:
                 color = utils.nudge_color_value(utils.hex_to_rgb(color), nudge_value)
             contrast_against = (0, 0, 0) if dark else (1, 1, 1)

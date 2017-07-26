@@ -1,4 +1,3 @@
-# coding=utf-8
 import os
 from glob import glob
 from functools import partial
@@ -11,6 +10,11 @@ import nomenclate.ui.instance_handler as instance_handler
 import nomenclate.ui.object_list as object_list
 import nomenclate.ui.default as default
 import nomenclate.ui.components.gui_save as gui_save
+
+try:
+    UNICODE_EXISTS = bool(type(unicode))
+except NameError:
+    unicode = lambda s: str(s)
 
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
@@ -205,7 +209,7 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         save_action.setShortcut('Ctrl+S')
         save_action.triggered.connect(lambda: self.run_action(self.save_state, None, False))
 
-        save_as_action = self.presets_menu.addAction(u' ↳ Save Window Settings As...'.encode('utf-8'))
+        save_as_action = self.presets_menu.addAction(unicode(u' ↳ Save Window Settings As...'))
         save_as_action.setShortcut('Ctrl+Alt+S')
         save_as_action.triggered.connect(lambda: self.run_action(self.save_state, None, True))
 
@@ -213,7 +217,7 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         load_action.setShortcut('Ctrl+L')
         load_action.triggered.connect(lambda: self.run_action(self.load_state, None, False))
 
-        load_as_action = self.presets_menu.addAction(u' ↳ Load Window Settings from file...'.encode('utf-8'))
+        load_as_action = self.presets_menu.addAction(unicode(u' ↳ Load Window Settings from file...'))
         load_as_action.setShortcut('Ctrl+Alt+L')
         load_as_action.triggered.connect(lambda: self.run_action(self.load_state, None, True))
 
@@ -221,7 +225,7 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         exit_action.setShortcut('Ctrl+Q')
         exit_action.triggered.connect(lambda: self.run_action(self.close, None, True))
 
-        exit_no_save_action = self.file_menu.addAction(u' ↳ Exit without saving settings...'.encode('utf-8'))
+        exit_no_save_action = self.file_menu.addAction(unicode(u' ↳ Exit without saving settings...'))
         exit_no_save_action.setShortcut('Ctrl+Alt+Q')
         exit_no_save_action.triggered.connect(lambda: self.run_action(self.close, None, False))
 
@@ -254,28 +258,32 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
             action = partial(self.run_action, self.load_format, None, format_history)
             menu_action.triggered.connect(action)
 
-    def save_state(self, mode=False):
-        filename = None if not mode else QtWidgets.QFileDialog.getSaveFileName(self, 'Save UI Settings',
-                                                                               gui_save.NomenclateFileContext.DEFAULT_DIR,
-                                                                               filter='*.json')
-        if filename:
-            file, ext = filename
-            file = os.path.normpath(file)
-            if file:
-                ext = ext.replace('*', '')
-                file = file if file.endswith(ext) else file + ext
-                gui_save.WidgetState.generate_state(self, fullpath_override=file)
-
     def restore_defaults(self):
         gui_save.WidgetState.restore_state(self, defaults=True)
-        print self.instance_handler.NOM.state
+
+    def save_state(self, mode=False):
+        result = None if not mode else QtWidgets.QFileDialog.getSaveFileName(self, 'Save UI Settings',
+                                                                             gui_save.NomenclateFileContext.DEFAULT_DIR,
+                                                                             filter='*.json')
+        result = self.process_dialog_result(result)
+        gui_save.WidgetState.generate_state(self, fullpath_override=result)
 
     def load_state(self, mode=False):
-        filename = None if not mode else QtWidgets.QFileDialog.getOpenFileName(self, 'Load UI Settings',
-                                                                               gui_save.NomenclateFileContext.DEFAULT_DIR,
-                                                                               filter='*.json')
-        if filename:
-            gui_save.WidgetState.restore_state(self, fullpath_override=filename[0])
+        result = None if not mode else QtWidgets.QFileDialog.getOpenFileName(self, 'Load UI Settings',
+                                                                             gui_save.NomenclateFileContext.DEFAULT_DIR,
+                                                                             filter='*.json')
+        result = self.process_dialog_result(result)
+        gui_save.WidgetState.restore_state(self, fullpath_override=result)
+
+    def process_dialog_result(self, path):
+        if path is None:
+            return path
+        path, file_filter = path
+        if not path:
+            return None
+        path = os.path.normpath(path)
+        ext = file_filter.replace('*', '')
+        return path if path.endswith(ext) else path + ext
 
     def run_action(self, action_function, qevent, *args, **kwargs):
         self.last_action_cache = {'function': action_function, 'args': args, 'kwargs': kwargs, 'event': qevent}

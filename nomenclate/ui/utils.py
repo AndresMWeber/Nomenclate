@@ -1,10 +1,11 @@
-import PyQt5.QtCore as QtCore
-import PyQt5.QtWidgets as QtWidgets
+from six import iteritems
+import hashlib
 import os
 import operator
-from six import iteritems
-import nomenclate
 import random
+import PyQt5.QtCore as QtCore
+import PyQt5.QtWidgets as QtWidgets
+import nomenclate
 
 ALPHANUMERIC_VALIDATOR = QtCore.QRegExp('[A-Za-z0-9_]*')
 TOKEN_VALUE_VALIDATOR = QtCore.QRegExp('^(?!^_)(?!.*__+|\.\.+.*)[a-zA-Z0-9_\.]+(?!_)$')
@@ -151,7 +152,7 @@ def replace_str_absolute(text, replacement, start, end=None):
 
 def gen_color(seed=None):
     if seed is not None:
-        random.seed(seed)
+        random.seed(seed-8)
     r = lambda: random.randint(0, 255)
     return '#%02X%02X%02X' % (r(), r(), r())
 
@@ -189,37 +190,25 @@ def get_relative_luminance(rgb):
 
 
 def get_contrast_ratio(color_a, color_b, mode=0):
+    """
+    (ratio 0-3) incidental usage or logotypes."
+    (ratio 3-4.5) minimum contrast large text."
+    (ratio 4.5-7) minimum contrast or enhanced contrast large text."
+    (ratio >= 7) enhanced contrast."
+    """
     light = color_a if sum(color_a) > sum(color_b) else color_b
     dark = color_a if sum(color_a) < sum(color_b) else color_b
-
     contrast_ratio = (get_relative_luminance(light) + 0.05) / (get_relative_luminance(dark) + 0.05)
-
     if mode:
         yiq_contrast_ratio = (get_contrast_YIQ(light) / (get_contrast_YIQ(dark) or 0.01))
         contrast_ratio = yiq_contrast_ratio
 
-    if contrast_ratio < 3:
-        usable_for = "(ratio 0-3) incidental usage or logotypes."
-    elif contrast_ratio >= 3 and contrast_ratio < 4.5:
-        usable_for = "(ratio 3-4.5) minimum contrast large text."
-    elif contrast_ratio >= 4.5 and contrast_ratio < 7:
-        usable_for = "(ratio 4.5-7) minimum contrast or enhanced contrast large text."
-    elif contrast_ratio >= 7:
-        usable_for = "(ratio >= 7) enhanced contrast."
-    """
-    print(str("Contrast ratio calculator\n"
-              "Usable for the W3C Web Content Accessibility Guidelines (WCAG) 2.0\n"
-              "http://www.w3.org/TR/2008/REC-WCAG20-20081211/\n"
-              "1.4.3 Contrast (Minimum): 4.5:1 (Large text: 3:1)\n"
-              "1.4.6 Contrast (Enhanced): 7:1 (Large text: 4.5:1)\n"
-              "Calculated contrast:\n"
-              "{:.01F}:1 Usable for {}\n").format(contrast_ratio, usable_for))
-    """
     return contrast_ratio
 
 
 def nudge_color_value(rgb_color, nudge_val):
     return [color + nudge_val for color in rgb_color]
+
 
 def convert_config_lookup_to_options(config_lookup, result=None, parent=None, index=None):
     if result is None:
@@ -232,3 +221,7 @@ def convert_config_lookup_to_options(config_lookup, result=None, parent=None, in
     else:
         result.append(config_lookup)
     return result
+
+
+def persistent_hash(input):
+    return int(hashlib.md5(str(input).encode('utf-8')).hexdigest(), 16)

@@ -1,10 +1,10 @@
-import nomenclate.ui.utils as utils
-import tempfile
-import json
 import os
+import json
+import tempfile
+import nomenclate.ui.utils as utils
 import nomenclate.settings as settings
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
 
 LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
 
@@ -79,8 +79,6 @@ class NomenclateFileContext(object):
                 self.data_cache = data
                 return data
 
-        if fullpath_override:
-            save_file_path = fullpath_override
         return {}
 
 
@@ -98,7 +96,6 @@ class WidgetState(object):
         for widget in cls.get_ui_members(ui):
             try:
                 widget_path = cls.get_widget_path(widget)
-                widget_path = widget_path if not cls.STORE_WITH_HASH else hash(widget_path)
 
                 if cls.is_unique_widget_path(widget_path, settings):
                     settings[widget_path] = cls.serialize_widget_settings(widget)
@@ -124,12 +121,11 @@ class WidgetState(object):
                 for supported_widget_type in list(cls.WIDGETS):
                     if issubclass(type(widget), supported_widget_type):
                         widget_path = cls.get_widget_path(widget)
-                        widget_path = widget_path if not cls.STORE_WITH_HASH else hash(widget_path)
 
                         if defaults:
                             setting = getattr(widget, 'default_value', None)
                         else:
-                            setting = settings.get(str(hash(widget_path)), None)
+                            setting = settings.get(widget_path, None)
 
                         if setting is not None:
                             setter = cls.WIDGETS[supported_widget_type][utils.SETTER]
@@ -176,8 +172,6 @@ class WidgetState(object):
 
     def get_ui_custom_attributes(self):
         pass
-        # import inspect
-        # inspect.getmembers(MyClass, lambda a: not (inspect.isroutine(a)))
 
     @classmethod
     def get_widget_path(cls, qwidget):
@@ -185,6 +179,7 @@ class WidgetState(object):
         while qwidget.parent():
             widget_path = cls.get_widget_name(qwidget.parent()) + utils.OBJECT_PATH_SEPARATOR + widget_path
             qwidget = qwidget.parent()
+        widget_path = widget_path if not cls.STORE_WITH_HASH else utils.persistent_hash(widget_path)
         return str(widget_path)
 
     @classmethod

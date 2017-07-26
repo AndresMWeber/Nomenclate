@@ -1,9 +1,8 @@
+from six import iteritems
 import PyQt5.QtWidgets as QtWidgets
 import PyQt5.QtCore as QtCore
-import PyQt5.QtGui as QtGui
 import nomenclate.ui.utils as utils
-from ui.default import DefaultFrame, DefaultWidget
-from six import iteritems
+from nomenclate.ui.default import DefaultFrame
 
 
 class QClickLabel(QtWidgets.QLabel):

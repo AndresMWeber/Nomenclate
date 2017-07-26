@@ -1,8 +1,7 @@
-import nomenclate.settings as settings
-from PyQt5 import QtWidgets, QtCore
-from main import MainDialog
-import logging
 import sys
+from PyQt5 import QtWidgets, QtCore
+import nomenclate.settings as settings
+from nomenclate.ui.main import MainDialog
 
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
 

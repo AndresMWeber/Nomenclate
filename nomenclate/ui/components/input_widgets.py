@@ -1,10 +1,10 @@
+from six import iteritems
+from functools import partial
 import PyQt5.QtWidgets as QtWidgets
 import PyQt5.QtCore as QtCore
 import PyQt5.QtGui as QtGui
 import nomenclate
 import nomenclate.ui.utils as utils
-from six import iteritems
-from functools import partial
 import nomenclate.core.tools as tools
 
 
@@ -117,7 +117,7 @@ class CompleterTextEntry(QLineEditContextTree):
         self.setToolTip('Right-click for full options list, blank if none')
 
     def text_utf(self):
-        return self.text().encode('utf-8')
+        return self.text()
 
     def set_mode(self, mode):
         if self.completer:

@@ -204,6 +204,10 @@ class RenderVar(RenderBase):
         return characters.upper() if capital else characters
 
 
+class RenderLod(RenderVar):
+    token = 'lod'
+
+
 class RenderVersion(RenderBase):
     token = 'version'
 
