@@ -43,6 +43,7 @@ class UISetting(object):
 
 
 class MainDialog(default.DefaultWidget, utils.Cacheable, object):
+    file_saved = QtCore.pyqtSignal()
     dropped_files = QtCore.pyqtSignal(list)
     update_stylesheet = QtCore.pyqtSignal()
     update_color_coded = QtCore.pyqtSignal(str, list, bool)
@@ -76,6 +77,7 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         self.update_stylesheet.emit()
         QtWidgets.QApplication.instance().installEventFilter(self)
         self.load_state()
+        self.populate_presets()
 
     @property
     def focused_widget(self):
@@ -134,6 +136,7 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         self.instance_handler.nomenclate_output.connect(self.update_names)
         self.update_stylesheet.connect(self.set_stylesheet)
         self.update_color_coded.connect(self.instance_handler.format_updated)
+        self.file_saved.connect(self.populate_presets)
 
     def initialize_controls(self):
         font = QtWidgets.QApplication.font()
@@ -173,6 +176,7 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         self.view_menu = self.menu_bar.addMenu('View')
         self.themes_menu = self.menu_bar.addMenu('Themes')
         self.format_menu = self.edit_menu.addMenu('Previous Formats')
+        self.presets_list_menu = self.presets_menu.addMenu('User Presets')
 
         presets_action_load_from_config = self.presets_menu.addAction('Reload defaults from config.yml')
         presets_action_load_from_config.triggered.connect(lambda: self.instance_handler.load_settings_from_config())
@@ -263,14 +267,15 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
 
     def save_state(self, mode=False):
         result = None if not mode else QtWidgets.QFileDialog.getSaveFileName(self, 'Save UI Settings',
-                                                                             gui_save.NomenclateFileContext.DEFAULT_DIR,
+                                                                             gui_save.NomenclateFileContext.DEFAULT_PRESETS_PATH,
                                                                              filter='*.json')
         result = self.process_dialog_result(result)
         gui_save.WidgetState.generate_state(self, fullpath_override=result)
+        self.file_saved.emit()
 
     def load_state(self, mode=False):
         result = None if not mode else QtWidgets.QFileDialog.getOpenFileName(self, 'Load UI Settings',
-                                                                             gui_save.NomenclateFileContext.DEFAULT_DIR,
+                                                                             gui_save.NomenclateFileContext.DEFAULT_PRESETS_PATH,
                                                                              filter='*.json')
         result = self.process_dialog_result(result)
         gui_save.WidgetState.restore_state(self, fullpath_override=result)
@@ -304,6 +309,16 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
             self.dark.set(not self.dark.get())
         self.update_stylesheet.emit()
 
+    def populate_presets(self):
+        self.presets_list_menu.clear()
+        print('populating!')
+        for preset_file in gui_save.WidgetState.list_presets():
+            menu_action = self.presets_list_menu.addAction(os.path.basename(preset_file))
+            menu_action.triggered.connect(partial(self.run_action,
+                                                  gui_save.WidgetState.restore_state,
+                                                  self,
+                                                  fullpath_override=preset_file))
+
     def populate_qss_styles(self):
         self.themes_menu.clear()
         for qss_style in glob(os.path.join(utils.RESOURCES_PATH, self.QSS_GLOB)):
@@ -312,8 +327,7 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
 
             if file_name not in [self.DARK_TEXT_QSS, self.LIGHT_TEXT_QSS]:
                 menu_action = self.themes_menu.addAction(style_name.capitalize())
-                action = partial(self.run_action, self.load_stylesheet, stylesheet=file_name)
-                menu_action.triggered.connect(action)
+                menu_action.triggered.connect(partial(self.run_action, self.load_stylesheet, stylesheet=file_name))
 
     @utils.cache_function
     def get_stylesheet_qss(self, stylesheet):

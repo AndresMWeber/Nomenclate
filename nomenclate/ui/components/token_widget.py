@@ -189,6 +189,7 @@ class VarTokenWidget(TokenWidget):
         list_view.setObjectName('drop_down_list_view')
         self.capital.setView(list_view)
         self.value_widget.setMinimum(-1)
+        self.value_widget.setValue(-1)
 
         self.prefix.setPlaceholderText('prefix')
         self.suffix.setPlaceholderText('suffix')
@@ -216,8 +217,10 @@ class VarTokenWidget(TokenWidget):
         self.prefix.textChanged.connect(self.on_change)
         self.suffix.textChanged.connect(self.on_change)
 
+
 class LodTokenWidget(VarTokenWidget):
     HANDLES_TOKEN = 'lod'
+
 
 class VersionTokenWidget(TokenWidget):
     HANDLES_TOKEN = 'version'
@@ -238,8 +241,10 @@ class VersionTokenWidget(TokenWidget):
         self.suffix.setValidator(QtGui.QRegExpValidator(utils.TOKEN_VALUE_VALIDATOR, self.suffix))
 
         self.accordion_tree.add_widgets_to_category(self.token, widgets)
+        self.padding.setPrefix('padding ')
         self.padding.setMinimum(1)
         self.value_widget.setMinimum(-1)
+        self.value_widget.setValue(-1)
 
         # Register with internal token settings dictionary to allow auto-serialization
         self.set_defaults(widgets + [self.value_widget])
