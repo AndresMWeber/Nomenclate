@@ -190,6 +190,8 @@ class VarTokenWidget(TokenWidget):
         self.capital.setView(list_view)
         self.value_widget.setMinimum(-1)
         self.value_widget.setValue(-1)
+        self.value_widget.setPrefix('index ')
+        self.value_widget.setSpecialValueText('off')
 
         self.prefix.setPlaceholderText('prefix')
         self.suffix.setPlaceholderText('suffix')
@@ -212,7 +214,6 @@ class VarTokenWidget(TokenWidget):
     def connect_controls(self):
         super(VarTokenWidget, self).connect_controls()
         self.capital.currentIndexChanged.connect(self.on_change)
-        self.value_widget.setValue(0)
         self.value_widget.valueChanged.connect(self.on_change)
         self.prefix.textChanged.connect(self.on_change)
         self.suffix.textChanged.connect(self.on_change)
@@ -243,8 +244,11 @@ class VersionTokenWidget(TokenWidget):
         self.accordion_tree.add_widgets_to_category(self.token, widgets)
         self.padding.setPrefix('padding ')
         self.padding.setMinimum(1)
+
         self.value_widget.setMinimum(-1)
         self.value_widget.setValue(-1)
+        self.value_widget.setPrefix('index ')
+        self.value_widget.setSpecialValueText('off')
 
         # Register with internal token settings dictionary to allow auto-serialization
         self.set_defaults(widgets + [self.value_widget])

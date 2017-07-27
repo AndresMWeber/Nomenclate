@@ -142,7 +142,7 @@ class NomenclateFileContext(object):
 
 class WidgetState(object):
     WIDGETS = utils.INPUT_WIDGETS.copy()
-    FILE_CONTEXT = NomenclateFileContext('ui_state.json')
+    FILE_CONTEXT = NomenclateFileContext('last_ui_settings.json')
     STORE_WITH_HASH = True
 
     @classmethod

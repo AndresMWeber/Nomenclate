@@ -31,6 +31,8 @@ class InstanceHandlerWidget(DefaultFrame):
 
         self.wgt_output = QtWidgets.QWidget()
         self.input_format = format_wgt.FormatWidget(starting_format=self.NOM.format)
+        self.input_format_label = QtWidgets.QLabel('Naming Format: ')
+        self.input_format_layout = QtWidgets.QHBoxLayout()
 
         self.output_layout = QtWidgets.QVBoxLayout(self.wgt_output)
         self.output_title = QtWidgets.QLabel('Output Base Name')
@@ -50,14 +52,20 @@ class InstanceHandlerWidget(DefaultFrame):
         self.output_layout.addWidget(self.output_title)
         self.output_layout.addWidget(self.output_name)
 
-        self.layout_main.addWidget(self.input_format, QtCore.Qt.AlignLeft)
+        self.layout_main.addLayout(self.input_format_layout)
+        self.input_format_layout.addWidget(self.input_format_label, QtCore.Qt.AlignLeft)
+        self.input_format_layout.addWidget(self.input_format, QtCore.Qt.AlignLeft)
+        #self.layout_main.addWidget(self.input_format, QtCore.Qt.AlignLeft)
+
         self.layout_main.addWidget(self.token_frame)
         self.layout_main.addWidget(self.wgt_output)
 
+        self.input_format_label.setSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Minimum)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         self.refresh_active_token_widgets()
 
         self.setObjectName('InstanceHandler')
+        self.input_format_label.setObjectName('InputLabel')
         self.wgt_output.setObjectName('OutputWidget')
         self.output_title.setObjectName('OutputTitle')
         self.output_name.setObjectName('OutputLabel')

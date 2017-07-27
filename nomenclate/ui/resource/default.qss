@@ -6,6 +6,7 @@ QTextEdit, QLineEdit, QPlainTextEdit, QLabel, QSpinBox, QComboBox {
 QLabel#HeaderLabel {
     font-weight: regular;
     font-size: 20pt;
+    border: none;
 }
 
 QLabel#TokenLabel {
@@ -21,4 +22,10 @@ QLabel#OutputTitle {
 QLabel#OutputLabel {
     qproperty-alignment: AlignCenter;
     padding: 0 10px 0 10px;
+}
+
+
+QLabel#InputLabel{
+    background: transparent;
+    border: none;
 }

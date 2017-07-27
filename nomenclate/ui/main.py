@@ -102,9 +102,7 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
             main_widget = self.centralWidget()
 
         self.layout_main = QtWidgets.QVBoxLayout(main_widget)
-
         self.menu_bar = QtWidgets.QMenuBar()
-
         self.wgt_drop_area = QtWidgets.QWidget()
         self.wgt_header = QtWidgets.QWidget()
         self.wgt_files = QtWidgets.QFrame()
@@ -178,10 +176,18 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         self.format_menu = self.edit_menu.addMenu('Previous Formats')
         self.presets_list_menu = self.presets_menu.addMenu('User Presets')
 
+        self.preset_load_action = QtWidgets.QAction('Load Preset...')
+        self.preset_load_action.setShortcut('Ctrl+Alt+L')
+        self.preset_load_action.triggered.connect(lambda: self.run_action(self.load_state, None, True))
+
+        self.preset_save_action = QtWidgets.QAction('Save New Preset...')
+        self.preset_save_action.setShortcut('Ctrl+Alt+S')
+        self.preset_save_action.triggered.connect(lambda: self.run_action(self.save_state, None, True))
+
         presets_action_load_from_config = self.presets_menu.addAction('Reload defaults from config.yml')
         presets_action_load_from_config.triggered.connect(lambda: self.instance_handler.load_settings_from_config())
 
-        edit_action_load_last_format = self.presets_menu.addAction('Reset all')
+        edit_action_load_last_format = self.presets_menu.addAction('Clear all fields')
         edit_action_load_last_format.setShortcut('Ctrl+R')
         edit_action_load_last_format.triggered.connect(lambda: self.restore_defaults())
 
@@ -213,17 +219,10 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         save_action.setShortcut('Ctrl+S')
         save_action.triggered.connect(lambda: self.run_action(self.save_state, None, False))
 
-        save_as_action = self.presets_menu.addAction(unicode(u' ↳ Save Window Settings As...'))
-        save_as_action.setShortcut('Ctrl+Alt+S')
-        save_as_action.triggered.connect(lambda: self.run_action(self.save_state, None, True))
 
-        load_action = self.presets_menu.addAction('Load Last Window Settings ')
+        load_action = self.presets_menu.addAction('Reload Current Preset')
         load_action.setShortcut('Ctrl+L')
         load_action.triggered.connect(lambda: self.run_action(self.load_state, None, False))
-
-        load_as_action = self.presets_menu.addAction(unicode(u' ↳ Load Window Settings from file...'))
-        load_as_action.setShortcut('Ctrl+Alt+L')
-        load_as_action.triggered.connect(lambda: self.run_action(self.load_state, None, True))
 
         exit_action = self.file_menu.addAction('Exit')
         exit_action.setShortcut('Ctrl+Q')
@@ -311,13 +310,15 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
 
     def populate_presets(self):
         self.presets_list_menu.clear()
-        print('populating!')
-        for preset_file in gui_save.WidgetState.list_presets():
+        for preset_file in sorted(gui_save.WidgetState.list_presets()):
             menu_action = self.presets_list_menu.addAction(os.path.basename(preset_file))
             menu_action.triggered.connect(partial(self.run_action,
                                                   gui_save.WidgetState.restore_state,
                                                   self,
                                                   fullpath_override=preset_file))
+        self.presets_list_menu.addSeparator()
+        self.presets_list_menu.addAction(self.preset_save_action)
+        self.presets_list_menu.addAction(self.preset_load_action)
 
     def populate_qss_styles(self):
         self.themes_menu.clear()

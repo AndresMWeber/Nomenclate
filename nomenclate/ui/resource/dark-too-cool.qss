@@ -24,6 +24,12 @@ QLabel#HeaderLabel {
     font-size: 20pt;
 }
 
+QLabel#InputLabel{
+    background: transparent;
+    border: none;
+    font-size: 10pt;
+}
+
 QWidget#MainFrame{
     background: #0D0E19;
 }
