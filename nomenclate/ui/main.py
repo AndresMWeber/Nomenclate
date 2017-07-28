@@ -131,11 +131,13 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
 
         self.dropped_files.connect(self.file_list_view.populate_objects)
         self.dropped_files.connect(lambda: self.wgt_stack.setCurrentIndex(0))
+
         self.file_list_view.request_name.connect(self.instance_handler.generate_name)
         self.instance_handler.name_generated.connect(self.file_list_view.set_item_name)
         self.file_list_view.request_state.connect(self.context_menu_state)
 
         self.instance_handler.format_updated.connect(self.update_format_history)
+        self.instance_handler.format_updated.connect(self.file_list_view.reset_incrementer)
         self.instance_handler.nomenclate_output.connect(self.file_list_view.get_object_names)
         self.dropped_files.connect(self.file_list_view.get_object_names)
 
@@ -230,7 +232,6 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         save_action = self.presets_menu.addAction('Save Window Settings')
         save_action.setShortcut('Ctrl+S')
         save_action.triggered.connect(lambda: self.run_action(self.save_state, None, False))
-
 
         load_action = self.presets_menu.addAction('Reload Current Preset')
         load_action.setShortcut('Ctrl+L')

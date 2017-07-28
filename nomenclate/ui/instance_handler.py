@@ -57,7 +57,7 @@ class InstanceHandlerWidget(DefaultFrame):
         self.layout_main.addLayout(self.input_format_layout)
         self.input_format_layout.addWidget(self.input_format_label, QtCore.Qt.AlignLeft)
         self.input_format_layout.addWidget(self.input_format, QtCore.Qt.AlignLeft)
-        #self.layout_main.addWidget(self.input_format, QtCore.Qt.AlignLeft)
+        # self.layout_main.addWidget(self.input_format, QtCore.Qt.AlignLeft)
 
         self.layout_main.addWidget(self.token_frame)
         self.layout_main.addWidget(self.wgt_output)
@@ -113,8 +113,21 @@ class InstanceHandlerWidget(DefaultFrame):
                 token_widget.set_category_title(token, rich_color)
 
     def generate_name(self, object_item, index, override_dict=None):
-        name = self.NOM.get(*override_dict) if override_dict else self.NOM.get() + str(index)
+        if not override_dict:
+            override_dict = self.default_override_incrementer(index)
+
+        name = self.NOM.get(**override_dict) if override_dict else self.NOM.get() + str(index)
         self.name_generated.emit(object_item, name)
+
+    def default_override_incrementer(self, index):
+        default_incr_tokens = ['var', 'version']
+        for token in self.NOM.format_order:
+            token_lower = token.lower()
+            for default_incr_token in default_incr_tokens:
+                if default_incr_token in token_lower:
+                    return {token_lower: index + int(self.NOM.state.get(token_lower, 0) or 0)}
+                    break
+        return {}
 
     def fold(self, fold_override=None):
         self.fold_state = not self.fold_state if fold_override is None else fold_override

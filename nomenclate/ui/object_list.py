@@ -1,3 +1,4 @@
+from functools import partial
 import PyQt5.QtWidgets as QtWidgets
 import PyQt5.QtCore as QtCore
 import PyQt5.QtGui as QtGui
@@ -8,10 +9,12 @@ from nomenclate.ui.default import DefaultFrame
 class QFileRenameTreeView(QtWidgets.QTreeView):
     sorting_stale = QtCore.pyqtSignal()
     request_state = QtCore.pyqtSignal(QtCore.QPoint, QtGui.QStandardItem)
+    proxy_filter_modified = QtCore.pyqtSignal()
 
     def __init__(self, *args, **kwargs):
         super(QFileRenameTreeView, self).__init__(*args, **kwargs)
 
+        self.proxy_row_count = self.last_proxy_row_count = 0
         # Creating
         self.proxy_model = QtCore.QSortFilterProxyModel()
         self.base_model = QFileItemModel()
@@ -47,15 +50,30 @@ class QFileRenameTreeView(QtWidgets.QTreeView):
         for token in nomenclate_instance.format_order:
             lower_token = token.lower()
             if 'var' in lower_token or 'version' in lower_token:
-                context_menu.addAction(lower_token)
-                # TODO: add action here to increment only based on specific vars.
-                print(getattr(nomenclate_instance, lower_token))
-
+                action = context_menu.addAction('increment with %s' % lower_token)
+                action.triggered.connect(partial(self.set_selected_items_incrementer, lower_token))
         context_menu.exec_(self.mapToGlobal(qpoint))
+
+    def reset_incrementer(self):
+        for row in self.base_model.data_table:
+            row[0].increment_token = ""
+
+    def set_selected_items_incrementer(self, token):
+        for selected_index in self.selectedIndexes():
+            selected_index = self.base_model.index(selected_index.row(), 0)
+            self.base_model.itemFromIndex(selected_index).increment_token = token
+        self.proxy_filter_modified.emit()
 
     def update_regexp(self, regex):
         self.filter_regex.setPattern(regex)
         self.proxy_model.setFilterRegExp(self.filter_regex)
+        self.proxy_filter_modified.emit()
+
+    def check_rows(self):
+        self.proxy_row_count = self.proxy_model.rowCount()
+        if self.proxy_row_count != self.last_proxy_row_count:
+            self.proxy_filter_modified.emit()
+        self.last_proxy_row_count = self.proxy_row_count
 
     @property
     def object_paths(self):
@@ -140,6 +158,8 @@ class FileListWidget(DefaultFrame):
 
     def connect_controls(self):
         self.request_state = self.wgt_list_view.request_state
+        self.reset_incrementer = self.wgt_list_view.reset_incrementer
+
         self.btn_remove.clicked.connect(self.wgt_list_view.remove_selected_items)
         self.btn_rename.clicked.connect(self.action_rename_items)
 
@@ -147,6 +167,9 @@ class FileListWidget(DefaultFrame):
         self.btn_full.clicked.connect(self.wgt_list_view.base_model.display_full)
         self.wgt_filter_list.textChanged.connect(self.wgt_list_view.update_regexp)
         self.update_object_paths.connect(self.wgt_list_view.add_paths)
+
+        self.wgt_list_view.proxy_filter_modified.connect(self.get_object_names)
+
         self.context_menu_for_item = self.wgt_list_view.context_menu_for_item
 
     def action_rename_items(self):
@@ -170,8 +193,13 @@ class FileListWidget(DefaultFrame):
     def get_object_names(self):
         row_index = 0
         for object_item, rename_item in self.wgt_list_view.filtered_data_table():
-            print(object_item.text(), row_index)
-            self.request_name.emit(object_item, row_index, {})
+            override_dict = {}
+
+            increment_token = getattr(object_item, 'increment_token', None)
+            if increment_token:
+                override_dict = {increment_token: row_index}
+
+            self.request_name.emit(object_item, row_index, override_dict)
             row_index += 1
 
     def set_item_name(self, object_item, object_name):
