@@ -1,102 +1,14 @@
-import os
 import PyQt5.QtWidgets as QtWidgets
 import PyQt5.QtCore as QtCore
 import PyQt5.QtGui as QtGui
+from nomenclate.ui.components.object_model import QFileItemModel
 from nomenclate.ui.default import DefaultFrame
 
 
-
-class QFileItem(QtGui.QStandardItem):
-    def __init__(self, path):
-        self.path = path
-        super(QFileItem, self).__init__(self.path)
-        self.setEditable(False)
-
-    def split_non_alpha(split_string, reverse=False):
-        end_pos = 0 if not reverse else len(split_string)
-        char_index = len(split_string) - 1 if not reverse else 1
-        while char_index >= end_pos and split_string[char_index].isalpha():
-            char_index -= 1
-        return (split_string[:char_index], split_string[char_index:])
-
-    @property
-    def long_path(self):
-        if self.os_mode:
-            return os.path.normpath(self.path)
-        else:
-            return self.path
-
-    @property
-    def short_path(self):
-        if self.os_mode:
-            return os.path.basename(self.path)
-        else:
-            return self.split_non_alpha(self.path)
-
-    @property
-    def os_mode(self):
-        return self.is_valid and (self.is_file or self.is_dir)
-
-    @property
-    def is_valid(self):
-        return os.path.exists(self.path)
-
-    @property
-    def is_file(self):
-        return os.path.isfile(self.path)
-
-    @property
-    def is_dir(self):
-        return os.path.isdir(self.path)
-
-
-class QFileItemModel(QtGui.QStandardItemModel):
-    FULL_PATH = True
-
-    def __init__(self):
-        super(QFileItemModel, self).__init__()
-        self.setColumnCount(2)
-
-    @property
-    def object_paths(self):
-        return [self.itemFromIndex(self.index(row_index, 0)) for row_index in range(self.rowCount())]
-
-    @property
-    def data_table(self):
-        index_table = []
-        for row in range(self.rowCount()):
-            index_table.append([])
-            for column in range(self.columnCount()):
-                index_table[row].append(self.itemFromIndex(self.index(row, column)))
-        return index_table
-
-    def appendRow(self, row_entry):
-        entry_object_path, entry_label = row_entry
-        entry_object_path = QFileItem(entry_object_path)
-
-        for row_item in self.data_table:
-            object_path, label = row_item
-            if entry_object_path.long_path == object_path.long_path:
-                label.setText(entry_label)
-                return
-
-        self.set_item_path(entry_object_path)
-        super(QFileItemModel, self).appendRow([entry_object_path, QtGui.QStandardItem(entry_label)])
-
-    def display_full(self):
-        self.FULL_PATH = not self.FULL_PATH
-        for item in self.object_paths:
-            self.set_item_path(item)
-
-    def set_item_path(self, item):
-        if self.FULL_PATH:
-            item.setText(item.long_path)
-        else:
-            item.setText(item.short_path)
-        return item
-
-
 class QFileRenameTreeView(QtWidgets.QTreeView):
+    sorting_stale = QtCore.pyqtSignal()
+    request_state = QtCore.pyqtSignal(QtCore.QPoint, QtGui.QStandardItem)
+
     def __init__(self, *args, **kwargs):
         super(QFileRenameTreeView, self).__init__(*args, **kwargs)
 
@@ -117,8 +29,29 @@ class QFileRenameTreeView(QtWidgets.QTreeView):
         self.header().setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
         self.header().setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
 
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.onCustomContextMenu)
+
         # Connections
-        self.base_model.itemChanged.connect(self.sort_model)
+        self.sorting_stale.connect(self.base_model.sorting_stale)
+
+    def onCustomContextMenu(self, qpoint):
+        index = self.indexAt(qpoint)
+        if index.isValid():
+            object_path_index = self.base_model.index(index.row(), 0)
+            item = self.base_model.itemFromIndex(object_path_index)
+            self.request_state.emit(qpoint, item)
+
+    def context_menu_for_item(self, qpoint, item, nomenclate_instance):
+        context_menu = QtWidgets.QMenu()
+        for token in nomenclate_instance.format_order:
+            lower_token = token.lower()
+            if 'var' in lower_token or 'version' in lower_token:
+                context_menu.addAction(lower_token)
+                # TODO: add action here to increment only based on specific vars.
+                print(getattr(nomenclate_instance, lower_token))
+
+        context_menu.exec_(self.mapToGlobal(qpoint))
 
     def update_regexp(self, regex):
         self.filter_regex.setPattern(regex)
@@ -131,6 +64,11 @@ class QFileRenameTreeView(QtWidgets.QTreeView):
             object_paths.append(QtCore.QPersistentModelIndex(self.base_model.index(row, 0)).data())
         return object_paths
 
+    def add_paths(self, object_paths):
+        for object_path in object_paths:
+            self.base_model.appendRow(object_path)
+        self.sorting_stale.emit()
+
     def remove_selected_items(self):
         remove_rows = []
         for selected_index in self.selectedIndexes():
@@ -142,12 +80,33 @@ class QFileRenameTreeView(QtWidgets.QTreeView):
 
         for persistent_row_index in remove_rows:
             self.model().removeRow(persistent_row_index.row())
+        self.sorting_stale.emit()
 
-    def sort_model(self):
-        self.model().sort(QtCore.Qt.AscendingOrder)
+    def filtered_data_table(self):
+        index_table = []
+        for row in range(self.proxy_model.rowCount()):
+            index_table.append([])
+            for column in range(self.proxy_model.columnCount()):
+                proxy_index = self.proxy_model.index(row, column)
+                base_model_item = self.base_model.itemFromIndex(self.proxy_model.mapToSource(proxy_index))
+                index_table[row].append(base_model_item)
+        return index_table
+
+    def moveRow(self, moveUp):
+        item = self.base_model
+        row = self.currentIndex().row()
+        if (moveUp and row == 0):
+            return
+
+        newRow = row - 1
+        list = item.takeRow(row)
+        item.insertRow(newRow, list)
 
 
 class FileListWidget(DefaultFrame):
+    update_object_paths = QtCore.pyqtSignal(list)
+    request_name = QtCore.pyqtSignal(QtGui.QStandardItem, int, dict)
+    request_state = QtCore.pyqtSignal(QtCore.QPoint, QtCore.QModelIndex)
     TITLE = 'File List View'
 
     @property
@@ -159,7 +118,7 @@ class FileListWidget(DefaultFrame):
         self.wgt_list_view = QFileRenameTreeView()
         self.btn_widget = QtWidgets.QFrame()
         self.btn_layout = QtWidgets.QHBoxLayout(self.btn_widget)
-        self.btn_layout.setContentsMargins(0,0,0,0)
+        self.btn_layout.setContentsMargins(0, 0, 0, 0)
         self.wgt_filter_list = QtWidgets.QLineEdit(placeholderText='filter...')
         self.btn_clear = QtWidgets.QPushButton('Clear')
         self.btn_remove = QtWidgets.QPushButton('Remove')
@@ -180,12 +139,15 @@ class FileListWidget(DefaultFrame):
         self.btn_layout.addWidget(self.btn_remove)
 
     def connect_controls(self):
+        self.request_state = self.wgt_list_view.request_state
         self.btn_remove.clicked.connect(self.wgt_list_view.remove_selected_items)
         self.btn_rename.clicked.connect(self.action_rename_items)
 
         self.btn_clear.clicked.connect(self.wgt_list_view.base_model.clear)
         self.btn_full.clicked.connect(self.wgt_list_view.base_model.display_full)
         self.wgt_filter_list.textChanged.connect(self.wgt_list_view.update_regexp)
+        self.update_object_paths.connect(self.wgt_list_view.add_paths)
+        self.context_menu_for_item = self.wgt_list_view.context_menu_for_item
 
     def action_rename_items(self):
         selected_items = self.selected_items
@@ -202,6 +164,15 @@ class FileListWidget(DefaultFrame):
             if ret:
                 print('If this were active we would rename these items: %s' % selected_items)
 
-    def update_object_paths(self, link_label_pair):
-        for pair in link_label_pair:
-            self.wgt_list_view.base_model.appendRow(pair)
+    def populate_objects(self, object_paths):
+        self.update_object_paths.emit(object_paths)
+
+    def get_object_names(self):
+        row_index = 0
+        for object_item, rename_item in self.wgt_list_view.filtered_data_table():
+            print(object_item.text(), row_index)
+            self.request_name.emit(object_item, row_index, {})
+            row_index += 1
+
+    def set_item_name(self, object_item, object_name):
+        object_item.update_target_name(object_name)

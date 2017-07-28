@@ -133,10 +133,8 @@ class NomenclateFileContext(object):
         preset_files = []
         for settings_folder in self.get_valid_presets_dirs():
             for json_file in glob.glob(os.path.join(settings_folder, '*.json')):
-                print('checking file', json_file)
                 if self.valid_preset_file(json_file):
                     preset_files.append(json_file)
-        print(preset_files)
         return preset_files
 
 

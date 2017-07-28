@@ -5,7 +5,10 @@ import operator
 import random
 import PyQt5.QtCore as QtCore
 import PyQt5.QtWidgets as QtWidgets
+import PyQt5.QtGui as QtGui
 import nomenclate
+
+APPLICATIONS = ['Maya', 'Nuke', 'Python']
 
 ALPHANUMERIC_VALIDATOR = QtCore.QRegExp('[A-Za-z0-9_]*')
 TOKEN_VALUE_VALIDATOR = QtCore.QRegExp('^(?!^_)(?!.*__+|\.\.+.*)[a-zA-Z0-9_\.]+(?!_)$')
@@ -16,6 +19,20 @@ SETTER = 'SET'
 GETTER = 'GET'
 
 OBJECT_PATH_SEPARATOR = '|'
+
+ICON_FILE = 'file'
+ICON_FOLDER = 'folder'
+ICON_OBJECT = 'object'
+ICON_TAG = 'tag'
+ICON_SAVE = 'save'
+
+ICON_SET = {
+    ICON_FILE: 'document.png',
+    ICON_FOLDER: 'folder.png',
+    ICON_OBJECT: 'object.png',
+    ICON_TAG: 'tag.png',
+    ICON_SAVE: 'floppy-disc.png'
+}
 
 INPUT_WIDGETS = {
     QtWidgets.QComboBox: {GETTER: QtWidgets.QComboBox.currentIndex,
@@ -45,6 +62,19 @@ INPUT_WIDGETS = {
     QtWidgets.QSlider: {GETTER: QtWidgets.QSlider.value,
                         SETTER: QtWidgets.QSlider.setValue},
 }
+
+
+def get_application_type():
+    application = QtWidgets.QApplication.instance()
+    environment_application = application.applicationName()
+    for supported_application in APPLICATIONS:
+        if supported_application in environment_application:
+            return supported_application
+    return None
+
+
+def get_icon(icon_name):
+    return QtGui.QIcon(os.path.join(RESOURCES_PATH, 'icons', ICON_SET.get(icon_name)))
 
 
 def cache_function(func):
@@ -152,7 +182,7 @@ def replace_str_absolute(text, replacement, start, end=None):
 
 def gen_color(seed=None):
     if seed is not None:
-        random.seed(seed-8)
+        random.seed(seed - 8)
     r = lambda: random.randint(0, 255)
     return '#%02X%02X%02X' % (r(), r(), r())
 

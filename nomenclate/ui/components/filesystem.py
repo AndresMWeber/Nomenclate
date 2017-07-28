@@ -1,4 +1,4 @@
-from .default import DefaultWidget
+from ui.default import DefaultWidget
 from PyQt5 import QtWidgets, QtGui, QtCore
 
 

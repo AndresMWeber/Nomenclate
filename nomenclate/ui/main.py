@@ -129,12 +129,24 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         self.wgt_stack.addWidget(self.file_list_view)
         self.wgt_stack.addWidget(self.wgt_drop_area)
 
-        self.dropped_files.connect(self.update_names)
+        self.dropped_files.connect(self.file_list_view.populate_objects)
+        self.dropped_files.connect(lambda: self.wgt_stack.setCurrentIndex(0))
+        self.file_list_view.request_name.connect(self.instance_handler.generate_name)
+        self.instance_handler.name_generated.connect(self.file_list_view.set_item_name)
+        self.file_list_view.request_state.connect(self.context_menu_state)
+
         self.instance_handler.format_updated.connect(self.update_format_history)
-        self.instance_handler.nomenclate_output.connect(self.update_names)
+        self.instance_handler.nomenclate_output.connect(self.file_list_view.get_object_names)
+        self.dropped_files.connect(self.file_list_view.get_object_names)
+
         self.update_stylesheet.connect(self.set_stylesheet)
         self.update_color_coded.connect(self.instance_handler.format_updated)
         self.file_saved.connect(self.populate_presets)
+
+    def context_menu_state(self, qpoint, qitem):
+        self.file_list_view.context_menu_for_item(qpoint,
+                                                  qitem,
+                                              self.instance_handler.NOM)
 
     def initialize_controls(self):
         font = QtWidgets.QApplication.font()
@@ -345,15 +357,6 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
     def set_stylesheet(self):
         QtWidgets.QApplication.instance().setStyleSheet(self.combined_stylesheet())
 
-    def update_names(self, object_paths=None):
-        object_paths = object_paths if isinstance(object_paths,
-                                                  list) else self.file_list_view.wgt_list_view.object_paths
-        if object_paths:
-            self.file_list_view.update_object_paths(self.generate_names(object_paths))
-
-    def generate_names(self, object_paths):
-        return [(target, self.instance_handler.get_index(index)) for index, target in enumerate(object_paths)]
-
     def add_fonts(self):
         for font_file in [os.path.join(utils.FONTS_PATH, path) for path in os.listdir(utils.FONTS_PATH)]:
             QtGui.QFontDatabase.addApplicationFont(font_file)
@@ -377,11 +380,14 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         self.wgt_stack.setCurrentIndex(0)
 
     def dropEvent(self, event):
-        if event.mimeData().hasUrls:
+        if event.mimeData().hasUrls():
             event.setDropAction(QtCore.Qt.CopyAction)
             event.accept()
             self.dropped_files.emit([str(url.toLocalFile()) for url in event.mimeData().urls()])
-            self.wgt_stack.setCurrentIndex(0)
+
+        if utils.get_application_type() == 'Maya':
+            if event.mimeData().hasText():
+                self.dropped_files.emit(event.mimeData().text().split())
 
     def eventFilter(self, source, event):
         if event.type() == QtCore.QEvent.KeyPress:

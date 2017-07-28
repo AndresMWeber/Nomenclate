@@ -1,6 +1,7 @@
 from six import iteritems
 import PyQt5.QtCore as QtCore
 import PyQt5.QtWidgets as QtWidgets
+import PyQt5.QtGui as QtGui
 import nomenclate
 import nomenclate.settings as settings
 import nomenclate.ui.utils as utils
@@ -23,6 +24,7 @@ class InstanceHandlerWidget(DefaultFrame):
     LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
 
     nomenclate_output = QtCore.pyqtSignal(str)
+    name_generated = QtCore.pyqtSignal(QtGui.QStandardItem, str)
     format_updated = QtCore.pyqtSignal(str, list, bool)
     token_colors_updated = QtCore.pyqtSignal(str, str, dict, list)
 
@@ -110,8 +112,9 @@ class InstanceHandlerWidget(DefaultFrame):
                 color, rich_color = color_dict.get(token)
                 token_widget.set_category_title(token, rich_color)
 
-    def get_index(self, index):
-        return self.NOM.get() + str(index)
+    def generate_name(self, object_item, index, override_dict=None):
+        name = self.NOM.get(*override_dict) if override_dict else self.NOM.get() + str(index)
+        self.name_generated.emit(object_item, name)
 
     def fold(self, fold_override=None):
         self.fold_state = not self.fold_state if fold_override is None else fold_override
