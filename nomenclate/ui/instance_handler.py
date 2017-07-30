@@ -116,6 +116,10 @@ class InstanceHandlerWidget(DefaultFrame):
         if not override_dict:
             override_dict = self.default_override_incrementer(index)
 
+        # Add all current values of the UI to the override dict to offset start values.
+        for token, value in iteritems(override_dict):
+            override_dict[token] = (self.NOM.state.get(token, 0) or 0) + value
+
         name = self.NOM.get(**override_dict) if override_dict else self.NOM.get() + str(index)
         self.name_generated.emit(object_item, name)
 

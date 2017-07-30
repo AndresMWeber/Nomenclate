@@ -15,6 +15,8 @@ TOKEN_VALUE_VALIDATOR = QtCore.QRegExp('^(?!^_)(?!.*__+|\.\.+.*)[a-zA-Z0-9_\.]+(
 RESOURCES_PATH = os.path.join(os.path.dirname(__file__), 'resource')
 FONTS_PATH = os.path.join(RESOURCES_PATH, 'fonts')
 
+REGISTERED_INCREMENTER_TOKENS = ['var', 'version']
+
 SETTER = 'SET'
 GETTER = 'GET'
 

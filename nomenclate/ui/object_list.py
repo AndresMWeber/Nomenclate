@@ -4,6 +4,7 @@ import PyQt5.QtCore as QtCore
 import PyQt5.QtGui as QtGui
 from nomenclate.ui.components.object_model import QFileItemModel
 from nomenclate.ui.default import DefaultFrame
+from nomenclate.ui.utils import REGISTERED_INCREMENTER_TOKENS
 
 
 class QFileRenameTreeView(QtWidgets.QTreeView):
@@ -47,20 +48,32 @@ class QFileRenameTreeView(QtWidgets.QTreeView):
 
     def context_menu_for_item(self, qpoint, item, nomenclate_instance):
         context_menu = QtWidgets.QMenu()
+        all_actions = []
         for token in nomenclate_instance.format_order:
             lower_token = token.lower()
-            if 'var' in lower_token or 'version' in lower_token:
-                action = context_menu.addAction('increment with %s' % lower_token)
-                action.triggered.connect(partial(self.set_selected_items_incrementer, lower_token))
+            for token in REGISTERED_INCREMENTER_TOKENS:
+                if token in lower_token:
+                    action = context_menu.addAction('increment with %s' % lower_token)
+                    action.triggered.connect(partial(self.set_items_incrementer, lower_token, True))
+                    all_action = QtWidgets.QAction('increment ALL with %s' % lower_token)
+                    all_action.triggered.connect(partial(self.set_items_incrementer, lower_token, False))
+                    all_actions.append(all_action)
+
+        if all_actions:
+            context_menu.addSeparator()
+            for action in all_actions:
+                context_menu.addAction(action)
+
         context_menu.exec_(self.mapToGlobal(qpoint))
 
     def reset_incrementer(self):
         for row in self.base_model.data_table:
             row[0].increment_token = ""
 
-    def set_selected_items_incrementer(self, token):
-        for selected_index in self.selectedIndexes():
-            selected_index = self.base_model.index(selected_index.row(), 0)
+    def set_items_incrementer(self, token, selected=True):
+        row_range = [index.row() for index in self.selectedIndexes()] if selected else range(self.proxy_model.rowCount())
+        for row in row_range:
+            selected_index = self.base_model.index(row, 0)
             self.base_model.itemFromIndex(selected_index).increment_token = token
         self.proxy_filter_modified.emit()
 
@@ -191,16 +204,17 @@ class FileListWidget(DefaultFrame):
         self.update_object_paths.emit(object_paths)
 
     def get_object_names(self):
-        row_index = 0
-        for object_item, rename_item in self.wgt_list_view.filtered_data_table():
+        token_counter = {}
+        for row, items in enumerate(self.wgt_list_view.filtered_data_table()):
+            object_item, rename_item = items
             override_dict = {}
+            token = getattr(object_item, 'increment_token', None)
 
-            increment_token = getattr(object_item, 'increment_token', None)
-            if increment_token:
-                override_dict = {increment_token: row_index}
+            if token is not None:
+                token_counter[token] = token_counter.get(token, 0) + 1
+                override_dict[token] = token_counter[token]
 
-            self.request_name.emit(object_item, row_index, override_dict)
-            row_index += 1
+            self.request_name.emit(object_item, row, override_dict)
 
     def set_item_name(self, object_item, object_name):
         object_item.update_target_name(object_name)

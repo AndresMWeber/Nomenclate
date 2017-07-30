@@ -114,7 +114,7 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         self.files_layout = QtWidgets.QHBoxLayout()
 
         self.instance_handler = instance_handler.InstanceHandlerWidget(parent=self)
-        self.file_list_view = object_list.FileListWidget()
+        self.object_list = object_list.FileListWidget()
 
     def connect_controls(self):
         self.setLayout(self.layout_main)
@@ -127,29 +127,29 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         self.layout_main.addWidget(self.instance_handler)
         self.layout_main.addWidget(self.wgt_stack)
 
-        self.wgt_stack.addWidget(self.file_list_view)
+        self.wgt_stack.addWidget(self.object_list)
         self.wgt_stack.addWidget(self.wgt_drop_area)
 
-        self.dropped_files.connect(self.file_list_view.populate_objects)
+        self.dropped_files.connect(self.object_list.populate_objects)
         self.dropped_files.connect(lambda: self.wgt_stack.setCurrentIndex(0))
 
-        self.file_list_view.request_name.connect(self.instance_handler.generate_name)
-        self.instance_handler.name_generated.connect(self.file_list_view.set_item_name)
-        self.file_list_view.request_state.connect(self.context_menu_state)
+        self.object_list.request_name.connect(self.instance_handler.generate_name)
+        self.instance_handler.name_generated.connect(self.object_list.set_item_name)
+        self.object_list.request_state.connect(self.context_menu_state)
 
         self.instance_handler.format_updated.connect(self.update_format_history)
-        self.instance_handler.format_updated.connect(self.file_list_view.reset_incrementer)
-        self.instance_handler.nomenclate_output.connect(self.file_list_view.get_object_names)
-        self.dropped_files.connect(self.file_list_view.get_object_names)
+        self.instance_handler.format_updated.connect(self.object_list.reset_incrementer)
+        self.instance_handler.nomenclate_output.connect(self.object_list.get_object_names)
+        self.dropped_files.connect(self.object_list.get_object_names)
 
         self.update_stylesheet.connect(self.set_stylesheet)
         self.update_color_coded.connect(self.instance_handler.format_updated)
         self.file_saved.connect(self.populate_presets)
 
     def context_menu_state(self, qpoint, qitem):
-        self.file_list_view.context_menu_for_item(qpoint,
-                                                  qitem,
-                                              self.instance_handler.NOM)
+        self.object_list.context_menu_for_item(qpoint,
+                                               qitem,
+                                               self.instance_handler.NOM)
 
     def initialize_controls(self):
         font = QtWidgets.QApplication.font()
