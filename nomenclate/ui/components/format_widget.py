@@ -1,12 +1,12 @@
-import PyQt5.QtCore as QtCore
-import PyQt5.QtWidgets as QtWidgets
+import Qt.QtCore as QtCore
+import Qt.QtWidgets as QtWidgets
 import nomenclate.ui.utils as utils
 import nomenclate.ui.components.input_widgets as input_widgets
 
 
 class FormatLabel(QtWidgets.QLabel):
-    doubleClick = QtCore.pyqtSignal(QtCore.QEvent)
-    rightClick = QtCore.pyqtSignal(QtCore.QEvent)
+    doubleClick = QtCore.Signal(QtCore.QEvent)
+    rightClick = QtCore.Signal(QtCore.QEvent)
 
     def mouseDoubleClickEvent(self, QMousePressEvent):
         self.doubleClick.emit(QMousePressEvent)
@@ -20,7 +20,7 @@ class FormatLabel(QtWidgets.QLabel):
 
 class FormatWidget(QtWidgets.QStackedWidget):
     COLOR_LOOKUP = {}
-    format_updated = QtCore.pyqtSignal()
+    format_updated = QtCore.Signal()
 
     def __init__(self, starting_format='', *args, **kwargs):
         super(FormatWidget, self).__init__(*args, **kwargs)

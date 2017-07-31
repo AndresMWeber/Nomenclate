@@ -1,10 +1,10 @@
 from ui.default import DefaultWidget
-from PyQt5 import QtWidgets, QtGui, QtCore
+from Qt import QtWidgets, QtGui, QtCore
 
 
 class FileSystemWidget(DefaultWidget):
     TITLE = 'Filesystem View'
-    send_files = QtCore.pyqtSignal(list)
+    send_files = QtCore.Signal(list)
 
     def create_controls(self):
         self.model = QtWidgets.QFileSystemModel()

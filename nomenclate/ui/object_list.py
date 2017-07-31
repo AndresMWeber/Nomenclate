@@ -1,20 +1,21 @@
 from functools import partial
-import PyQt5.QtWidgets as QtWidgets
-import PyQt5.QtCore as QtCore
-import PyQt5.QtGui as QtGui
+import Qt.QtWidgets as QtWidgets
+import Qt.QtCore as QtCore
+import Qt.QtGui as QtGui
 from nomenclate.ui.components.object_model import QFileItemModel
 from nomenclate.ui.default import DefaultFrame
 from nomenclate.ui.utils import REGISTERED_INCREMENTER_TOKENS
+from nomenclate.ui.platform import Platform
+import inspect
 
 
 class QFileRenameTreeView(QtWidgets.QTreeView):
-    sorting_stale = QtCore.pyqtSignal()
-    request_state = QtCore.pyqtSignal(QtCore.QPoint, QtGui.QStandardItem)
-    proxy_filter_modified = QtCore.pyqtSignal()
+    sorting_stale = QtCore.Signal()
+    request_state = QtCore.Signal(QtCore.QPoint, QtGui.QStandardItem)
+    proxy_filter_modified = QtCore.Signal()
 
     def __init__(self, *args, **kwargs):
         super(QFileRenameTreeView, self).__init__(*args, **kwargs)
-
         self.proxy_row_count = self.last_proxy_row_count = 0
         # Creating
         self.proxy_model = QtCore.QSortFilterProxyModel()
@@ -55,13 +56,13 @@ class QFileRenameTreeView(QtWidgets.QTreeView):
                 if token in lower_token:
                     action = context_menu.addAction('increment with %s' % lower_token)
                     action.triggered.connect(partial(self.set_items_incrementer, lower_token, True))
-                    all_action = QtWidgets.QAction('increment ALL with %s' % lower_token)
-                    all_action.triggered.connect(partial(self.set_items_incrementer, lower_token, False))
-                    all_actions.append(all_action)
+                    all_actions.append(lower_token)
 
         if all_actions:
             context_menu.addSeparator()
-            for action in all_actions:
+            for lower_token in all_actions:
+                all_action = context_menu.addAction(u'increment ALL with %s' % lower_token)
+                all_action.triggered.connect(partial(self.set_items_incrementer, lower_token, False))
                 context_menu.addAction(action)
 
         context_menu.exec_(self.mapToGlobal(qpoint))
@@ -135,9 +136,10 @@ class QFileRenameTreeView(QtWidgets.QTreeView):
 
 
 class FileListWidget(DefaultFrame):
-    update_object_paths = QtCore.pyqtSignal(list)
-    request_name = QtCore.pyqtSignal(QtGui.QStandardItem, int, dict)
-    request_state = QtCore.pyqtSignal(QtCore.QPoint, QtCore.QModelIndex)
+    platform = Platform()
+    update_object_paths = QtCore.Signal(list)
+    request_name = QtCore.Signal(QtGui.QStandardItem, int, dict)
+    request_state = QtCore.Signal(QtCore.QPoint, QtCore.QModelIndex)
     TITLE = 'File List View'
 
     @property
@@ -198,6 +200,8 @@ class FileListWidget(DefaultFrame):
             # message_box.setInformativeText("Do you really want to disable safety enforcement?")
             ret = message_box.exec_()
             if ret:
+                print(self.platform.rename)
+                print(inspect.getsource(self.platform.rename))
                 print('If this were active we would rename these items: %s' % selected_items)
 
     def populate_objects(self, object_paths):

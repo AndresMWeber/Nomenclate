@@ -1,7 +1,7 @@
 from six import add_metaclass, iteritems
-import PyQt5.QtCore as QtCore
-import PyQt5.QtGui as QtGui
-import PyQt5.QtWidgets as QtWidgets
+import Qt.QtCore as QtCore
+import Qt.QtGui as QtGui
+import Qt.QtWidgets as QtWidgets
 import nomenclate.ui.components.input_widgets as input_widgets
 import nomenclate.settings as settings
 import nomenclate.ui.utils as utils
@@ -20,7 +20,7 @@ class TokenWidgetFactory(type(QtCore.QObject)):
     TOKEN_WIDGETS = {}
 
     def __new__(mcs, name, bases, dct):
-        cls = type.__new__(mcs, name, bases, dct)
+        cls = type(QtCore.QObject).__new__(mcs, name, bases, dct)
         token = dct.get('HANDLES_TOKEN', 'default')
         if token:
             mcs.TOKEN_WIDGETS[token] = cls
@@ -40,7 +40,7 @@ class TokenWidgetFactory(type(QtCore.QObject)):
 @add_metaclass(TokenWidgetFactory)
 class TokenWidget(DefaultFrame):
     CAPITAL_OPTIONS = ['case', 'upper', 'lower']
-    changed = QtCore.pyqtSignal(dict)
+    changed = QtCore.Signal(dict)
 
     def __init__(self, token, value):
         self.SETTINGS = {}

@@ -1,7 +1,7 @@
 from six import iteritems
-import PyQt5.QtCore as QtCore
-import PyQt5.QtWidgets as QtWidgets
-import PyQt5.QtGui as QtGui
+import Qt.QtCore as QtCore
+import Qt.QtWidgets as QtWidgets
+import Qt.QtGui as QtGui
 import nomenclate
 import nomenclate.settings as settings
 import nomenclate.ui.utils as utils
@@ -9,7 +9,7 @@ import nomenclate.ui.components.format_widget as format_wgt
 from nomenclate.ui.default import DefaultFrame
 from nomenclate.ui.components.token_widget import TokenWidgetFactory
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.DEBUG
 
 try:
     UNICODE_EXISTS = bool(type(unicode))
@@ -23,10 +23,10 @@ class InstanceHandlerWidget(DefaultFrame):
     NOM = nomenclate.Nom()
     LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
 
-    nomenclate_output = QtCore.pyqtSignal(str)
-    name_generated = QtCore.pyqtSignal(QtGui.QStandardItem, str)
-    format_updated = QtCore.pyqtSignal(str, list, bool)
-    token_colors_updated = QtCore.pyqtSignal(str, str, dict, list)
+    nomenclate_output = QtCore.Signal(str)
+    name_generated = QtCore.Signal(QtGui.QStandardItem, str)
+    format_updated = QtCore.Signal(str, list, bool)
+    token_colors_updated = QtCore.Signal(str, str, dict, list)
 
     def create_controls(self):
         self.layout_main = QtWidgets.QVBoxLayout(self)
@@ -151,11 +151,8 @@ class InstanceHandlerWidget(DefaultFrame):
             token = token.lower()
             self.LOG.info('Running through token value pair %s:%s' % (token, value))
             token_widget = self.create_token_widget(token, value)
-            receiversCount = token_widget.receivers(token_widget.changed)
-            if receiversCount == 0:
-                self.LOG.info('Connecting %s.changed -> %s.update_instance and adding to layout' % (token_widget, self))
-                token_widget.changed.connect(self.update_instance)
-                self.token_layout.addWidget(token_widget)
+            self.LOG.info('Adding token_widget: %s to widget layout' % token_widget)
+            self.token_layout.addWidget(token_widget)
 
     def create_token_widget(self, token, value):
         token_widget = self.token_widget_lookup.get(token, None)
@@ -165,6 +162,7 @@ class InstanceHandlerWidget(DefaultFrame):
             token_widget = TokenWidgetFactory.get_token_widget(token, value)
             token_widget.add_default_values_from_config(self.NOM.get_token_settings(token))
             token_widget.set_options(self.get_options_from_config(token, dict))
+            token_widget.changed.connect(self.update_instance)
             self.token_widget_lookup[token] = token_widget
 
         else:

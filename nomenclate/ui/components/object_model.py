@@ -1,6 +1,6 @@
 import os
-import PyQt5.QtGui as QtGui
-import PyQt5.QtCore as QtCore
+import Qt.QtGui as QtGui
+import Qt.QtCore as QtCore
 import nomenclate.ui.utils as utils
 
 class QObjectItem(QtGui.QStandardItem):
@@ -67,7 +67,7 @@ class QObjectItem(QtGui.QStandardItem):
 
 class QFileItemModel(QtGui.QStandardItemModel):
     FULL_PATH = True
-    sorting_stale = QtCore.pyqtSignal()
+    sorting_stale = QtCore.Signal()
 
     def __init__(self):
         super(QFileItemModel, self).__init__()

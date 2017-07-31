@@ -3,9 +3,9 @@ import hashlib
 import os
 import operator
 import random
-import PyQt5.QtCore as QtCore
-import PyQt5.QtWidgets as QtWidgets
-import PyQt5.QtGui as QtGui
+import Qt.QtCore as QtCore
+import Qt.QtWidgets as QtWidgets
+import Qt.QtGui as QtGui
 import nomenclate
 
 APPLICATIONS = ['Maya', 'Nuke', 'Python']

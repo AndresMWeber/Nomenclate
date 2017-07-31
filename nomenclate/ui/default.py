@@ -1,4 +1,4 @@
-import PyQt5.QtWidgets as QtWidgets
+import Qt.QtWidgets as QtWidgets
 
 
 class Default(object):
@@ -8,8 +8,8 @@ class Default(object):
     WIDTH = 640
     HEIGHT = 480
 
-    def __init__(self):
-        super(Default, self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(Default, self).__init__(*args, **kwargs)
         self.category_label = self.TITLE
         self.setup()
 
@@ -28,20 +28,20 @@ class Default(object):
         raise NotImplementedError
 
     def closeEvent(self, event):
-        print("widget closing %s" % self)
         super(Default, self).closeEvent(event)
 
-class DefaultWidget(QtWidgets.QWidget, Default):
+
+class DefaultWidget(Default, QtWidgets.QWidget):
     pass
 
 
-class DefaultFrame(QtWidgets.QFrame, Default):
+class DefaultFrame(Default, QtWidgets.QFrame):
     pass
 
 
-class DefaultDialog(QtWidgets.QDialog, Default):
+class DefaultDialog(Default, QtWidgets.QDialog):
     pass
 
 
-class QCollapsableTree(QtWidgets.QTreeView):
+class QCollapsableTree(Default, QtWidgets.QTreeView):
     pass

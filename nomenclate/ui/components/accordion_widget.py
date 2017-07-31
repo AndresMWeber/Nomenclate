@@ -1,12 +1,12 @@
 from six import iteritems
-import PyQt5.QtWidgets as QtWidgets
-import PyQt5.QtCore as QtCore
+import Qt.QtWidgets as QtWidgets
+import Qt.QtCore as QtCore
 import nomenclate.ui.utils as utils
 from nomenclate.ui.default import DefaultFrame
 
 
 class QClickLabel(QtWidgets.QLabel):
-    clicked = QtCore.pyqtSignal(QtWidgets.QLabel)
+    clicked = QtCore.Signal(QtWidgets.QLabel)
 
     def __init__(self, *args):
         super(QClickLabel, self).__init__(*args)
@@ -50,10 +50,10 @@ class QAccordionCategory(DefaultFrame):
 
 
 class QAccordionWidget(DefaultFrame):
-    fold_event = QtCore.pyqtSignal()
-    itemExpanded = QtCore.pyqtSignal()
-    itemCollapsed = QtCore.pyqtSignal()
-    items_added = QtCore.pyqtSignal()
+    fold_event = QtCore.Signal()
+    itemExpanded = QtCore.Signal()
+    itemCollapsed = QtCore.Signal()
+    items_added = QtCore.Signal()
 
     def __init__(self, parent_widget, *args, **kwargs):
         self.category_widget_lookup = {}

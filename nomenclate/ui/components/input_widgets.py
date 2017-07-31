@@ -1,15 +1,15 @@
 from six import iteritems
 from functools import partial
-import PyQt5.QtWidgets as QtWidgets
-import PyQt5.QtCore as QtCore
-import PyQt5.QtGui as QtGui
+import Qt.QtWidgets as QtWidgets
+import Qt.QtCore as QtCore
+import Qt.QtGui as QtGui
 import nomenclate
 import nomenclate.ui.utils as utils
 import nomenclate.core.tools as tools
 
 
 class CustomCompleter(QtWidgets.QCompleter):
-    insertText = QtCore.pyqtSignal(str, name='insertText')
+    insertText = QtCore.Signal(str, name='insertText')
 
     def __init__(self, options, parent=None):
         self.options = QtCore.QStringListModel(options)
@@ -40,7 +40,7 @@ class TokenLineEdit(QtWidgets.QLineEdit):
 
 
 class QLineEditContextTree(QtWidgets.QLineEdit):
-    context_menu_insertion = QtCore.pyqtSignal()
+    context_menu_insertion = QtCore.Signal()
 
     def __init__(self, parent=None):
         self.menu = QtWidgets.QMenu()
@@ -97,11 +97,11 @@ class QLineEditContextTree(QtWidgets.QLineEdit):
 
 
 class CompleterTextEntry(QLineEditContextTree):
-    escapePressed = QtCore.pyqtSignal(QtCore.QEvent, name='escapePressed')
-    returnPressed = QtCore.pyqtSignal(QtCore.QEvent, name='returnPressed')
-    options_added = QtCore.pyqtSignal()
+    escapePressed = QtCore.Signal(QtCore.QEvent, name='escapePressed')
+    returnPressed = QtCore.Signal(QtCore.QEvent, name='returnPressed')
+    options_added = QtCore.Signal()
 
-    focusLost = QtCore.pyqtSignal(QtWidgets.QLineEdit)
+    focusLost = QtCore.Signal(QtWidgets.QLineEdit)
     MODS = (QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return, QtCore.Qt.Key_Escape, QtCore.Qt.Key_Tab, QtCore.Qt.Key_Backtab)
 
     def __init__(self, parent=None):

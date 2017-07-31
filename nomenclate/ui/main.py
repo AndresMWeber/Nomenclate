@@ -1,20 +1,15 @@
 import os
 from glob import glob
 from functools import partial
-import PyQt5.QtWidgets as QtWidgets
-import PyQt5.QtCore as QtCore
-import PyQt5.QtGui as QtGui
+import Qt.QtWidgets as QtWidgets
+import Qt.QtCore as QtCore
+import Qt.QtGui as QtGui
 import nomenclate.ui.utils as utils
 import nomenclate.settings as settings
 import nomenclate.ui.instance_handler as instance_handler
 import nomenclate.ui.object_list as object_list
 import nomenclate.ui.default as default
 import nomenclate.ui.components.gui_save as gui_save
-
-try:
-    UNICODE_EXISTS = bool(type(unicode))
-except NameError:
-    unicode = lambda s: str(s)
 
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
@@ -42,11 +37,11 @@ class UISetting(object):
         self.value = value
 
 
-class MainDialog(default.DefaultWidget, utils.Cacheable, object):
-    file_saved = QtCore.pyqtSignal()
-    dropped_files = QtCore.pyqtSignal(list)
-    update_stylesheet = QtCore.pyqtSignal()
-    update_color_coded = QtCore.pyqtSignal(str, list, bool)
+class MainDialog(default.DefaultWidget, utils.Cacheable):
+    file_saved = QtCore.Signal()
+    dropped_files = QtCore.Signal(list)
+    update_stylesheet = QtCore.Signal()
+    update_color_coded = QtCore.Signal(str, list, bool)
 
     NAME = 'Nomenclate'
     LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
@@ -102,6 +97,7 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
             self.setCentralWidget(QtWidgets.QWidget())
             main_widget = self.centralWidget()
 
+        print('making controls')
         self.layout_main = QtWidgets.QVBoxLayout(main_widget)
         self.menu_bar = QtWidgets.QMenuBar()
         self.wgt_drop_area = QtWidgets.QWidget()
@@ -191,13 +187,6 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         self.format_menu = self.edit_menu.addMenu('Previous Formats')
         self.presets_list_menu = self.presets_menu.addMenu('User Presets')
 
-        self.preset_load_action = QtWidgets.QAction('Load Preset...')
-        self.preset_load_action.setShortcut('Ctrl+%s+L' % self.DEFAULT_MODIFIER)
-        self.preset_load_action.triggered.connect(lambda: self.run_action(self.load_state, None, True))
-
-        self.preset_save_action = QtWidgets.QAction('Save New Preset...')
-        self.preset_save_action.setShortcut('Ctrl+%s+S' % self.DEFAULT_MODIFIER)
-        self.preset_save_action.triggered.connect(lambda: self.run_action(self.save_state, None, True))
 
         presets_action_load_from_config = self.presets_menu.addAction('Reload defaults from config.yml')
         presets_action_load_from_config.triggered.connect(lambda: self.instance_handler.load_settings_from_config())
@@ -242,7 +231,7 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         exit_action.setShortcut('Ctrl+Q')
         exit_action.triggered.connect(lambda: self.run_action(self.close, None, True))
 
-        exit_no_save_action = self.file_menu.addAction(unicode(u' ↳ Exit without saving settings...'))
+        exit_no_save_action = self.file_menu.addAction('  Exit without saving settings...')
         exit_no_save_action.setShortcut('Ctrl+%s+Q' % self.DEFAULT_MODIFIER)
         exit_no_save_action.triggered.connect(lambda: self.run_action(self.close, None, False))
 
@@ -331,8 +320,14 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
                                                   self,
                                                   fullpath_override=preset_file))
         self.presets_list_menu.addSeparator()
-        self.presets_list_menu.addAction(self.preset_save_action)
-        self.presets_list_menu.addAction(self.preset_load_action)
+
+        preset_load_action = self.presets_list_menu.addAction(u'Load Preset...')
+        preset_load_action.setShortcut('Ctrl+%s+L' % self.DEFAULT_MODIFIER)
+        preset_load_action.triggered.connect(lambda: self.run_action(self.load_state, None, True))
+
+        preset_save_action = self.presets_list_menu.addAction(u'Save New Preset...')
+        preset_save_action.setShortcut('Ctrl+%s+S' % self.DEFAULT_MODIFIER)
+        preset_save_action.triggered.connect(lambda: self.run_action(self.save_state, None, True))
 
     def populate_qss_styles(self):
         self.themes_menu.clear()
@@ -357,7 +352,7 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         self.update_stylesheet.emit()
 
     def set_stylesheet(self):
-        QtWidgets.QApplication.instance().setStyleSheet(self.combined_stylesheet())
+        self.setStyleSheet(self.combined_stylesheet())
 
     def add_fonts(self):
         for font_file in [os.path.join(utils.FONTS_PATH, path) for path in os.listdir(utils.FONTS_PATH)]:
@@ -421,8 +416,7 @@ class MainDialog(default.DefaultWidget, utils.Cacheable, object):
         super(MainDialog, self).close()
 
     def closeEvent(self, e):
-        if not issubclass(type(self.focused_widget), QtWidgets.QLineEdit):
-            self.LOG.info('closeEvent and not within a QLineEdit, exiting.')
-            QtWidgets.QApplication.instance().removeEventFilter(self)
-            self.deleteLater()
-            return exit()
+        self.LOG.info('closeEvent and not within a QLineEdit, exiting.')
+        QtWidgets.QApplication.instance().removeEventFilter(self)
+        self.deleteLater()
+        #return exit()
