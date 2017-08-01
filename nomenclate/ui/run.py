@@ -1,10 +1,7 @@
 import sys
 from Qt import QtWidgets, QtCore
-import nomenclate.settings as settings
 from nomenclate.ui.main import MainDialog
-from nomenclate.ui.platform import Platform
-
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
+import nomenclate.ui.platform as platform_mod
 
 SUPPORTED_APPLICATIONS = ['Maya-2017', 'Maya-2016', 'Maya-2015', 'Nuke']
 WINDOW_INSTANCE = None
@@ -13,23 +10,23 @@ WINDOW_INSTANCE = None
 def create():
     global WINDOW_INSTANCE
     application = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
-    platform = Platform()
 
+    platform = platform_mod.current
     if WINDOW_INSTANCE is None:
         WINDOW_INSTANCE = MainDialog()
 
     WINDOW_INSTANCE.LOG.info('%s running on %s' % (platform.env, platform.application.platformName()))
-    WINDOW_INSTANCE.show()
-    WINDOW_INSTANCE.raise_()
     application.setActiveWindow(WINDOW_INSTANCE)
 
-    if not platform.env in SUPPORTED_APPLICATIONS:
-        WINDOW_INSTANCE.LOG.info('Nomenclate running in %s-mode' % platform.env)
-        application.exec_()
-    else:
+    if platform.env in [app.lower() for app in list(SUPPORTED_APPLICATIONS)]:
         WINDOW_INSTANCE.LOG.info('Nomenclate running as a tool in %s-mode' % platform.env)
-        WINDOW_INSTANCE.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
-        WINDOW_INSTANCE.setWindowFlags(QtCore.Qt.Tool)
+        WINDOW_INSTANCE.show(dockable=1, area='left')
+        WINDOW_INSTANCE.raise_()
+    else:
+        WINDOW_INSTANCE.LOG.info('Nomenclate running standalone in %s-mode' % platform.env)
+        WINDOW_INSTANCE.show()
+        WINDOW_INSTANCE.raise_()
+        application.exec_()
 
 def delete():
     global WINDOW_INSTANCE

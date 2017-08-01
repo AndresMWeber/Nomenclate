@@ -1,12 +1,13 @@
-from six import add_metaclass, iteritems
 import Qt.QtCore as QtCore
 import Qt.QtGui as QtGui
 import Qt.QtWidgets as QtWidgets
-import nomenclate.ui.components.input_widgets as input_widgets
+from six import add_metaclass, iteritems
+
 import nomenclate.settings as settings
-import nomenclate.ui.utils as utils
 import nomenclate.ui.components.accordion_widget as accordion_tree
-from nomenclate.ui.default import DefaultFrame
+import nomenclate.ui.components.input_widgets as input_widgets
+import nomenclate.ui.utils as utils
+from nomenclate.ui.components.default import DefaultFrame
 
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 

@@ -90,7 +90,8 @@ class QFileItemModel(QtGui.QStandardItemModel):
     def entry_exists(self, object_path):
         for row_item in self.data_table:
             row_object_path, row_label = row_item
-            if object_path == row_object_path:
+            print(type(object_path), type(row_object_path))
+            if object_path == row_object_path.text():
                 return True
         return False
 
@@ -99,9 +100,9 @@ class QFileItemModel(QtGui.QStandardItemModel):
         super(QFileItemModel, self).removeRow(index)
 
     def appendRow(self, object_path):
-        entry_object_path = QObjectItem(object_path)
         if self.entry_exists(object_path):
             return
+        entry_object_path = QObjectItem(object_path)
         self.set_item_path(entry_object_path)
         super(QFileItemModel, self).appendRow([entry_object_path, entry_object_path.rename_item])
 

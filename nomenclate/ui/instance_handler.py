@@ -1,15 +1,16 @@
-from six import iteritems
 import Qt.QtCore as QtCore
-import Qt.QtWidgets as QtWidgets
 import Qt.QtGui as QtGui
+import Qt.QtWidgets as QtWidgets
+from six import iteritems
+
 import nomenclate
 import nomenclate.settings as settings
-import nomenclate.ui.utils as utils
 import nomenclate.ui.components.format_widget as format_wgt
-from nomenclate.ui.default import DefaultFrame
+import nomenclate.ui.utils as utils
 from nomenclate.ui.components.token_widget import TokenWidgetFactory
+from nomenclate.ui.components.default import DefaultFrame
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.DEBUG
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 try:
     UNICODE_EXISTS = bool(type(unicode))
@@ -57,7 +58,6 @@ class InstanceHandlerWidget(DefaultFrame):
         self.layout_main.addLayout(self.input_format_layout)
         self.input_format_layout.addWidget(self.input_format_label, QtCore.Qt.AlignLeft)
         self.input_format_layout.addWidget(self.input_format, QtCore.Qt.AlignLeft)
-        # self.layout_main.addWidget(self.input_format, QtCore.Qt.AlignLeft)
 
         self.layout_main.addWidget(self.token_frame)
         self.layout_main.addWidget(self.wgt_output)
@@ -207,8 +207,8 @@ class InstanceHandlerWidget(DefaultFrame):
         self.update_instance({})
 
     def update_instance(self, serialized_token_data):
-        token = serialized_token_data.pop('token', None)
-        value = serialized_token_data.pop('value', None)
+        token = str(serialized_token_data.pop('token', None))
+        value = str(serialized_token_data.pop('value', None))
 
         self.LOG.debug('Updating instance with %s' % serialized_token_data)
         if value is not None and token is not None:

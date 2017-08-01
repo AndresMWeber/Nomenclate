@@ -1,5 +1,6 @@
-from ui.default import DefaultWidget
-from Qt import QtWidgets, QtGui, QtCore
+from Qt import QtWidgets, QtCore
+
+from nomenclate.ui.components.default import DefaultWidget
 
 
 class FileSystemWidget(DefaultWidget):

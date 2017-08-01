@@ -41,6 +41,7 @@ QTextEdit, QLineEdit, QLabel, QListView, QSpinBox, QWidget {
 QTextEdit, QLineEdit, QLabel, QSpinBox {
     font-family: "Lato";
     background: #1A1B25;
+    font-size: 8pt;
     border-top: none;
     border-left: none;
     border-right: none;

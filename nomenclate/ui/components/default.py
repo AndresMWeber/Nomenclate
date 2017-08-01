@@ -1,12 +1,10 @@
 import Qt.QtWidgets as QtWidgets
+import nomenclate.ui.platform as platform
 
 
-class Default(object):
+
+class Default(platform.current.platform_mixin or object):
     TITLE = 'Default Widget'
-    TOP = 10
-    LEFT = 10
-    WIDTH = 640
-    HEIGHT = 480
 
     def __init__(self, *args, **kwargs):
         super(Default, self).__init__(*args, **kwargs)
@@ -30,6 +28,9 @@ class Default(object):
     def closeEvent(self, event):
         super(Default, self).closeEvent(event)
 
+
+class DefaultWindow(Default, QtWidgets.QWidget):
+    pass
 
 class DefaultWidget(Default, QtWidgets.QWidget):
     pass

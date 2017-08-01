@@ -1,12 +1,14 @@
+import inspect
 from functools import partial
-import Qt.QtWidgets as QtWidgets
+
 import Qt.QtCore as QtCore
 import Qt.QtGui as QtGui
+import Qt.QtWidgets as QtWidgets
+
 from nomenclate.ui.components.object_model import QFileItemModel
-from nomenclate.ui.default import DefaultFrame
-from nomenclate.ui.utils import REGISTERED_INCREMENTER_TOKENS
 from nomenclate.ui.platform import Platform
-import inspect
+from nomenclate.ui.utils import REGISTERED_INCREMENTER_TOKENS
+from nomenclate.ui.components.default import DefaultFrame
 
 
 class QFileRenameTreeView(QtWidgets.QTreeView):
@@ -72,7 +74,8 @@ class QFileRenameTreeView(QtWidgets.QTreeView):
             row[0].increment_token = ""
 
     def set_items_incrementer(self, token, selected=True):
-        row_range = [index.row() for index in self.selectedIndexes()] if selected else range(self.proxy_model.rowCount())
+        row_range = [index.row() for index in self.selectedIndexes()] if selected else range(
+            self.proxy_model.rowCount())
         for row in row_range:
             selected_index = self.base_model.index(row, 0)
             self.base_model.itemFromIndex(selected_index).increment_token = token
@@ -188,7 +191,7 @@ class FileListWidget(DefaultFrame):
         self.context_menu_for_item = self.wgt_list_view.context_menu_for_item
 
     def action_rename_items(self):
-        selected_items = self.selected_items
+        selected_items = [x for i, x in enumerate(self.selected_items) if i % 2 == 0]
         if selected_items:
             message_box = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Warning,
                                                 "Rename Items",

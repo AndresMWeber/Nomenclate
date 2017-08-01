@@ -1,17 +1,19 @@
 import os
-from glob import glob
 from functools import partial
-import Qt.QtWidgets as QtWidgets
+from glob import glob
+
 import Qt.QtCore as QtCore
 import Qt.QtGui as QtGui
-import nomenclate.ui.utils as utils
+import Qt.QtWidgets as QtWidgets
+
 import nomenclate.settings as settings
+import nomenclate.ui.components.gui_save as gui_save
 import nomenclate.ui.instance_handler as instance_handler
 import nomenclate.ui.object_list as object_list
-import nomenclate.ui.default as default
-import nomenclate.ui.components.gui_save as gui_save
+import nomenclate.ui.utils as utils
+import nomenclate.ui.components.default as default
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
 
 
 class UISetting(object):
@@ -37,7 +39,7 @@ class UISetting(object):
         self.value = value
 
 
-class MainDialog(default.DefaultWidget, utils.Cacheable):
+class MainDialog(default.DefaultWindow, utils.Cacheable):
     file_saved = QtCore.Signal()
     dropped_files = QtCore.Signal(list)
     update_stylesheet = QtCore.Signal()
@@ -65,8 +67,8 @@ class MainDialog(default.DefaultWidget, utils.Cacheable):
 
     format_history = []
 
-    def __init__(self):
-        super(MainDialog, self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(MainDialog, self).__init__(*args, **kwargs)
         self.add_fonts()
         self.setup_menubar()
         self.setup_hotkeys()
@@ -97,7 +99,6 @@ class MainDialog(default.DefaultWidget, utils.Cacheable):
             self.setCentralWidget(QtWidgets.QWidget())
             main_widget = self.centralWidget()
 
-        print('making controls')
         self.layout_main = QtWidgets.QVBoxLayout(main_widget)
         self.menu_bar = QtWidgets.QMenuBar()
         self.wgt_drop_area = QtWidgets.QWidget()
