@@ -5,8 +5,8 @@ import Qt.QtCore as QtCore
 import Qt.QtGui as QtGui
 import Qt.QtWidgets as QtWidgets
 
+import nomenclate.ui.platform as platform
 from nomenclate.ui.components.object_model import QFileItemModel
-from nomenclate.ui.platform import Platform
 from nomenclate.ui.utils import REGISTERED_INCREMENTER_TOKENS
 from nomenclate.ui.components.default import DefaultFrame
 
@@ -139,7 +139,6 @@ class QFileRenameTreeView(QtWidgets.QTreeView):
 
 
 class FileListWidget(DefaultFrame):
-    platform = Platform()
     update_object_paths = QtCore.Signal(list)
     request_name = QtCore.Signal(QtGui.QStandardItem, int, dict)
     request_state = QtCore.Signal(QtCore.QPoint, QtCore.QModelIndex)
@@ -203,8 +202,8 @@ class FileListWidget(DefaultFrame):
             # message_box.setInformativeText("Do you really want to disable safety enforcement?")
             ret = message_box.exec_()
             if ret:
-                print(self.platform.rename)
-                print(inspect.getsource(self.platform.rename))
+                print(platform.current.rename)
+                print(inspect.getsource(platform.current.rename))
                 print('If this were active we would rename these items: %s' % selected_items)
 
     def populate_objects(self, object_paths):

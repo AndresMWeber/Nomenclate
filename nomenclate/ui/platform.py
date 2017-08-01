@@ -1,10 +1,14 @@
-from six import iteritems
-import sys
-import Qt.QtWidgets as QtWidgets
 from importlib import import_module
+import sys
+from six import iteritems
+import Qt.QtWidgets as QtWidgets
+import nomenclate.settings as settings
+
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
 
 
 class Platform(object):
+    LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
     APPLICATIONS = {'maya':
                         {'basename': 'maya',
                          'mixin': 'maya.app.general.mayaMixin.MayaQWidgetDockableMixin',#MayaQDockWidget',
@@ -38,10 +42,14 @@ class Platform(object):
 
     def auto_populate_platform(self):
         self.application = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
+        #self.LOG.info('Active platform detected as: %s' % self.application.platform())
         self.env = self.get_environment()
+        self.LOG.info('Active environment detected as: %s' % self.env)
         for module_string in self.get_platform_import():
             import_module(module_string)
+            self.LOG.info('Imported module %s: %s' % (module_string, bool(sys.modules.get(module_string))))
         self.platform_mixin = self.populate_mixin()
+        self.LOG.info('Defined platform mixing as %s: %s' % self.platform_mixin)
         self.populate_functions()
 
     def populate_mixin(self):
@@ -54,6 +62,7 @@ class Platform(object):
     def populate_functions(self):
         for method_name, platform_methods in iteritems(self.ACTIONS):
             setattr(self, method_name, platform_methods.get(self.env))
+            self.LOG.info('Populating action %s with %s' % (method_name, platform_methods.get(self.env)))
 
     def get_environment(self):
         pyqt_application_name = self.application.applicationName()
