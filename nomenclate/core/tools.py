@@ -24,6 +24,25 @@ class NomenclateNotifier(object):
             observer_function(*args, **kwargs)
 
 
+def get_string_difference(string1, string2):
+    last_found_index = 0
+    matches = []
+    longer_string = max(string1, string2)
+    shorter_string = min(string1, string2)
+
+    for char_index, char in enumerate(shorter_string):
+        comparison_index = max(char_index, last_found_index)
+
+        while comparison_index < len(longer_string):
+            if longer_string[comparison_index] == char:
+                last_found_index = comparison_index
+                matches.append([char_index, longer_string[comparison_index], comparison_index])
+                break
+            comparison_index += 1
+
+    return matches
+
+
 def combine_dicts(*args, **kwargs):
     """ Combines all arguments (if they are dictionaries) and kwargs to a final dict
 

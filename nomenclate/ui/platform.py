@@ -49,7 +49,7 @@ class Platform(object):
             import_module(module_string)
             self.LOG.info('Imported module %s: %s' % (module_string, bool(sys.modules.get(module_string))))
         self.platform_mixin = self.populate_mixin()
-        self.LOG.info('Defined platform mixing as %s: %s' % self.platform_mixin)
+        self.LOG.info('Default platform mixin is %s: %s' % (self.env, self.platform_mixin))
         self.populate_functions()
 
     def populate_mixin(self):

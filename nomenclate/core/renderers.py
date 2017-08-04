@@ -179,20 +179,21 @@ class RenderVar(RenderBase):
         return cls.process_token_augmentations(var, token_attr=getattr(nomenclate_object, token))
 
     @staticmethod
-    def _get_variation_id(integer, capital=False):
+    def _get_variation_id(value, capital=False):
         """ Convert an integer value to a character. a-z then double aa-zz etc
         Args:
-            integer (int): integer index we're looking up
+            value (int): integer index we're looking up
             capital (bool): whether we convert to capitals or not
         Returns (str): alphanumeric representation of the index
         """
-        # calculate number of characters required
+        # Reinforcing type just in case a valid string was entered
+        value = int(value)
         base_power = base_start = base_end = 0
-        while integer >= base_end:
+        while value >= base_end:
             base_power += 1
             base_start = base_end
             base_end += pow(26, base_power)
-        base_index = integer - base_start
+        base_index = value - base_start
 
         # create alpha representation
         alphas = ['a'] * base_power

@@ -1,5 +1,6 @@
 import Qt.QtCore as QtCore
 import Qt.QtWidgets as QtWidgets
+import nomenclate.core.tools as tools
 import nomenclate.ui.utils as utils
 import nomenclate.ui.components.input_widgets as input_widgets
 
@@ -36,7 +37,6 @@ class FormatWidget(QtWidgets.QStackedWidget):
         self.returnPressed = self.text_input.returnPressed
         self.doubleClick = self.format_label.doubleClick
         self.setPlaceholderText = self.text_input.setPlaceholderText
-        self.setText = self.text_input.setText
 
         self.addWidget(self.text_input)
         self.addWidget(self.format_label)
@@ -64,10 +64,14 @@ class FormatWidget(QtWidgets.QStackedWidget):
         return self.text_input.text_utf()
 
     def text_changed(self, text):
-        difference = text.replace(self._last_text, '')
-        if len(difference) > 1 and not self.text_input.completer.popup().isVisible():
+        matches = tools.get_string_difference(self._last_text, text)
+        if len(max(text, self._last_text)) - len(matches) > 1 and not self.text_input.completer.popup().isVisible():
             self.format_updated.emit()
         self._last_text = text
+
+    def setText(self, text):
+        self.text_input.setText(text)
+        self.format_updated.emit()
 
     def swap_visible_widget(self):
         self.format_updated.emit()

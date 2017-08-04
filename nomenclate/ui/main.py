@@ -59,11 +59,10 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
 
     default_css_cache = None
 
-    last_action_cache = None
     dark = UISetting(True)
     color_coded = UISetting(True)
-    loaded_stylesheet = ''
-    key_list = []
+    last_action_cache = None
+    current_stylesheet = ''
 
     format_history = []
 
@@ -91,7 +90,7 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
         return self.get_stylesheet_qss(text_stylesheet)
 
     def combined_stylesheet(self):
-        return self.loaded_stylesheet + self.default_stylesheet + self.text_stylesheet
+        return self.current_stylesheet + self.default_stylesheet + self.text_stylesheet
 
     def create_controls(self):
         main_widget = self
@@ -188,7 +187,6 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
         self.format_menu = self.edit_menu.addMenu('Previous Formats')
         self.presets_list_menu = self.presets_menu.addMenu('User Presets')
 
-
         presets_action_load_from_config = self.presets_menu.addAction('Reload defaults from config.yml')
         presets_action_load_from_config.triggered.connect(lambda: self.instance_handler.load_settings_from_config())
 
@@ -206,14 +204,14 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
 
         view_action_refresh = self.view_menu.addAction('Refresh StyleSheets from Folder')
         view_action_refresh.setShortcut('Ctrl+U')
-        view_action_refresh.triggered.connect(lambda: self.run_action(self.populate_qss_styles))
+        view_action_refresh.triggered.connect(lambda: self.run_action(self.populate_qss_styles, None))
 
         view_action = self.view_menu.addAction('Expand/Collapse Tokens')
         view_action.setShortcut('Ctrl+H')
         view_action.triggered.connect(lambda: self.run_action(self.instance_handler.fold, None))
 
         view_action = self.view_menu.addAction('Swap Light/Dark Text')
-        view_action.setShortcut('Ctrl+W')
+        view_action.setShortcut('Ctrl+T')
         view_action.triggered.connect(lambda: self.run_action(self.set_color_mode, None))
 
         repeat_action = self.edit_menu.addAction('Repeat last menu action')
@@ -228,29 +226,36 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
         load_action.setShortcut('Ctrl+L')
         load_action.triggered.connect(lambda: self.run_action(self.load_state, None, False))
 
-        exit_action = self.file_menu.addAction('Exit')
+        exit_action = self.file_menu.addAction('Exit and Save')
         exit_action.setShortcut('Ctrl+Q')
         exit_action.triggered.connect(lambda: self.run_action(self.close, None, True))
 
-        exit_no_save_action = self.file_menu.addAction('  Exit without saving settings...')
+        exit_no_save_action = self.file_menu.addAction('Exit without saving...')
         exit_no_save_action.setShortcut('Ctrl+%s+Q' % self.DEFAULT_MODIFIER)
         exit_no_save_action.triggered.connect(lambda: self.run_action(self.close, None, False))
 
         self.populate_qss_styles()
 
-    def load_format(self, format, *args):
+    def load_format(self, input_format, *args):
         if not self.format_history:
+            self.LOG.warning('No format history')
             return
-        if format is None:
+        elif input_format is None:
             # Swap two last formats
-            self.format_history = [self.format_history[1], self.format_history[0]] + self.format_history[2:]
-            format = self.format_history[0]
-        else:
-            self.format_history.remove(format)
-            self.format_history.insert(0, format)
+            if len(self.format_history) > 1:
+                self.format_history = [self.format_history[1], self.format_history[0]]
 
-        if format != self.instance_handler.input_format.text_utf:
-            self.instance_handler.input_format.setText(format)
+            if len(self.format_history) > 2:
+                self.format_history= self.format_history + self.format_history[2:]
+
+            input_format = self.format_history[0]
+        else:
+            self.format_history.remove(input_format)
+            self.format_history.insert(0, input_format)
+        if input_format != self.instance_handler.input_format.text_utf:
+            self.LOG.info('Swapping format %s with current %s' % (input_format,
+                                                                  self.instance_handler.input_format.text_utf))
+            self.instance_handler.input_format.setText(input_format)
         self.refresh_format_history_menu()
 
     def update_format_history(self, format_string, format_order, swapped):
@@ -349,7 +354,7 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
     def load_stylesheet(self, btn_event=None, stylesheet=''):
         self.dark.set('dark' in stylesheet)
         qss_data = self.get_stylesheet_qss(stylesheet=stylesheet)
-        self.loaded_stylesheet = qss_data
+        self.current_stylesheet = qss_data
         self.update_stylesheet.emit()
 
     def set_stylesheet(self):
@@ -420,4 +425,4 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
         self.LOG.info('closeEvent and not within a QLineEdit, exiting.')
         QtWidgets.QApplication.instance().removeEventFilter(self)
         self.deleteLater()
-        #return exit()
+        # return exit()

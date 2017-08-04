@@ -184,7 +184,7 @@ class CompleterTextEntry(QLineEditContextTree):
         self.set_mode('filtered')
         ctrl = QtCore.Qt.ControlModifier
 
-        if event.key() in [QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter] and self.completer.popup().isVisible():
+        if event.key() in [QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter] and not self.completer.popup().isVisible():
             super(CompleterTextEntry, self).keyPressEvent(event)
             self.returnPressed.emit(event)
             return

@@ -1,12 +1,11 @@
+from six import iteritems
 import Qt.QtCore as QtCore
 import Qt.QtGui as QtGui
 import Qt.QtWidgets as QtWidgets
-from six import iteritems
-
 import nomenclate
 import nomenclate.settings as settings
-import nomenclate.ui.components.format_widget as format_wgt
 import nomenclate.ui.utils as utils
+import nomenclate.ui.components.format_widget as format_wgt
 from nomenclate.ui.components.token_widget import TokenWidgetFactory
 from nomenclate.ui.components.default import DefaultFrame
 
@@ -118,7 +117,7 @@ class InstanceHandlerWidget(DefaultFrame):
 
         # Add all current values of the UI to the override dict to offset start values.
         for token, value in iteritems(override_dict):
-            override_dict[token] = (self.NOM.state.get(token, 0) or 0) + value
+            override_dict[token] = int((self.NOM.state.get(token, 0) or 0)) + int(value)
 
         name = self.NOM.get(**override_dict) if override_dict else self.NOM.get() + str(index)
         self.name_generated.emit(object_item, name)
@@ -158,7 +157,6 @@ class InstanceHandlerWidget(DefaultFrame):
         token_widget = self.token_widget_lookup.get(token, None)
         if token_widget is None:
             self.LOG.debug('No preexisting token widget...creating and adding to %s.token_widget_lookup.' % self)
-
             token_widget = TokenWidgetFactory.get_token_widget(token, value)
             token_widget.add_default_values_from_config(self.NOM.get_token_settings(token))
             token_widget.set_options(self.get_options_from_config(token, dict))
@@ -267,7 +265,7 @@ class InstanceHandlerWidget(DefaultFrame):
 
                 if color is None or rich_color is None or swapped:
                     color = self.get_safe_color(format_token, last_color, dark)
-                    color = (abs(color[0]), abs(color[1]), abs(color[2]))
+                    color = (min(abs(color[0]), 255), min(abs(color[1]), 255), min(abs(color[2]), 255))
                     rich_color = '<span style="color:{COLOR};">{TOKEN}</span>'.format(COLOR=utils.rgb_to_hex(color),
                                                                                       TOKEN=format_token)
             else:
@@ -293,5 +291,4 @@ class InstanceHandlerWidget(DefaultFrame):
             bg_score = utils.get_contrast_ratio(color, contrast_against)
             if last_color:
                 color_score = utils.get_contrast_ratio(color, last_color)
-
         return color

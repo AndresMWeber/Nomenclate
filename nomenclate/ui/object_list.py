@@ -1,17 +1,19 @@
 import inspect
 from functools import partial
-
 import Qt.QtCore as QtCore
 import Qt.QtGui as QtGui
 import Qt.QtWidgets as QtWidgets
-
 import nomenclate.ui.platform as platform
+import nomenclate.settings as settings
 from nomenclate.ui.components.object_model import QFileItemModel
 from nomenclate.ui.utils import REGISTERED_INCREMENTER_TOKENS
 from nomenclate.ui.components.default import DefaultFrame
 
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
+
 
 class QFileRenameTreeView(QtWidgets.QTreeView):
+    LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
     sorting_stale = QtCore.Signal()
     request_state = QtCore.Signal(QtCore.QPoint, QtGui.QStandardItem)
     proxy_filter_modified = QtCore.Signal()
@@ -51,11 +53,13 @@ class QFileRenameTreeView(QtWidgets.QTreeView):
 
     def context_menu_for_item(self, qpoint, item, nomenclate_instance):
         context_menu = QtWidgets.QMenu()
+        context_menu.clear()
         all_actions = []
         for token in nomenclate_instance.format_order:
             lower_token = token.lower()
             for token in REGISTERED_INCREMENTER_TOKENS:
                 if token in lower_token:
+                    self.LOG.debug('Context Menu: token %s detected as incrementer' % lower_token)
                     action = context_menu.addAction('increment with %s' % lower_token)
                     action.triggered.connect(partial(self.set_items_incrementer, lower_token, True))
                     all_actions.append(lower_token)
@@ -63,9 +67,9 @@ class QFileRenameTreeView(QtWidgets.QTreeView):
         if all_actions:
             context_menu.addSeparator()
             for lower_token in all_actions:
+                self.LOG.debug('Context Menu: adding all action for token %s' % lower_token)
                 all_action = context_menu.addAction(u'increment ALL with %s' % lower_token)
                 all_action.triggered.connect(partial(self.set_items_incrementer, lower_token, False))
-                context_menu.addAction(action)
 
         context_menu.exec_(self.mapToGlobal(qpoint))
 
@@ -102,6 +106,9 @@ class QFileRenameTreeView(QtWidgets.QTreeView):
     def add_paths(self, object_paths):
         for object_path in object_paths:
             self.base_model.appendRow(object_path)
+        self.header().setStretchLastSection(False)
+        self.header().setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
+        self.header().setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
         self.sorting_stale.emit()
 
     def remove_selected_items(self):
