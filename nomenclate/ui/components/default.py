@@ -2,8 +2,7 @@ import Qt.QtWidgets as QtWidgets
 import nomenclate.ui.platform as platform
 
 
-
-class Default(platform.current.platform_mixin or object):
+class Default(object):
     TITLE = 'Default Widget'
 
     def __init__(self, *args, **kwargs):
@@ -29,8 +28,16 @@ class Default(platform.current.platform_mixin or object):
         super(Default, self).closeEvent(event)
 
 
-class DefaultWindow(Default, QtWidgets.QWidget):
+class WindowMixer(Default, QtWidgets.QWidget):
     pass
+
+if platform.current.platform_mixin:
+    print('MIXIN IS DOCKABLE')
+    class DefaultWindow(platform.current.platform_mixin, WindowMixer):
+        pass
+else:
+    class DefaultWindow(WindowMixer):
+        pass
 
 class DefaultWidget(Default, QtWidgets.QWidget):
     pass

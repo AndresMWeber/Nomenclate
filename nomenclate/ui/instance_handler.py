@@ -185,20 +185,6 @@ class InstanceHandlerWidget(DefaultFrame):
                 self.LOG.debug('Recycle widget %s as it is still relevant and should not be deleted.' % token_widget)
                 self.token_layout.removeWidget(token_widget)
 
-    def set_format(self):
-        if self.input_format.text_utf:
-            try:
-                self.NOM.format = self.input_format.text_utf
-                self.refresh()
-                self.format_updated.emit(self.NOM.format, self.NOM.format_order, True)
-            except nomenclate.core.errors.BalanceError as e:
-                fix_msg = '\nYou need to fix it before you can input this format.'
-                message_box = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Warning,
-                                                    "Format Error",
-                                                    e.message + fix_msg,
-                                                    QtWidgets.QMessageBox.Ok, self)
-                message_box.exec_()
-
     def refresh(self):
         self.clear_stale_token_widgets()
         self.refresh_active_token_widgets()
@@ -222,6 +208,20 @@ class InstanceHandlerWidget(DefaultFrame):
 
         self.LOG.debug('Updated Nomenclate state: %s\n%s' % (self.NOM.state, self.NOM.format))
         self.nomenclate_output.emit(self.NOM.get())
+
+    def set_format(self):
+        if self.input_format.text_utf:
+            try:
+                self.NOM.format = self.input_format.text_utf
+                self.refresh()
+                self.format_updated.emit(self.NOM.format, self.NOM.format_order, True)
+            except nomenclate.core.errors.BalanceError as e:
+                fix_msg = '\nYou need to fix it before you can input this format.'
+                message_box = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Warning,
+                                                    "Format Error",
+                                                    e.message + fix_msg,
+                                                    QtWidgets.QMessageBox.Ok, self)
+                message_box.exec_()
 
     def set_output(self, input_name):
         self.output_name.setText(input_name)

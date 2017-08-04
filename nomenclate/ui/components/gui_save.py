@@ -5,7 +5,7 @@ import tempfile
 import nomenclate.ui.utils as utils
 import nomenclate.settings as settings
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.DEBUG
 
 LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
 
@@ -155,16 +155,23 @@ class WidgetState(object):
         unhandled_types = []
         for widget in cls.get_ui_members(ui):
             try:
-                widget_path = cls.get_widget_path(widget)
+                if widget != ui:
+                    widget_path = cls.get_widget_path(widget, top_level=ui)
 
-                if cls.is_unique_widget_path(widget_path, settings):
-                    settings[widget_path] = cls.serialize_widget_settings(widget)
-                else:
-                    parent = widget.parent()
-                    LOG.warning('{0} needs an objectName, siblings of same class exist under parent {1}'.format(widget,
-                                                                                                                parent))
+                    if cls.is_unique_widget_path(widget_path, settings):
+                        value = cls.serialize_widget_settings(widget)
+                        if value != '':
+                            settings[widget_path] = value
+                    else:
+                        parent = widget.parent()
+                        LOG.warning(
+                            '{0} needs an objectName, siblings of same class exist under parent {1}'.format(widget,
+                                                                                                            parent))
             except AttributeError:
+                LOG.warning('Cannot handle widget %s of type %s' % (widget, type(widget)))
                 unhandled_types.append(type(widget))
+
+        LOG.info('Generated state...now saving to preset file')
 
         cls.FILE_CONTEXT.save_preset_file(data=settings, filename=filename, full_path_override=fullpath_override)
         return settings
@@ -180,7 +187,7 @@ class WidgetState(object):
             for widget in cls.get_ui_members(ui):
                 for supported_widget_type in list(cls.WIDGETS):
                     if issubclass(type(widget), supported_widget_type):
-                        widget_path = cls.get_widget_path(widget)
+                        widget_path = cls.get_widget_path(widget, top_level=ui)
 
                         if defaults:
                             setting = getattr(widget, 'default_value', None)
@@ -235,12 +242,14 @@ class WidgetState(object):
         pass
 
     @classmethod
-    def get_widget_path(cls, qwidget):
+    def get_widget_path(cls, qwidget, top_level=None):
+        LOG.debug('Starting widget path for widget %s until %s' % (qwidget, top_level))
         widget_path = cls.get_widget_name(qwidget)
-        while qwidget.parent():
+        while qwidget.parent() and qwidget != top_level:
             widget_path = cls.get_widget_name(qwidget.parent()) + utils.OBJECT_PATH_SEPARATOR + widget_path
             qwidget = qwidget.parent()
         widget_path = widget_path if not cls.STORE_WITH_HASH else utils.persistent_hash(widget_path)
+        LOG.debug('Attained widget path %s' % (widget_path))
         return str(widget_path)
 
     @classmethod

@@ -9,9 +9,10 @@ MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
 
 class Platform(object):
     LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
+    LOG.propagate = False
     APPLICATIONS = {'maya':
                         {'basename': 'maya',
-                         'mixin': 'maya.app.general.mayaMixin.MayaQWidgetDockableMixin',#MayaQDockWidget',
+                         'mixin': 'maya.app.general.mayaMixin.MayaQWidgetDockableMixin',  # MayaQDockWidget',
                          'imports': ['maya', 'maya.cmds', 'maya.app.general.mayaMixin']},
                     'nuke':
                         {'basename': 'nuke',
@@ -42,14 +43,14 @@ class Platform(object):
 
     def auto_populate_platform(self):
         self.application = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
-        #self.LOG.info('Active platform detected as: %s' % self.application.platform())
         self.env = self.get_environment()
-        self.LOG.info('Active environment detected as: %s' % self.env)
+        self.LOG.info('Active environment detected as: %s...starting platform module imports' % self.env)
         for module_string in self.get_platform_import():
             import_module(module_string)
-            self.LOG.info('Imported module %s: %s' % (module_string, bool(sys.modules.get(module_string))))
+            self.LOG.info('import %s...%s' % (module_string,
+                                                     ['failed', 'success'][bool(sys.modules.get(module_string))]))
         self.platform_mixin = self.populate_mixin()
-        self.LOG.info('Default platform mixin is %s: %s' % (self.env, self.platform_mixin))
+        self.LOG.info('Modules imported...default platform mixin for %s=%s' % (self.env, self.platform_mixin))
         self.populate_functions()
 
     def populate_mixin(self):
@@ -78,5 +79,6 @@ class Platform(object):
 
     def get_platform_import(self):
         return self.APPLICATIONS[self.env].get('imports', 'None')
+
 
 current = Platform()

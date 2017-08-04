@@ -13,7 +13,7 @@ import nomenclate.ui.object_list as object_list
 import nomenclate.ui.utils as utils
 import nomenclate.ui.components.default as default
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
 class UISetting(object):
@@ -40,13 +40,14 @@ class UISetting(object):
 
 
 class MainDialog(default.DefaultWindow, utils.Cacheable):
+    LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
+
     file_saved = QtCore.Signal()
     dropped_files = QtCore.Signal(list)
     update_stylesheet = QtCore.Signal()
     update_color_coded = QtCore.Signal(str, list, bool)
 
     NAME = 'Nomenclate'
-    LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
     WIDTH = 800
     HEIGHT = 600
 
@@ -68,13 +69,19 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
 
     def __init__(self, *args, **kwargs):
         super(MainDialog, self).__init__(*args, **kwargs)
+        self.file_menu = None
+        self.edit_menu = None
+        self.view_menu = None
+        self.format_menu = None
+        self.presets_menu = None
+        self.presets_list_menu = None
+
         self.add_fonts()
         self.setup_menubar()
-        self.setup_hotkeys()
+        self.populate_presets()
+        self.load_state()
         self.update_stylesheet.emit()
         QtWidgets.QApplication.instance().installEventFilter(self)
-        self.load_state()
-        self.populate_presets()
 
     @property
     def focused_widget(self):
@@ -171,33 +178,13 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
         self.layout_main.setAlignment(QtCore.Qt.AlignTop)
         self.instance_handler.fold()
 
-    def setup_hotkeys(self):
-        # self.hotkey_close = QtWidgets.QShortcut(QtGui.QKeySequence("Escape"), self)
-        # self.hotkey_close.activated.connect(self.close)
-        # self.hotkey_fold = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+Space"), self)
-        # self.hotkey_fold.activated.connect(self.instance_handler.fold)
-        pass
-
     def setup_menubar(self):
         self.file_menu = self.menu_bar.addMenu('File')
         self.edit_menu = self.menu_bar.addMenu('Edit')
-        self.presets_menu = self.menu_bar.addMenu('Presets')
         self.view_menu = self.menu_bar.addMenu('View')
-        self.themes_menu = self.menu_bar.addMenu('Themes')
         self.format_menu = self.edit_menu.addMenu('Previous Formats')
+        self.presets_menu = self.create_presets_menu()
         self.presets_list_menu = self.presets_menu.addMenu('User Presets')
-
-        presets_action_load_from_config = self.presets_menu.addAction('Reload defaults from config.yml')
-        presets_action_load_from_config.triggered.connect(lambda: self.instance_handler.load_settings_from_config())
-
-        edit_action_load_last_format = self.presets_menu.addAction('Clear all fields')
-        edit_action_load_last_format.setShortcut('Ctrl+R')
-        edit_action_load_last_format.triggered.connect(lambda: self.restore_defaults())
-
-        edit_action_load_last_format = self.presets_menu.addAction('Load last format')
-        edit_action_load_last_format.setShortcut('Ctrl+D')
-        edit_action_load_last_format.triggered.connect(lambda: self.load_format(None))
-
         view_action_color_code = self.view_menu.addAction('Color code tokens')
         view_action_color_code.setShortcut('Ctrl+E')
         view_action_color_code.triggered.connect(self.set_color_coded)
@@ -218,13 +205,6 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
         repeat_action.setShortcut('Ctrl+G')
         repeat_action.triggered.connect(self.repeat_last_action)
 
-        save_action = self.presets_menu.addAction('Save Window Settings')
-        save_action.setShortcut('Ctrl+S')
-        save_action.triggered.connect(lambda: self.run_action(self.save_state, None, False))
-
-        load_action = self.presets_menu.addAction('Reload Current Preset')
-        load_action.setShortcut('Ctrl+L')
-        load_action.triggered.connect(lambda: self.run_action(self.load_state, None, False))
 
         exit_action = self.file_menu.addAction('Exit and Save')
         exit_action.setShortcut('Ctrl+Q')
@@ -236,6 +216,28 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
 
         self.populate_qss_styles()
 
+    def create_presets_menu(self):
+        self.presets_menu = self.menu_bar.addMenu('Presets')
+        presets_action_load_from_config = self.presets_menu.addAction('Reload defaults from config.yml')
+        presets_action_load_from_config.triggered.connect(lambda: self.instance_handler.load_settings_from_config())
+
+        edit_action_load_last_format = self.presets_menu.addAction('Clear all fields')
+        edit_action_load_last_format.setShortcut('Ctrl+R')
+        edit_action_load_last_format.triggered.connect(lambda: self.restore_defaults())
+
+        edit_action_load_last_format = self.presets_menu.addAction('Load last format')
+        edit_action_load_last_format.setShortcut('Ctrl+D')
+        edit_action_load_last_format.triggered.connect(lambda: self.load_format(None))
+
+        save_action = self.presets_menu.addAction('Save Window Settings')
+        save_action.setShortcut('Ctrl+S')
+        save_action.triggered.connect(lambda: self.run_action(self.save_state, None, False))
+
+        load_action = self.presets_menu.addAction('Reload Current Preset')
+        load_action.setShortcut('Ctrl+L')
+        load_action.triggered.connect(lambda: self.run_action(self.load_state, None, False))
+        return self.presets_menu
+
     def load_format(self, input_format, *args):
         if not self.format_history:
             self.LOG.warning('No format history')
@@ -246,7 +248,7 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
                 self.format_history = [self.format_history[1], self.format_history[0]]
 
             if len(self.format_history) > 2:
-                self.format_history= self.format_history + self.format_history[2:]
+                self.format_history = self.format_history + self.format_history[2:]
 
             input_format = self.format_history[0]
         else:
@@ -273,13 +275,14 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
     def restore_defaults(self):
         gui_save.WidgetState.restore_state(self, defaults=True)
 
-    def save_state(self, mode=False):
+    def save_state(self, mode=False, quit=False):
         result = None if not mode else QtWidgets.QFileDialog.getSaveFileName(self, 'Save UI Settings',
                                                                              gui_save.NomenclateFileContext.DEFAULT_PRESETS_PATH,
                                                                              filter='*.json')
         result = self.process_dialog_result(result)
         gui_save.WidgetState.generate_state(self, fullpath_override=result)
-        self.file_saved.emit()
+        if not quit:
+            self.file_saved.emit()
 
     def load_state(self, mode=False):
         result = None if not mode else QtWidgets.QFileDialog.getOpenFileName(self, 'Load UI Settings',
@@ -299,6 +302,10 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
         return path if path.endswith(ext) else path + ext
 
     def run_action(self, action_function, qevent, *args, **kwargs):
+        self.LOG.info('Recording + running action %s with qevent %s and args %s, kwargs %s' % (action_function,
+                                                                                               qevent,
+                                                                                               args,
+                                                                                               kwargs))
         self.last_action_cache = {'function': action_function, 'args': args, 'kwargs': kwargs, 'event': qevent}
         action_function(*args, **kwargs)
 
@@ -319,14 +326,17 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
 
     def populate_presets(self):
         self.presets_list_menu.clear()
+
+        self.LOG.info('Populating presets with %s' % sorted(gui_save.WidgetState.list_presets()))
         for preset_file in sorted(gui_save.WidgetState.list_presets()):
             menu_action = self.presets_list_menu.addAction(os.path.basename(preset_file))
             menu_action.triggered.connect(partial(self.run_action,
                                                   gui_save.WidgetState.restore_state,
+                                                  None,
                                                   self,
                                                   fullpath_override=preset_file))
         self.presets_list_menu.addSeparator()
-
+        self.LOG.info('Re-adding load/save preset actions...')
         preset_load_action = self.presets_list_menu.addAction(u'Load Preset...')
         preset_load_action.setShortcut('Ctrl+%s+L' % self.DEFAULT_MODIFIER)
         preset_load_action.triggered.connect(lambda: self.run_action(self.load_state, None, True))
@@ -336,14 +346,21 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
         preset_save_action.triggered.connect(lambda: self.run_action(self.save_state, None, True))
 
     def populate_qss_styles(self):
-        self.themes_menu.clear()
+
+        try:
+            self.themes_menu.clear()
+        except (RuntimeError, AttributeError):
+            self.themes_menu = self.menu_bar.addMenu('Themes')
+
         for qss_style in glob(os.path.join(utils.RESOURCES_PATH, self.QSS_GLOB)):
             file_name = os.path.basename(qss_style)
             style_name = os.path.splitext(file_name)[0]
 
             if file_name not in [self.DARK_TEXT_QSS, self.LIGHT_TEXT_QSS]:
-                menu_action = self.themes_menu.addAction(style_name.capitalize())
-                menu_action.triggered.connect(partial(self.run_action, self.load_stylesheet, stylesheet=file_name))
+                action_name = style_name.capitalize() if not style_name == 'default' else 'native OS'
+                menu_action = self.themes_menu.addAction(action_name)
+                menu_action.triggered.connect(
+                    partial(self.run_action, self.load_stylesheet, None, stylesheet=file_name))
 
     @utils.cache_function
     def get_stylesheet_qss(self, stylesheet):
@@ -402,8 +419,11 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
         if event.type() == QtCore.QEvent.Close:
             self.LOG.debug(
                 'Close event %s detected from widget %s with parent %s' % (event, source, source.parent()))
-
-        return super(MainDialog, self).eventFilter(source, event)
+        try:
+            return QtWidgets.QWidget.eventFilter(self, source, event)
+        except RuntimeError:
+            self.LOG.debug('Failed to filter event %s with source %s' % (event, source))
+            return False
 
     def keyPressEvent(self, QKeyPressEvent):
         if QKeyPressEvent.key() in [QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return]:
@@ -417,8 +437,13 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
         super(MainDialog, self).mousePressEvent(event)
 
     def close(self, save_state=True):
+        try:
+            QtWidgets.QApplication.instance().removeEventFilter(self)
+        except:
+            self.LOG.warning('Failed to remove event filter...')
         if save_state:
-            self.save_state()
+            self.save_state(quit=True)
+
         super(MainDialog, self).close()
 
     def closeEvent(self, e):

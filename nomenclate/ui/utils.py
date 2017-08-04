@@ -108,17 +108,15 @@ class Cacheable(object):
         return function
 
 
-def get_all_widget_children(widget, path=None):
-    if path is None:
-        path = []
-    path.append(widget)
+def get_all_widget_children(widget, children=None):
+    if children is None:
+        children = []
+    children.append(widget)
 
     if widget.children():
         for child in widget.children():
-            get_all_widget_children(child, path)
-    else:
-        pass
-    return path
+            get_all_widget_children(child, children)
+    return children
 
 
 def give_children_unique_names(widget):

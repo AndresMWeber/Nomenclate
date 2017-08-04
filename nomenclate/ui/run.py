@@ -26,6 +26,7 @@ def create():
         WINDOW_INSTANCE.show(dockable=1, floating=1, area='left')
         WINDOW_INSTANCE.show(dockable=1, floating=0, area='left')
         WINDOW_INSTANCE.raise_()
+        return WINDOW_INSTANCE
     else:
         WINDOW_INSTANCE.LOG.info('Nomenclate running standalone in %s-mode' % platform.env)
         WINDOW_INSTANCE.show()
