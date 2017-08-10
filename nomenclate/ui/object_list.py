@@ -103,6 +103,9 @@ class QFileRenameTreeView(QtWidgets.QTreeView):
             object_paths.append(QtCore.QPersistentModelIndex(self.base_model.index(row, 0)).data())
         return object_paths
 
+    def get_item(self, row, column):
+        return QtCore.QPersistentModelIndex(self.base_model.index(row, column)).data()
+
     def add_paths(self, object_paths):
         for object_path in object_paths:
             self.base_model.appendRow(object_path)
@@ -151,9 +154,9 @@ class FileListWidget(DefaultFrame):
     request_state = QtCore.Signal(QtCore.QPoint, QtCore.QModelIndex)
     TITLE = 'File List View'
 
-    @property
-    def selected_items(self):
-        return [QtCore.QPersistentModelIndex(index).data() for index in self.wgt_list_view.selectedIndexes()]
+    def get_selected_rows(self):
+        return [QtCore.QPersistentModelIndex(index).row() for index in self.wgt_list_view.selectedIndexes() if
+                index.column() == 0]
 
     def create_controls(self):
         self.layout_main = QtWidgets.QVBoxLayout(self)
@@ -196,22 +199,24 @@ class FileListWidget(DefaultFrame):
 
         self.context_menu_for_item = self.wgt_list_view.context_menu_for_item
 
-    def action_rename_items(self):
-        selected_items = [x for i, x in enumerate(self.selected_items) if i % 2 == 0]
-        if selected_items:
-            message_box = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Warning,
-                                                "Rename Items",
-                                                "Do you want to rename %d items" % len(selected_items),
-                                                parent=self)
+    def action_rename_items(self, btn_event, auto_confirm=True):
+        selected_rows = self.get_selected_rows()
+        if selected_rows:
+            if not auto_confirm:
+                message_box = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Warning,
+                                                    "Rename Items",
+                                                    "Do you want to rename %d items" % len(selected_rows),
+                                                    parent=self)
 
-            message_box.addButton(QtWidgets.QMessageBox.Yes)
-            message_box.addButton(QtWidgets.QMessageBox.No)
-            # message_box.setInformativeText("Do you really want to disable safety enforcement?")
-            ret = message_box.exec_()
-            if ret:
-                print(platform.current.rename)
-                print(inspect.getsource(platform.current.rename))
-                print('If this were active we would rename these items: %s' % selected_items)
+                message_box.addButton(QtWidgets.QMessageBox.Yes)
+                message_box.addButton(QtWidgets.QMessageBox.No)
+                auto_confirm = message_box.exec_()
+
+            if auto_confirm:
+                for row in selected_rows:
+                    name = self.wgt_list_view.get_item(row, 0)
+                    new_name = self.wgt_list_view.get_item(row, 1)
+                    platform.current.rename(name, new_name)
 
     def populate_objects(self, object_paths):
         self.update_object_paths.emit(object_paths)

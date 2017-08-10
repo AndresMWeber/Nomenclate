@@ -27,7 +27,8 @@ class Platform(object):
         'rename':
             {'maya': lambda node, new_name: cmds.rename(file, new_name),
              'nuke': lambda node, new_name: nuke.Node(node)['name'].setValue(new_name),
-             'python': lambda file, new_name: os.rename(file, os.path.join(os.path.dirname(file), new_name))
+             'python': lambda file, new_name: os.rename(file, os.path.join(os.path.dirname(file), new_name)),
+             'nomenclate': lambda file, new_name: os.rename(file, os.path.join(os.path.dirname(file), new_name))
              }
     }
 

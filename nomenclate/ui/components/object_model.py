@@ -90,7 +90,6 @@ class QFileItemModel(QtGui.QStandardItemModel):
     def entry_exists(self, object_path):
         for row_item in self.data_table:
             row_object_path, row_label = row_item
-            # print(type(object_path), type(row_object_path))
             if object_path == row_object_path.text():
                 return True
         return False

@@ -31,10 +31,11 @@ class Default(object):
 class DefaultNormalWindow(Default, QtWidgets.QWidget):
     pass
 
-
-class DefaultMixinWindow(platform.current.platform_mixin, DefaultNormalWindow):
-    pass
-
+if platform.current.platform_mixin:
+    class DefaultMixinWindow(platform.current.platform_mixin, DefaultNormalWindow):
+        pass
+else:
+    DefaultMixinWindow = None
 
 DefaultWindow = DefaultMixinWindow if platform.current.platform_mixin else DefaultNormalWindow
 
