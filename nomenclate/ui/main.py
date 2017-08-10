@@ -13,7 +13,7 @@ import nomenclate.ui.object_list as object_list
 import nomenclate.ui.utils as utils
 import nomenclate.ui.components.default as default
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
 
 
 class UISetting(object):

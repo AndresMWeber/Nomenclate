@@ -28,16 +28,16 @@ class Default(object):
         super(Default, self).closeEvent(event)
 
 
-class WindowMixer(Default, QtWidgets.QWidget):
+class DefaultNormalWindow(Default, QtWidgets.QWidget):
     pass
 
-if platform.current.platform_mixin:
-    print('MIXIN IS DOCKABLE')
-    class DefaultWindow(platform.current.platform_mixin, WindowMixer):
-        pass
-else:
-    class DefaultWindow(WindowMixer):
-        pass
+
+class DefaultMixinWindow(platform.current.platform_mixin, DefaultNormalWindow):
+    pass
+
+
+DefaultWindow = DefaultMixinWindow if platform.current.platform_mixin else DefaultNormalWindow
+
 
 class DefaultWidget(Default, QtWidgets.QWidget):
     pass
