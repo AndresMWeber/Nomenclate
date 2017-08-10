@@ -1,5 +1,5 @@
 import Qt.QtWidgets as QtWidgets
-import nomenclate.ui.platform as platform
+import nomenclate.ui.platforms as platforms
 
 
 class Default(object):
@@ -31,13 +31,13 @@ class Default(object):
 class DefaultNormalWindow(Default, QtWidgets.QWidget):
     pass
 
-if platform.current.platform_mixin:
-    class DefaultMixinWindow(platform.current.platform_mixin, DefaultNormalWindow):
+if platforms.current.PLATFORM_MIXIN:
+    class DefaultMixinWindow(platforms.current.PLATFORM_MIXIN, DefaultNormalWindow):
         pass
 else:
     DefaultMixinWindow = None
 
-DefaultWindow = DefaultMixinWindow if platform.current.platform_mixin else DefaultNormalWindow
+DefaultWindow = DefaultMixinWindow if platforms.current.PLATFORM_MIXIN else DefaultNormalWindow
 
 
 class DefaultWidget(Default, QtWidgets.QWidget):

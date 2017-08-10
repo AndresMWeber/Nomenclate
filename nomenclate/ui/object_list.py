@@ -1,9 +1,9 @@
-import inspect
+import sys
 from functools import partial
 import Qt.QtCore as QtCore
 import Qt.QtGui as QtGui
 import Qt.QtWidgets as QtWidgets
-import nomenclate.ui.platform as platform
+import nomenclate.ui.platforms as platforms
 import nomenclate.settings as settings
 from nomenclate.ui.components.object_model import QFileItemModel
 from nomenclate.ui.utils import REGISTERED_INCREMENTER_TOKENS
@@ -199,7 +199,7 @@ class FileListWidget(DefaultFrame):
 
         self.context_menu_for_item = self.wgt_list_view.context_menu_for_item
 
-    def action_rename_items(self, btn_event, auto_confirm=True):
+    def action_rename_items(self, btn_event=None, auto_confirm=True):
         selected_rows = self.get_selected_rows()
         if selected_rows:
             if not auto_confirm:
@@ -213,10 +213,12 @@ class FileListWidget(DefaultFrame):
                 auto_confirm = message_box.exec_()
 
             if auto_confirm:
+                for mod in sorted(list(sys.modules)):
+                    print(mod)
                 for row in selected_rows:
                     name = self.wgt_list_view.get_item(row, 0)
                     new_name = self.wgt_list_view.get_item(row, 1)
-                    platform.current.rename(name, new_name)
+                    platforms.current.rename(name, new_name)
 
     def populate_objects(self, object_paths):
         self.update_object_paths.emit(object_paths)
