@@ -213,8 +213,6 @@ class FileListWidget(DefaultFrame):
                 auto_confirm = message_box.exec_()
 
             if auto_confirm:
-                for mod in sorted(list(sys.modules)):
-                    print(mod)
                 for row in selected_rows:
                     name = self.wgt_list_view.get_item(row, 0)
                     new_name = self.wgt_list_view.get_item(row, 1)
