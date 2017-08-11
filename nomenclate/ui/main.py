@@ -428,7 +428,9 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
     def keyPressEvent(self, QKeyPressEvent):
         if QKeyPressEvent.key() in [QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return]:
             pass
-        super(MainDialog, self).keyPressEvent(QKeyPressEvent)
+        # Attempting to use this fix for taking over maya shortcuts:
+        # https://forums.autodesk.com/t5/maya-programming/maya-amp-pyqt-how-to-prevent-trigger-of-shortcut-keys/td-p/4354371
+        #super(MainDialog, self).keyPressEvent(QKeyPressEvent)
 
     def mousePressEvent(self, event):
         focused_widget = self.focused_widget
