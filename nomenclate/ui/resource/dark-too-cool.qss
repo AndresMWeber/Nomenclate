@@ -18,8 +18,8 @@ MiscB: #E2327F
 MiscC: #5DABAE
 */
 
-QWidget#HeaderWidget, QLabel#HeaderLabel{
-    background: transparent;/*#1F212B;*/
+QWidget#MainFrame, QWidget#HeaderWidget, QLabel#HeaderLabel{
+    background: #1F212B;
     font-family: "Quicksand";
     font-weight: regular;
     font-size: 20pt;
@@ -31,9 +31,6 @@ QLabel#InputLabel{
     font-size: 10pt;
 }
 
-QWidget#MainFrame{
-    background: #0D0E19;
-}
 
 QTextEdit, QLineEdit, QLabel, QListView, QSpinBox, QWidget {
     font-family: "Lato";

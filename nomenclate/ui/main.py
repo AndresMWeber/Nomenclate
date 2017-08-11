@@ -208,11 +208,11 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
 
         exit_action = self.file_menu.addAction('Exit and Save')
         exit_action.setShortcut('Ctrl+Q')
-        exit_action.triggered.connect(partial(self.run_action, self.close, None, True))
+        exit_action.triggered.connect(lambda: self.close(True))
 
         exit_no_save_action = self.file_menu.addAction('Exit without saving...')
         exit_no_save_action.setShortcut('Ctrl+%s+Q' % self.DEFAULT_MODIFIER)
-        exit_no_save_action.triggered.connect(lambda: self.run_action(self.close, None, False))
+        exit_no_save_action.triggered.connect(lambda: self.close(False))
 
         self.populate_qss_styles()
 

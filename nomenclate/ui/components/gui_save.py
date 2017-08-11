@@ -5,7 +5,10 @@ import tempfile
 import nomenclate.ui.utils as utils
 import nomenclate.settings as settings
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
+global MAX_DEPTH
+MAX_DEPTH = 0
+
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.DEBUG
 
 LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
 
@@ -154,22 +157,24 @@ class WidgetState(object):
         settings = {}
         unhandled_types = []
         for widget in cls.get_ui_members(ui):
-            try:
-                if widget != ui:
+            if type(widget) in list(cls.WIDGETS):
+                try:
                     widget_path = cls.get_widget_path(widget, top_level=ui)
-
+                    LOG.debug('Attained widget path for %s...now serializing and storing' % widget)
                     if cls.is_unique_widget_path(widget_path, settings):
                         value = cls.serialize_widget_settings(widget)
                         if value != '':
                             settings[widget_path] = value
+                            LOG.info('Successfully stored widget %s value %s under path %s' % (widget,
+                                                                                               widget_path,
+                                                                                               value))
                     else:
-                        parent = widget.parent()
                         LOG.warning(
-                            '{0} needs an objectName, siblings of same class exist under parent {1}'.format(widget,
-                                                                                                            parent))
-            except AttributeError:
-                LOG.warning('Cannot handle widget %s of type %s' % (widget, type(widget)))
-                unhandled_types.append(type(widget))
+                            '{0} identical class siblings exist under parent {1} set objectName'.format(widget,
+                                                                                                        widget.parent()))
+                except AttributeError:
+                    LOG.warning('Cannot handle widget %s of type %s' % (widget, type(widget)))
+                    unhandled_types.append(type(widget))
 
         LOG.info('Generated state...now saving to preset file')
 
@@ -185,21 +190,20 @@ class WidgetState(object):
         failed_load = []
         if settings:
             for widget in cls.get_ui_members(ui):
-                for supported_widget_type in list(cls.WIDGETS):
-                    if issubclass(type(widget), supported_widget_type):
-                        widget_path = cls.get_widget_path(widget, top_level=ui)
+                if type(widget) in list(cls.WIDGETS):
+                    widget_path = cls.get_widget_path(widget, top_level=ui)
 
-                        if defaults:
-                            setting = getattr(widget, 'default_value', None)
-                        else:
-                            setting = settings.get(widget_path, None)
+                    if defaults:
+                        setting = getattr(widget, 'default_value', None)
+                    else:
+                        setting = settings.get(widget_path, None)
 
-                        if setting is not None:
-                            setter = cls.WIDGETS[supported_widget_type][utils.SETTER]
-                            setter(widget, setting)
-                        else:
-                            failed_load.append(widget_path)
-                        break
+                    if setting is not None:
+                        setter = cls.WIDGETS[type(widget)][utils.SETTER]
+                        setter(widget, setting)
+                    else:
+                        failed_load.append(widget_path)
+                    break
 
             LOG.info('Successfully loaded state from file %s' % cls.FILE_CONTEXT.FILE_HISTORY[-1])
         else:
@@ -213,19 +217,23 @@ class WidgetState(object):
 
     @staticmethod
     def get_ui_members(ui):
-        return utils.get_all_widget_children(ui)
+        return [u for u in utils.get_all_widget_children(ui) if u != ui]
 
     @classmethod
     def serialize_widget_settings(cls, widget):
-        return cls.get_widget_method(type(widget), utils.GETTER)(widget)
+        widget_serializer = cls.get_widget_method(type(widget), utils.GETTER)
+        LOG.info('Serializing widget %s with %s value: %s' % (widget, widget_serializer, widget_serializer(widget)))
+        return widget_serializer(widget)
 
     @classmethod
-    def get_widget_method(cls, widget_type, type):
+    def get_widget_method(cls, widget_type, method_type):
         if not widget_type in list(cls.WIDGETS):
             for supported_widget_type in list(cls.WIDGETS):
                 if issubclass(widget_type, supported_widget_type):
                     widget_type = supported_widget_type
-        return cls.WIDGETS.get(widget_type).get(type)
+
+        LOG.info('Getting widget %s for type %s' % (method_type, widget_type))
+        return cls.WIDGETS.get(widget_type).get(method_type)
 
     @classmethod
     def deserialize_widget_settings(cls, widget, settings):
@@ -242,14 +250,26 @@ class WidgetState(object):
         pass
 
     @classmethod
-    def get_widget_path(cls, qwidget, top_level=None):
+    def get_widget_path(cls, qwidget, top_level=None, depth_tolerance=15):
+        global MAX_DEPTH
         LOG.debug('Starting widget path for widget %s until %s' % (qwidget, top_level))
         widget_path = cls.get_widget_name(qwidget)
+        print('got base name')
+        depth = 0
+        print('entering while', qwidget.parent())
         while qwidget.parent() and qwidget != top_level:
             widget_path = cls.get_widget_name(qwidget.parent()) + utils.OBJECT_PATH_SEPARATOR + widget_path
             qwidget = qwidget.parent()
+            depth += 1
+            print(depth)
+            if depth > depth_tolerance:
+                break
+
+        print('exiting while')
+        MAX_DEPTH = max(MAX_DEPTH, depth)
         widget_path = widget_path if not cls.STORE_WITH_HASH else utils.persistent_hash(widget_path)
-        LOG.debug('Attained widget path %s' % (widget_path))
+        LOG.debug(
+            'Attained widget path %s with final parent at depth %d, deepest: %d' % (widget_path, depth, MAX_DEPTH))
         return str(widget_path)
 
     @classmethod
