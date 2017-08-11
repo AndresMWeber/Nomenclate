@@ -1,4 +1,3 @@
-import sys
 from functools import partial
 import Qt.QtCore as QtCore
 import Qt.QtGui as QtGui
@@ -9,11 +8,12 @@ from nomenclate.ui.components.object_model import QFileItemModel
 from nomenclate.ui.utils import REGISTERED_INCREMENTER_TOKENS
 from nomenclate.ui.components.default import DefaultFrame
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.DEBUG
+
+LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
 
 
 class QFileRenameTreeView(QtWidgets.QTreeView):
-    LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
     sorting_stale = QtCore.Signal()
     request_state = QtCore.Signal(QtCore.QPoint, QtGui.QStandardItem)
     proxy_filter_modified = QtCore.Signal()
@@ -42,7 +42,7 @@ class QFileRenameTreeView(QtWidgets.QTreeView):
         self.customContextMenuRequested.connect(self.onCustomContextMenu)
 
         # Connections
-        self.sorting_stale.connect(self.base_model.sorting_stale)
+        self.sorting_stale.connect(self.base_model.order_changed)
 
     def onCustomContextMenu(self, qpoint):
         index = self.indexAt(qpoint)
@@ -59,7 +59,7 @@ class QFileRenameTreeView(QtWidgets.QTreeView):
             lower_token = token.lower()
             for token in REGISTERED_INCREMENTER_TOKENS:
                 if token in lower_token:
-                    self.LOG.debug('Context Menu: token %s detected as incrementer' % lower_token)
+                    LOG.debug('Context Menu: token %s detected as incrementer' % lower_token)
                     action = context_menu.addAction('increment with %s' % lower_token)
                     action.triggered.connect(partial(self.set_items_incrementer, lower_token, True))
                     all_actions.append(lower_token)
@@ -67,7 +67,7 @@ class QFileRenameTreeView(QtWidgets.QTreeView):
         if all_actions:
             context_menu.addSeparator()
             for lower_token in all_actions:
-                self.LOG.debug('Context Menu: adding all action for token %s' % lower_token)
+                LOG.debug('Context Menu: adding all action for token %s' % lower_token)
                 all_action = context_menu.addAction(u'increment ALL with %s' % lower_token)
                 all_action.triggered.connect(partial(self.set_items_incrementer, lower_token, False))
 
@@ -104,7 +104,8 @@ class QFileRenameTreeView(QtWidgets.QTreeView):
         return object_paths
 
     def get_item(self, row, column):
-        return QtCore.QPersistentModelIndex(self.base_model.index(row, column)).data()
+        persistent_index = QtCore.QPersistentModelIndex(self.base_model.index(row, column))
+        return self.base_model.item(persistent_index.row(), persistent_index.column())
 
     def add_paths(self, object_paths):
         for object_path in object_paths:
@@ -152,6 +153,7 @@ class FileListWidget(DefaultFrame):
     update_object_paths = QtCore.Signal(list)
     request_name = QtCore.Signal(QtGui.QStandardItem, int, dict)
     request_state = QtCore.Signal(QtCore.QPoint, QtCore.QModelIndex)
+    renamed = QtCore.Signal()
     TITLE = 'File List View'
 
     def get_selected_rows(self):
@@ -214,9 +216,20 @@ class FileListWidget(DefaultFrame):
 
             if auto_confirm:
                 for row in selected_rows:
-                    name = self.wgt_list_view.get_item(row, 0)
-                    new_name = self.wgt_list_view.get_item(row, 1)
-                    platforms.current.rename(name, new_name)
+                    name_item, new_name_item = self.wgt_list_view.get_item(row, 0), self.wgt_list_view.get_item(row, 1)
+                    name, new_name = name_item.text(), new_name_item.text()
+
+                    try:
+                        if not new_name:
+                            raise NameError('No new object name specified for %d:%s' % (row, name))
+                        new_name = platforms.current.rename(name, new_name)
+                        name_item.setText(new_name)
+                        LOG.info('Success renaming object: %d:%s->%s' % (row, name, new_name))
+
+                    except (OSError, NameError) as e:
+                        print(e)
+                        LOG.warning('Failed renaming object %d:%s' % (row, name))
+                self.renamed.emit()
 
     def populate_objects(self, object_paths):
         self.update_object_paths.emit(object_paths)

@@ -18,7 +18,8 @@ MiscB: #E2327F
 MiscC: #5DABAE
 */
 
-QLabel#HeaderLabel {
+QWidget#HeaderWidget, QLabel#HeaderLabel{
+    background: transparent;/*#1F212B;*/
     font-family: "Quicksand";
     font-weight: regular;
     font-size: 20pt;
@@ -58,10 +59,6 @@ QTextEdit, QLineEdit, QLabel, QSpinBox {
 
 #TokenWidget, #SeeThrough, QFrame#fold_widget {
     background: transparent;
-}
-
-QWidget#HeaderWidget, QLabel#HeaderLabel{
-    background: #1F212B;
 }
 
 QListView, QFileRenameTreeView {
@@ -156,7 +153,6 @@ QComboBox {
     background: #161823;
     border: 1px solid #451A37;
 }
-
 
 QComboBox::drop-down {
     subcontrol-origin: padding;

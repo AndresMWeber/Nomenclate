@@ -29,10 +29,6 @@ class DefaultPlatform(object):
             self.application.setApplicationName('python')
         return self.application.applicationName()
 
-    @classmethod
-    def rename(cls, node_path, new_name, keep_extension=True):
-        raise NotImplementedError
-
     def show(self, window_instance):
         self.LOG.info(
             '%s running on %s with instance %s' % (self.env, self.application.platformName(), window_instance))
@@ -46,3 +42,11 @@ class DefaultPlatform(object):
             window_instance.raise_()
             self.application.setActiveWindow(window_instance)
             self.application.exec_()
+
+    @classmethod
+    def rename(cls, node_path, new_name, keep_extension=True):
+        raise NotImplementedError
+
+    @classmethod
+    def exists(cls, node_path):
+        raise NotImplementedError

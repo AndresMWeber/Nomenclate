@@ -208,7 +208,7 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
 
         exit_action = self.file_menu.addAction('Exit and Save')
         exit_action.setShortcut('Ctrl+Q')
-        exit_action.triggered.connect(lambda: self.run_action(self.close, None, True))
+        exit_action.triggered.connect(partial(self.run_action, self.close, None, True))
 
         exit_no_save_action = self.file_menu.addAction('Exit without saving...')
         exit_no_save_action.setShortcut('Ctrl+%s+Q' % self.DEFAULT_MODIFIER)
@@ -439,17 +439,20 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
         super(MainDialog, self).mousePressEvent(event)
 
     def close(self, save_state=True):
+        print ('running close.')
         try:
             QtWidgets.QApplication.instance().removeEventFilter(self)
         except:
             self.LOG.warning('Failed to remove event filter...')
+        print('save state')
         if save_state:
             self.save_state(quit=True)
+        print('self.deleteLater!')
+        self.deleteLater()
+        print('self.deleteLater done!')
 
         super(MainDialog, self).close()
 
     def closeEvent(self, e):
-        self.LOG.info('closeEvent and not within a QLineEdit, exiting.')
-        QtWidgets.QApplication.instance().removeEventFilter(self)
-        self.deleteLater()
-        # return exit()
+        self.close()
+        super(MainDialog, self).closeEvent(e)

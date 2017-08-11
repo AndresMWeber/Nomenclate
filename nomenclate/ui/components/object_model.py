@@ -2,6 +2,13 @@ import os
 import Qt.QtGui as QtGui
 import Qt.QtCore as QtCore
 import nomenclate.ui.utils as utils
+import nomenclate.ui.platforms as platforms
+import nomenclate.settings as settings
+
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
+
+LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
+
 
 class QObjectItem(QtGui.QStandardItem):
     def __init__(self, path):
@@ -14,6 +21,9 @@ class QObjectItem(QtGui.QStandardItem):
         self.set_icon()
 
     def split_non_alpha(split_string, reverse=False):
+        """ Searches backward or forward for a non alpha character and returns the string based on that position
+            to the front or back depending on direction.
+        """
         end_pos = 0 if not reverse else len(split_string)
         char_index = len(split_string) - 1 if not reverse else 1
         while char_index >= end_pos and split_string[char_index].isalpha():
@@ -54,7 +64,7 @@ class QObjectItem(QtGui.QStandardItem):
 
     @property
     def is_valid(self):
-        return os.path.exists(self.path)
+        return platforms.current.exists(self.path)
 
     @property
     def is_file(self):
@@ -67,12 +77,12 @@ class QObjectItem(QtGui.QStandardItem):
 
 class QFileItemModel(QtGui.QStandardItemModel):
     FULL_PATH = True
-    sorting_stale = QtCore.Signal()
+    order_changed = QtCore.Signal()
 
     def __init__(self):
         super(QFileItemModel, self).__init__()
         self.setColumnCount(2)
-        self.sorting_stale.connect(self.default_sort)
+        self.order_changed.connect(self.refresh)
 
     @property
     def object_paths(self):
@@ -87,16 +97,20 @@ class QFileItemModel(QtGui.QStandardItemModel):
                 index_table[row].append(self.itemFromIndex(self.index(row, column)))
         return index_table
 
+    def refresh(self):
+        self.remove_stale_references()
+        self.default_sort()
+
     def entry_exists(self, object_path):
         for row_item in self.data_table:
             row_object_path, row_label = row_item
-            if object_path == row_object_path.text():
+            if os.path.normpath(object_path) == row_object_path.text():
                 return True
         return False
 
     def removeRow(self, index):
-        self.sorting_stale.emit()
         super(QFileItemModel, self).removeRow(index)
+        self.order_changed.emit()
 
     def appendRow(self, object_path):
         if self.entry_exists(object_path):
@@ -104,6 +118,7 @@ class QFileItemModel(QtGui.QStandardItemModel):
         entry_object_path = QObjectItem(object_path)
         self.set_item_path(entry_object_path)
         super(QFileItemModel, self).appendRow([entry_object_path, entry_object_path.rename_item])
+        self.order_changed.emit()
 
     def default_sort(self):
         self.sort(0, QtCore.Qt.AscendingOrder)
@@ -119,3 +134,9 @@ class QFileItemModel(QtGui.QStandardItemModel):
         else:
             item.setText(item.short_path)
         return item
+
+    def remove_stale_references(self):
+        for row_item in self.data_table:
+            row_object_path, row_object_label = row_item
+            if not platforms.current.exists(row_object_path.text()):
+                self.removeRow(row_object_path.index().row())

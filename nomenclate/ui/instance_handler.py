@@ -11,11 +11,6 @@ from nomenclate.ui.components.default import DefaultFrame
 
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
-try:
-    UNICODE_EXISTS = bool(type(unicode))
-except NameError:
-    unicode = lambda s: str(s)
-
 
 class InstanceHandlerWidget(DefaultFrame):
     TITLE = 'File List View'
@@ -73,7 +68,7 @@ class InstanceHandlerWidget(DefaultFrame):
         self.token_frame.setObjectName('SeeThrough')
 
         self.setFrameShadow(QtWidgets.QFrame.Sunken)
-        self.nomenclate_output.connect(self.set_output)
+        self.nomenclate_output.connect(self.output_name.setText)
 
         self.input_format.text_input.set_options(self.get_options_from_config('naming_formats', return_type=dict),
                                                  for_token=False)
@@ -112,6 +107,8 @@ class InstanceHandlerWidget(DefaultFrame):
                 token_widget.set_category_title(token, rich_color)
 
     def generate_name(self, object_item, index, override_dict=None):
+        """ Generates a name from the nomenclate instance for use in renaming.
+        """
         if not override_dict:
             override_dict = self.default_override_incrementer(index)
 
@@ -123,7 +120,12 @@ class InstanceHandlerWidget(DefaultFrame):
         self.name_generated.emit(object_item, name)
 
     def default_override_incrementer(self, index):
-        default_incr_tokens = ['var', 'version']
+        """ Finds the first incrementer (in order of appearance L->R) and uses that as the incrementer.
+
+        :param index: int, given starting index.
+        :return: dict, dictionary with override value
+        """
+        default_incr_tokens = ['version', 'var']
         for token in self.NOM.format_order:
             token_lower = token.lower()
             for default_incr_token in default_incr_tokens:
@@ -133,17 +135,25 @@ class InstanceHandlerWidget(DefaultFrame):
         return {}
 
     def fold(self, fold_override=None):
+        """ alternates the state of all accordion widgets in the layout or overrides all using fold_override
+
+        :param fold_override: bool, value to override as the fold state (true being folded)
+        """
         self.fold_state = not self.fold_state if fold_override is None else fold_override
         for token_widget in self.active_token_widgets:
             token_widget.accordion_tree.fold(None, fold_override=self.fold_state)
 
     def get_options_from_config(self, search_path, return_type=list):
+        """ Gets the token's options from the config for use as a auto completion in the token widget
+        """
         try:
             return self.NOM.cfg.get(search_path, return_type)
         except nomenclate.core.errors.ResourceNotFoundError:
             self.LOG.debug('Could not find config entries for token %s' % search_path)
 
     def refresh_active_token_widgets(self):
+        """ Makes sure all active token widgets are valid given the current naming format, adds new ones if missing
+        """
         self.LOG.info('(refresh active token widgets) Current state and format order \n%s\n%s' % (self.NOM.state,
                                                                                                   self.NOM.format_order))
         for token, value in [(token, self.NOM.state[token.lower()]) for token in self.NOM.format_order]:
@@ -154,6 +164,14 @@ class InstanceHandlerWidget(DefaultFrame):
             self.token_layout.addWidget(token_widget)
 
     def create_token_widget(self, token, value):
+        """ Creates appropriate token widget from the factory without conflicting current ones
+            Finds the options from the config and
+            Sets defaults.
+
+        :param token:
+        :param value:
+        :return:
+        """
         token_widget = self.token_widget_lookup.get(token, None)
         if token_widget is None:
             self.LOG.debug('No preexisting token widget...creating and adding to %s.token_widget_lookup.' % self)
@@ -169,11 +187,15 @@ class InstanceHandlerWidget(DefaultFrame):
         return token_widget
 
     def load_settings_from_config(self):
+        """ Loads all settings from the config for all tokens widgets.
+        """
         self.NOM.initialize_config_settings()
         for token, token_widget in iteritems(self.token_widget_lookup):
             token_widget.add_default_values_from_config(self.NOM.get_token_settings(token))
 
     def clear_stale_token_widgets(self):
+        """ Removes unnecessary tokens if they aren't found in the current format string's order
+        """
         self.LOG.debug('Comparing current token widgets %s against format order %s' % (self.token_widgets,
                                                                                        self.NOM.format_order))
         for token_widget in self.active_token_widgets:
@@ -191,6 +213,9 @@ class InstanceHandlerWidget(DefaultFrame):
         self.update_instance({})
 
     def update_instance(self, serialized_token_data):
+        """ Updates the nomenclate instance based on the serialized token widget values/settings
+        """
+
         token = str(serialized_token_data.pop('token', None))
         value = str(serialized_token_data.pop('value', None))
 
@@ -210,6 +235,8 @@ class InstanceHandlerWidget(DefaultFrame):
         self.nomenclate_output.emit(self.NOM.get())
 
     def set_format(self):
+        """ Sets the current nomenclate instance's format.
+        """
         if self.input_format.text_utf:
             try:
                 self.NOM.format = self.input_format.text_utf
@@ -223,10 +250,9 @@ class InstanceHandlerWidget(DefaultFrame):
                                                     QtWidgets.QMessageBox.Ok, self)
                 message_box.exec_()
 
-    def set_output(self, input_name):
-        self.output_name.setText(input_name)
-
     def select_next_token_line_edit(self, direction):
+        """ KeyPressEvent takeover to enable easy tabbing between token widget input lines
+        """
         order = self.NOM.format_order
         direction_shifted_tokens = order[-1:] + order[:-1] if direction else order[1:] + order[:1]
         restart = order[-1] if direction else order[0]
@@ -247,6 +273,8 @@ class InstanceHandlerWidget(DefaultFrame):
         return False
 
     def generate_token_colors(self, richtext_format_string=None, format_order=None, swapped=False):
+        """ Generates and emits a rich text string to update the tokens with.
+        """
         dark = self.parent().dark.get()
         color_coded = self.parent().color_coded.get()
         richtext_format_string = richtext_format_string or self.NOM.format
@@ -278,6 +306,12 @@ class InstanceHandlerWidget(DefaultFrame):
         self.token_colors_updated.emit(original_format, richtext_format_string, self.TOKEN_COLORS, format_order)
 
     def get_safe_color(self, format_token, last_color, dark):
+        """ Generates a safe color value from a persistent hash of the token string
+            based on perceived contrast ratio against background.
+
+        :param dark: bool, if we have a perceived dark background theme.
+        :return:
+        """
         color = None
         bg_score, color_score = 0, 0
 
@@ -291,4 +325,5 @@ class InstanceHandlerWidget(DefaultFrame):
             bg_score = utils.get_contrast_ratio(color, contrast_against)
             if last_color:
                 color_score = utils.get_contrast_ratio(color, last_color)
+
         return color
