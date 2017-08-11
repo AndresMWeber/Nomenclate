@@ -325,7 +325,7 @@ class StaticTokenWidget(TokenWidget):
 
     def create_controls(self):
         super(StaticTokenWidget, self).create_controls()
-        self.value_widget = QtWidgets.QLineEdit()
+        self.value_widget = QtWidgets.QLineEdit(self)
         self.disabled_label = QtWidgets.QLabel('Cannot change')
 
     def initialize_controls(self):

@@ -8,7 +8,7 @@ import nomenclate.settings as settings
 global MAX_PARENT_DEPTH
 MAX_PARENT_DEPTH = 0
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.DEBUG
 
 LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
 
@@ -144,7 +144,7 @@ class NomenclateFileContext(object):
 class WidgetState(object):
     WIDGETS = utils.INPUT_WIDGETS.copy()
     FILE_CONTEXT = NomenclateFileContext('last_ui_settings.json')
-    STORE_WITH_HASH = False
+    STORE_WITH_HASH = True
 
     @classmethod
     def list_presets(cls):
@@ -156,8 +156,9 @@ class WidgetState(object):
         """
         settings = {}
         unhandled_types = []
+        print('ui:', ui, len(cls.get_ui_members(ui)))
         for widget in cls.get_ui_members(ui):
-            if type(widget) in list(cls.WIDGETS):
+            if any([issubclass(type(widget), widget_type) for widget_type in list(cls.WIDGETS)]):
                 try:
                     widget_path = cls.get_widget_path(widget, top_level=ui)
                     LOG.debug('Attained widget path for %s...now serializing and storing' % widget)
@@ -189,21 +190,31 @@ class WidgetState(object):
 
         failed_load = []
         if settings:
+            print(ui, len(cls.get_ui_members(ui)))
             for widget in cls.get_ui_members(ui):
-                if type(widget) in list(cls.WIDGETS):
+                widget_storage_class = None
+
+                for widget_type in list(cls.WIDGETS):
+                    if issubclass(type(widget), widget_type):
+                        widget_storage_class = widget_type
+
+                if widget_storage_class:
                     widget_path = cls.get_widget_path(widget, top_level=ui)
+                    LOG.debug('Attained widget path %s for %s...now loading and setting' % (widget_path, widget))
 
                     if defaults:
                         setting = getattr(widget, 'default_value', None)
+                        LOG.debug('Loaded default value %s' % setting)
                     else:
                         setting = settings.get(widget_path, None)
+                        LOG.debug('Loaded stored value %s' % setting)
 
                     if setting is not None:
-                        setter = cls.WIDGETS[type(widget)][utils.SETTER]
+                        setter = cls.WIDGETS[widget_storage_class][utils.SETTER]
+                        LOG.debug('Using setter %s to set widget %s to %s' % (setter, widget, setting))
                         setter(widget, setting)
                     else:
                         failed_load.append(widget_path)
-                    break
 
             LOG.info('Successfully loaded state from file %s' % cls.FILE_CONTEXT.FILE_HISTORY[-1])
         else:
@@ -228,7 +239,7 @@ class WidgetState(object):
         except Exception as ex:
             template = "An exception of type {0} occurred. Arguments:\n{1!r}"
             message = template.format(type(ex).__name__, ex.args)
-            LOG.warning(message)
+            LOG.warning('%s has error %s with serializer %s...setting to empty' % (widget, widget_serializer, message))
             value = ''
         return value
 
@@ -265,7 +276,7 @@ class WidgetState(object):
         current_widget = qwidget
         while current_widget.parent() and current_widget != top_level:
             widget_path = cls.get_widget_name(current_widget.parent()) + utils.OBJECT_PATH_SEPARATOR + widget_path
-            qwidget = current_widget.parent()
+            current_widget = current_widget.parent()
             depth += 1
             if depth > depth_tolerance:
                 break
