@@ -5,10 +5,10 @@ import tempfile
 import nomenclate.ui.utils as utils
 import nomenclate.settings as settings
 
-global MAX_DEPTH
-MAX_DEPTH = 0
+global MAX_PARENT_DEPTH
+MAX_PARENT_DEPTH = 0
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.DEBUG
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
 
@@ -144,7 +144,7 @@ class NomenclateFileContext(object):
 class WidgetState(object):
     WIDGETS = utils.INPUT_WIDGETS.copy()
     FILE_CONTEXT = NomenclateFileContext('last_ui_settings.json')
-    STORE_WITH_HASH = True
+    STORE_WITH_HASH = False
 
     @classmethod
     def list_presets(cls):
@@ -222,8 +222,15 @@ class WidgetState(object):
     @classmethod
     def serialize_widget_settings(cls, widget):
         widget_serializer = cls.get_widget_method(type(widget), utils.GETTER)
-        LOG.info('Serializing widget %s with %s value: %s' % (widget, widget_serializer, widget_serializer(widget)))
-        return widget_serializer(widget)
+        LOG.info('Serializing widget %s with %s' % (widget, widget_serializer))
+        try:
+            value = widget_serializer(widget)
+        except Exception as ex:
+            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+            message = template.format(type(ex).__name__, ex.args)
+            LOG.warning(message)
+            value = ''
+        return value
 
     @classmethod
     def get_widget_method(cls, widget_type, method_type):
@@ -251,25 +258,22 @@ class WidgetState(object):
 
     @classmethod
     def get_widget_path(cls, qwidget, top_level=None, depth_tolerance=15):
-        global MAX_DEPTH
+        global MAX_PARENT_DEPTH
         LOG.debug('Starting widget path for widget %s until %s' % (qwidget, top_level))
         widget_path = cls.get_widget_name(qwidget)
-        print('got base name')
         depth = 0
-        print('entering while', qwidget.parent())
-        while qwidget.parent() and qwidget != top_level:
-            widget_path = cls.get_widget_name(qwidget.parent()) + utils.OBJECT_PATH_SEPARATOR + widget_path
-            qwidget = qwidget.parent()
+        current_widget = qwidget
+        while current_widget.parent() and current_widget != top_level:
+            widget_path = cls.get_widget_name(current_widget.parent()) + utils.OBJECT_PATH_SEPARATOR + widget_path
+            qwidget = current_widget.parent()
             depth += 1
-            print(depth)
             if depth > depth_tolerance:
                 break
 
-        print('exiting while')
-        MAX_DEPTH = max(MAX_DEPTH, depth)
+        MAX_PARENT_DEPTH = max(MAX_PARENT_DEPTH, depth)
         widget_path = widget_path if not cls.STORE_WITH_HASH else utils.persistent_hash(widget_path)
         LOG.debug(
-            'Attained widget path %s with final parent at depth %d, deepest: %d' % (widget_path, depth, MAX_DEPTH))
+            'Attained widget path %s with final parent at depth %d, deepest: %d' % (widget_path, depth, MAX_PARENT_DEPTH))
         return str(widget_path)
 
     @classmethod

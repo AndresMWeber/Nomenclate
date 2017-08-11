@@ -23,8 +23,8 @@ class FormatWidget(QtWidgets.QStackedWidget):
     COLOR_LOOKUP = {}
     format_updated = QtCore.Signal()
 
-    def __init__(self, starting_format='', *args, **kwargs):
-        super(FormatWidget, self).__init__(*args, **kwargs)
+    def __init__(self, starting_format='', parent=None, *args, **kwargs):
+        super(FormatWidget, self).__init__(parent=parent, *args, **kwargs)
         self.text_input = input_widgets.CompleterTextEntry()
         self.text_input.set_validation(utils.TOKEN_VALUE_VALIDATOR)
         self.format_label = FormatLabel(starting_format)

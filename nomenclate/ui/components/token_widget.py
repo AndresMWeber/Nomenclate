@@ -43,16 +43,16 @@ class TokenWidget(DefaultFrame):
     CAPITAL_OPTIONS = ['case', 'upper', 'lower']
     changed = QtCore.Signal(dict)
 
-    def __init__(self, token, value):
+    def __init__(self, token, value, parent=None):
         self.SETTINGS = {}
         self.token = token.lower()
         self.value = value
         self.value_widget = None
-        super(TokenWidget, self).__init__()
+        super(TokenWidget, self).__init__(parent=parent)
         self.value_widget.setObjectName(self.token + 'ValueInput')
 
     def create_controls(self):
-        self.accordion_tree = accordion_tree.QAccordionWidget(self)
+        self.accordion_tree = accordion_tree.QAccordionWidget(parent_widget=self)
         QtWidgets.QVBoxLayout(self)
 
     def set_category_title(self, category, title):
@@ -120,11 +120,11 @@ class TokenWidget(DefaultFrame):
 class DefaultTokenWidget(TokenWidget):
     def create_controls(self):
         super(DefaultTokenWidget, self).create_controls()
-        self.capital = QtWidgets.QComboBox()
-        self.prefix = QtWidgets.QLineEdit()
-        self.suffix = QtWidgets.QLineEdit()
-        self.length = QtWidgets.QSpinBox()
-        self.value_widget = input_widgets.CompleterTextEntry(self.value)
+        self.capital = QtWidgets.QComboBox(self)
+        self.prefix = QtWidgets.QLineEdit(self)
+        self.suffix = QtWidgets.QLineEdit(self)
+        self.length = QtWidgets.QSpinBox(self)
+        self.value_widget = input_widgets.CompleterTextEntry(self.value_widget)
 
     def initialize_controls(self):
         super(DefaultTokenWidget, self).initialize_controls()
@@ -177,10 +177,10 @@ class VarTokenWidget(TokenWidget):
 
     def create_controls(self):
         super(VarTokenWidget, self).create_controls()
-        self.capital = QtWidgets.QComboBox()
-        self.value_widget = QtWidgets.QSpinBox()
-        self.prefix = QtWidgets.QLineEdit()
-        self.suffix = QtWidgets.QLineEdit()
+        self.capital = QtWidgets.QComboBox(self)
+        self.value_widget = QtWidgets.QSpinBox(self)
+        self.prefix = QtWidgets.QLineEdit(self)
+        self.suffix = QtWidgets.QLineEdit(self)
 
     def initialize_controls(self):
         super(VarTokenWidget, self).initialize_controls()
@@ -229,10 +229,10 @@ class VersionTokenWidget(TokenWidget):
 
     def create_controls(self):
         super(VersionTokenWidget, self).create_controls()
-        self.padding = QtWidgets.QSpinBox()
-        self.prefix = QtWidgets.QLineEdit()
-        self.suffix = QtWidgets.QLineEdit()
-        self.value_widget = QtWidgets.QSpinBox()
+        self.padding = QtWidgets.QSpinBox(self)
+        self.prefix = QtWidgets.QLineEdit(self)
+        self.suffix = QtWidgets.QLineEdit(self)
+        self.value_widget = QtWidgets.QSpinBox(self)
 
     def initialize_controls(self):
         super(VersionTokenWidget, self).initialize_controls()
@@ -276,10 +276,10 @@ class DateTokenWidget(TokenWidget):
 
     def create_controls(self):
         super(DateTokenWidget, self).create_controls()
-        self.capital = QtWidgets.QComboBox()
-        self.prefix = QtWidgets.QLineEdit()
-        self.suffix = QtWidgets.QLineEdit()
-        self.length = QtWidgets.QSpinBox()
+        self.capital = QtWidgets.QComboBox(self)
+        self.prefix = QtWidgets.QLineEdit(self)
+        self.suffix = QtWidgets.QLineEdit(self)
+        self.length = QtWidgets.QSpinBox(self)
         self.value_widget = input_widgets.CompleterTextEntry(self.value)
 
     def initialize_controls(self):

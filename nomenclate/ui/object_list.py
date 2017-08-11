@@ -162,8 +162,8 @@ class FileListWidget(DefaultFrame):
 
     def create_controls(self):
         self.layout_main = QtWidgets.QVBoxLayout(self)
-        self.wgt_list_view = QFileRenameTreeView()
-        self.btn_widget = QtWidgets.QFrame()
+        self.wgt_list_view = QFileRenameTreeView(parent=self)
+        self.btn_widget = QtWidgets.QFrame(parent=self)
         self.btn_layout = QtWidgets.QHBoxLayout(self.btn_widget)
         self.btn_layout.setContentsMargins(0, 0, 0, 0)
         self.wgt_filter_list = QtWidgets.QLineEdit(placeholderText='filter...')
@@ -227,8 +227,7 @@ class FileListWidget(DefaultFrame):
                         LOG.info('Success renaming object: %d:%s->%s' % (row, name, new_name))
 
                     except (OSError, NameError) as e:
-                        print(e)
-                        LOG.warning('Failed renaming object %d:%s' % (row, name))
+                        LOG.warning('Failed renaming object %d:%s error: %s' % (row, name, e))
                 self.renamed.emit()
 
     def populate_objects(self, object_paths):

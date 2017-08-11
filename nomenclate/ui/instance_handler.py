@@ -33,9 +33,9 @@ class InstanceHandlerWidget(DefaultFrame):
 
         self.output_layout = QtWidgets.QVBoxLayout(self.wgt_output)
         self.output_title = QtWidgets.QLabel('Output Base Name')
-        self.output_name = QtWidgets.QLabel()
+        self.output_name = QtWidgets.QLabel(parent=self)
 
-        self.token_frame = QtWidgets.QFrame()
+        self.token_frame = QtWidgets.QFrame(parent=self)
         self.token_layout = QtWidgets.QHBoxLayout(self.token_frame)
 
         self.token_widget_lookup = {}

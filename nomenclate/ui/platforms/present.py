@@ -1,5 +1,10 @@
 import Qt.QtWidgets as QtWidgets
+import nomenclate.settings as settings
 from . import platform_registry as registry
+
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
+
+LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
 
 
 def platform_identifier(platform_name):
@@ -9,21 +14,22 @@ def platform_identifier(platform_name):
             return identifier
     return platform_name or 'python'
 
+
 def get_current_platform():
     application = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
     app = platform_identifier(application.applicationName())
-    print('current application: %s' % app)
+    LOG.info('current application: %s' % app)
     if 'maya' in app.lower():
         app = 'maya'
-        print('importing maya plugin')
+        LOG.info('importing maya plugin')
         import nomenclate.ui.platforms.p_maya
 
     elif 'nuke' in app.lower():
-        print('importing nuke plugin')
+        LOG.info('importing nuke plugin')
         import nomenclate.ui.platforms.p_nuke
 
     elif 'python' in app.lower():
-        print('importing os plugin')
+        LOG.info('importing os plugin')
         import nomenclate.ui.platforms.p_os
 
     return registry.REGISTERED_PLATFORMS.get(app, None)()

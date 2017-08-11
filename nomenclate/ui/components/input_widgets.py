@@ -32,9 +32,9 @@ class CustomCompleter(QtWidgets.QCompleter):
 
 
 class TokenLineEdit(QtWidgets.QLineEdit):
-    def __init__(self, *args):
-        super(TokenLineEdit, self).__init__(*args)
-        self.completer = CustomCompleter([], parent=self)
+    def __init__(self, parent=None, *args):
+        super(TokenLineEdit, self).__init__(*args, parent=parent)
+        self.completer = CustomCompleter([], self)
         self.setCompleter(self.completer)
         self.set_completer_items = self.completer.set_items
 
@@ -45,7 +45,7 @@ class QLineEditContextTree(QtWidgets.QLineEdit):
     def __init__(self, parent=None):
         self.menu = QtWidgets.QMenu()
         self.match_width = False
-        super(QLineEditContextTree, self).__init__(parent)
+        super(QLineEditContextTree, self).__init__(parent=parent)
 
     def resizeEvent(self, event):
         if self.match_width:
@@ -105,7 +105,7 @@ class CompleterTextEntry(QLineEditContextTree):
     MODS = (QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return, QtCore.Qt.Key_Escape, QtCore.Qt.Key_Tab, QtCore.Qt.Key_Backtab)
 
     def __init__(self, parent=None):
-        super(CompleterTextEntry, self).__init__(parent)
+        super(CompleterTextEntry, self).__init__(parent=parent)
         self.completer = None
         self.complete_sub_words = False
         self.perform_validator_filter = True
@@ -145,7 +145,7 @@ class CompleterTextEntry(QLineEditContextTree):
         except AttributeError:
             pass
 
-        self.completer = CustomCompleter(items, parent=self)
+        self.completer = CustomCompleter(items, self)
         self.completer.setWidget(self)
         self.setCompleter(self.completer)
         self.set_completer_items = self.completer.set_items

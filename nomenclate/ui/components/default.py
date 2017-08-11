@@ -5,8 +5,8 @@ import nomenclate.ui.platforms as platforms
 class Default(object):
     TITLE = 'Default Widget'
 
-    def __init__(self, *args, **kwargs):
-        super(Default, self).__init__(*args, **kwargs)
+    def __init__(self, parent=None, *args, **kwargs):
+        super(Default, self).__init__(parent=parent, *args, **kwargs)
         self.category_label = self.TITLE
         self.setup()
 
@@ -30,6 +30,7 @@ class Default(object):
 
 class DefaultNormalWindow(Default, QtWidgets.QWidget):
     pass
+
 
 if platforms.current.PLATFORM_MIXIN:
     class DefaultMixinWindow(platforms.current.PLATFORM_MIXIN, DefaultNormalWindow):

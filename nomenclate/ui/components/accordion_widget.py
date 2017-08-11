@@ -18,11 +18,11 @@ class QClickLabel(QtWidgets.QLabel):
 
 
 class QAccordionCategory(DefaultFrame):
-    def __init__(self, title, parent, *args, **kwargs):
+    def __init__(self, title, parent=None, *args, **kwargs):
         self.label_title = title
         self.parent_widget = parent
         self.folded = False
-        super(QAccordionCategory, self).__init__(*args, **kwargs)
+        super(QAccordionCategory, self).__init__(parent=parent, *args, **kwargs)
 
     def create_controls(self):
         QtWidgets.QVBoxLayout(self)
@@ -56,9 +56,9 @@ class QAccordionWidget(DefaultFrame):
     itemCollapsed = QtCore.Signal()
     items_added = QtCore.Signal()
 
-    def __init__(self, parent_widget, *args, **kwargs):
+    def __init__(self, parent_widget=None, *args, **kwargs):
         self.category_widget_lookup = {}
-        super(QAccordionWidget, self).__init__(*args, **kwargs)
+        super(QAccordionWidget, self).__init__(parent=parent_widget, *args, **kwargs)
         self.parent_widget = parent_widget
 
     def create_controls(self):

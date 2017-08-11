@@ -439,18 +439,14 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
         super(MainDialog, self).mousePressEvent(event)
 
     def close(self, save_state=True):
-        print ('running close.')
         try:
             QtWidgets.QApplication.instance().removeEventFilter(self)
         except:
             self.LOG.warning('Failed to remove event filter...')
-        print('save state')
+
         if save_state:
             self.save_state(quit=True)
-        print('self.deleteLater!')
         self.deleteLater()
-        print('self.deleteLater done!')
-
         super(MainDialog, self).close()
 
     def closeEvent(self, e):
