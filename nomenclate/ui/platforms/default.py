@@ -50,3 +50,7 @@ class DefaultPlatform(object):
     @classmethod
     def exists(cls, node_path):
         raise NotImplementedError
+
+    @classmethod
+    def close(cls, ui):
+        ui.deleteLater()

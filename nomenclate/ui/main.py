@@ -12,6 +12,7 @@ import nomenclate.ui.instance_handler as instance_handler
 import nomenclate.ui.object_list as object_list
 import nomenclate.ui.utils as utils
 import nomenclate.ui.components.default as default
+import nomenclate.ui.platforms as platforms
 
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
 
@@ -205,7 +206,6 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
         repeat_action.setShortcut('Ctrl+G')
         repeat_action.triggered.connect(self.repeat_last_action)
 
-
         exit_action = self.file_menu.addAction('Exit and Save')
         exit_action.setShortcut('Ctrl+Q')
         exit_action.triggered.connect(lambda: self.close(True))
@@ -346,7 +346,6 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
         preset_save_action.triggered.connect(lambda: self.run_action(self.save_state, None, True))
 
     def populate_qss_styles(self):
-
         try:
             self.themes_menu.clear()
         except (RuntimeError, AttributeError):
@@ -409,28 +408,10 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
             if event.mimeData().hasText():
                 self.dropped_files.emit(event.mimeData().text().split())
 
-    def eventFilter(self, source, event):
-        if event.type() == QtCore.QEvent.KeyPress:
-            if event.key() in [QtCore.Qt.Key_Tab, QtCore.Qt.Key_Backtab]:
-                if self.focused_widget.parent() in self.instance_handler.token_widgets:
-                    if self.instance_handler.select_next_token_line_edit(event.key() == QtCore.Qt.Key_Backtab):
-                        return True
-
-        if event.type() == QtCore.QEvent.Close:
-            self.LOG.debug(
-                'Close event %s detected from widget %s with parent %s' % (event, source, source.parent()))
-        try:
-            return QtWidgets.QWidget.eventFilter(self, source, event)
-        except RuntimeError:
-            self.LOG.debug('Failed to filter event %s with source %s' % (event, source))
-            return False
-
     def keyPressEvent(self, QKeyPressEvent):
-        if QKeyPressEvent.key() in [QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return]:
-            pass
-        # Attempting to use this fix for taking over maya shortcuts:
+        # Attempting to use this passthrough fix to prevent taking over maya shortcuts:
         # https://forums.autodesk.com/t5/maya-programming/maya-amp-pyqt-how-to-prevent-trigger-of-shortcut-keys/td-p/4354371
-        #super(MainDialog, self).keyPressEvent(QKeyPressEvent)
+        pass
 
     def mousePressEvent(self, event):
         focused_widget = self.focused_widget
@@ -446,8 +427,8 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
 
         if save_state:
             self.save_state(quit=True)
-        self.deleteLater()
-        super(MainDialog, self).close()
+
+        platforms.current.close(self)
 
     def closeEvent(self, e):
         self.close()

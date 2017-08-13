@@ -30,3 +30,15 @@ class MayaPlatform(default.DefaultPlatform):
     @classmethod
     def long_name(cls, node_path):
         return cmds.ls(node_path, long=True)[0]
+
+    @classmethod
+    def close(cls, ui):
+        # 2017 bug where it only checks for the PARENT as a workspace control for some reason instead of the UI itself.
+        # {MAYA_INSTALL}/Python/Lib/site-packages/maya/app/general/mayaMixin.py
+        if cmds.about(v=True) == '2017':
+            mayaWorkspaceControlName = ui.objectName() + 'WorkspaceControl'
+            if cmds.workspaceControl(mayaWorkspaceControlName, q=True, exists=True):
+                print('Detected UI registered as control, closing...')
+                cmds.workspaceControl(mayaWorkspaceControlName, e=True, close=True)
+
+        super(MayaPlatform, cls).close(ui)

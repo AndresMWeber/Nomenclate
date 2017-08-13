@@ -4,17 +4,16 @@ import json
 import tempfile
 import nomenclate.ui.utils as utils
 import nomenclate.settings as settings
+from collections import OrderedDict
 
-global MAX_PARENT_DEPTH
 MAX_PARENT_DEPTH = 0
-
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.DEBUG
-
+STORE_WITH_HASH = True
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
 
 preset_header = 'nomenclate_preset'
 preset_info = 'This is a nomenclate preset file.'
-preset_metadata = {'nomenclate_preset': preset_info}
+preset_metadata = OrderedDict(nomenclate_preset=preset_info)
 
 
 class NomenclateFileContext(object):
@@ -144,7 +143,6 @@ class NomenclateFileContext(object):
 class WidgetState(object):
     WIDGETS = utils.INPUT_WIDGETS.copy()
     FILE_CONTEXT = NomenclateFileContext('last_ui_settings.json')
-    STORE_WITH_HASH = True
 
     @classmethod
     def list_presets(cls):
@@ -153,12 +151,16 @@ class WidgetState(object):
     @classmethod
     def generate_state(cls, ui, filename=None, fullpath_override=None):
         """ save "ui" controls and values to registry "setting"
+            Saves value if any child widget is a subclass of a predefined input type
+            EXCEPT if it has a parent that is an input type:
+                E.G. - QSpinBox which has an instance of a QLineEdit below it.
         """
         settings = {}
         unhandled_types = []
-        print('ui:', ui, len(cls.get_ui_members(ui)))
+
         for widget in cls.get_ui_members(ui):
-            if any([issubclass(type(widget), widget_type) for widget_type in list(cls.WIDGETS)]):
+            if any([issubclass(type(widget), widget_type) for widget_type in list(cls.WIDGETS)]) and not \
+                    any([issubclass(type(widget.parent()), widget_type) for widget_type in list(cls.WIDGETS)]):
                 try:
                     widget_path = cls.get_widget_path(widget, top_level=ui)
                     LOG.debug('Attained widget path for %s...now serializing and storing' % widget)
@@ -282,9 +284,10 @@ class WidgetState(object):
                 break
 
         MAX_PARENT_DEPTH = max(MAX_PARENT_DEPTH, depth)
-        widget_path = widget_path if not cls.STORE_WITH_HASH else utils.persistent_hash(widget_path)
+        widget_path = widget_path if not STORE_WITH_HASH else utils.persistent_hash(widget_path)
         LOG.debug(
-            'Attained widget path %s with final parent at depth %d, deepest: %d' % (widget_path, depth, MAX_PARENT_DEPTH))
+            'Attained widget path %s with final parent at depth %d, deepest: %d' % (
+                widget_path, depth, MAX_PARENT_DEPTH))
         return str(widget_path)
 
     @classmethod
