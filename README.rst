@@ -248,3 +248,12 @@ Further version/var/date specific token notes:
 Version Support
 ===============
 Currently this package supports Python 2.7, 3.5 and 3.6
+
+Attribution
+===========
+WPZOOM Developer Icon Set by WPZOOM License_ Source_ - Designed by David Ferreira.
+.. _License: http://creativecommons.org/licenses/by-sa/3.0/
+.. _Source: http://www.wpzoom.com
+
+Icon made by iconauth_ from www.flaticon.com
+.. _iconauth: https://www.flaticon.com/authors/freepik

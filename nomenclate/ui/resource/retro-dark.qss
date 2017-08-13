@@ -1,0 +1,186 @@
+QLabel#HeaderLabel, QWidget#HeaderWidget {
+    background: purple;
+    color: black;
+}
+
+QWidget#MainFrame{
+    background: green;
+}
+
+QTextEdit, QLineEdit, QLabel, QListView, QSpinBox, QWidget {
+    font-family: "VT323";
+}
+
+QWidget{
+    padding: 1px;
+}
+QTextEdit, QLineEdit, QLabel, QListView, QSpinBox, QComboBox{
+    padding: 1px 1px 1px 3px;
+    font-size: 12pt;
+    color: white;
+    background: black;
+    border: 1px solid purple;
+}
+
+QListView, QTreeView, QTreeWidget {
+    alternate-background-color: rgb(75,75,75);
+    background-color: rgb(50,50,50);
+    border: 1px solid purple;
+}
+
+QTreeView::QScrollArea
+{
+  background: white;
+}
+
+QListView::item:selected:!active, QTreeView::item:selected:!active{
+    background: rgb(35, 107, 178);
+}
+
+QMenuBar, QMenuBar::item, QMenu::item, QMenu {
+    background: #94FFAB;
+    color: black;
+}
+
+QMenu::item:selected {
+    background-color: #263238;
+    background: black;
+}
+
+QLabel#TokenLabel {
+    background: black;
+    border: 3px solid #94FFAB;
+    font-weight: 400;
+    qproperty-alignment: AlignCenter;
+    font-size: 14pt;
+}
+
+QLabel#DragLabel {
+    background: transparent;
+}
+
+QWidget#OutputWidget {
+    background: purple;
+    color: white;
+    border: 1px solid purple;
+}
+
+QLabel#OutputTitle {
+    background: transparent;
+    font-weight: 800;
+    font-size: 16pt;
+    qproperty-alignment: AlignCenter;
+}
+
+QLabel#OutputLabel {
+    font-weight: 400;
+    font-size: 16pt;
+    background: black;
+    qproperty-alignment: AlignCenter;
+    border: 1px solid purple;
+}
+
+QFrame{
+    background: black;
+    border: none;
+}
+
+QPushButton, QCheckBox {
+    background: purple;
+    color: white;
+    padding: 3px;
+    font-family: "VT323";
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+QPushButton {
+    font-weight: bold;
+    font-size: 14pt;
+}
+
+QPushButton::pressed {
+    background: rgb(160, 160, 160);
+}
+
+QPushButton:focus {
+    background: rgb(100, 100, 100);
+}
+
+QCheckBox::indicator {
+    background: none;
+}
+
+QCheckBox::indicator:checked {
+    background: #B4BACC;
+}
+
+QAccordionTreeWidget {
+    border: none;
+}
+
+QAccordionTreeWidget::QScrollArea {
+    border: none;
+}
+
+QAccordionTreeWidget::item:!selected {
+    border: none;
+    border-left: none;
+    border-top: none;
+}
+
+QAccordionTreeWidget::item:selected {
+    border-left: none;
+}
+
+QComboBox:editable {
+    background: DarkSlateGray;
+}
+
+QAbstractItemView {
+    background-color: black;
+    selection-background-color: white;
+    border-radius: 0px;
+    color: rgb(0, 0, 0);
+    font: 14pt;
+    border: 1px solid #94FFAB;
+}
+
+QListView::item:selected{
+    background-color: #94FFAB;
+    color: black;
+}
+
+QListView::item:hover{
+    background-color: white;
+    color: black;
+}
+
+QListView::item:!active{
+    background-color: white;
+    color: black;
+}
+
+QComboBox:on {
+    padding-top: 3px;
+    padding-left: 4px;
+}
+
+QComboBox::drop-down {
+    background: black;
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+}
+
+QComboBox::down-arrow {
+    border-image: url(./nomenclate/ui/resource/icons/arrow-down.png);
+}
+
+QComboBox::down-arrow:on {
+    top: 1px;
+    left: 1px;
+}
+
+QCompleter {
+    background-color: transparent;
+}

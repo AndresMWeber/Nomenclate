@@ -1,0 +1,31 @@
+QTextEdit, QLineEdit, QPlainTextEdit, QLabel, QSpinBox, QComboBox {
+    min-height: 25;
+    max-height: 25;
+}
+
+QLabel#HeaderLabel {
+    font-weight: regular;
+    font-size: 20pt;
+    border: none;
+}
+
+QLabel#TokenLabel {
+    font-weight: 400;
+    qproperty-alignment: AlignCenter;
+}
+
+QLabel#OutputTitle {
+    qproperty-alignment: AlignCenter;
+    font-weight: 400;
+}
+
+QLabel#OutputLabel {
+    qproperty-alignment: AlignCenter;
+    padding: 0 10px 0 10px;
+}
+
+
+QLabel#InputLabel{
+    background: transparent;
+    border: none;
+}

@@ -39,6 +39,11 @@ class ValidationError(NomenclateException):
     """
     pass
 
+class BalanceError(ValidationError):
+    """IO error.
+    """
+    pass
+
 
 class ResourceNotFoundError(NomenclateException):
     """HTTP error.

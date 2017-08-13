@@ -1,0 +1,168 @@
+/*
+Top: #2D2F42
+Headers: #151723
+High: #22222A
+Mid: #1A1B25
+Backgrounds: #0D0E19
+Bottom: #0B0C17
+Label: transparent
+Separators: #161823
+
+Fields: #1F1F2B
+Alt-fields: #161628
+Buttons: #050510
+Selected: #29162A
+
+MiscA: #ECCD2A
+MiscB: #E2327F
+MiscC: #5DABAE
+*/
+
+QWidget#MainFrame, QWidget#HeaderWidget, QLabel#HeaderLabel{
+    background: #1F212B;
+    font-family: "Quicksand";
+    font-weight: regular;
+    font-size: 20pt;
+}
+
+QLabel#InputLabel{
+    background: transparent;
+    border: none;
+    font-size: 10pt;
+}
+
+
+QTextEdit, QLineEdit, QLabel, QListView, QSpinBox, QWidget {
+    font-family: "Lato";
+}
+
+QTextEdit, QLineEdit, QLabel, QSpinBox {
+    font-family: "Lato";
+    background: #1A1B25;
+    font-size: 8pt;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    border-bottom: 1px solid #2D2F42;
+}
+
+#InstanceHandler, #ObjectListFrame{
+    background-color: #0B0C17;
+}
+
+#TokenWidget{
+    border: 1px solid #161823;
+}
+
+#TokenWidget, #SeeThrough, QFrame#fold_widget {
+    background: transparent;
+}
+
+QListView, QFileRenameTreeView {
+    alternate-background-color: #1A1B25;
+    background: #0D0E19;
+    border-right: 1px solid #2D2F42;
+    border-left: 1px solid #2D2F42;
+    border-top: none;
+    border-bottom: none;
+}
+
+QMenuBar, QMenu {
+    background-color: #2D2F42;
+    border: 1px solid #161823;
+    padding: 2px 5px 2px 5px;
+}
+
+QMenuBar::item,  QMenu::item {
+    background-color: transparent;
+}
+
+QMenu::item:selected, QAccordionTreeWidget::item:selected {
+    background-color: #29162A;
+    border-left: none;
+}
+
+QListView::item:selected:!active, QTreeView::item:selected:!active, QAccordionTreeWidget::item:!selected {
+    border: none;
+    border-left: none;
+    border-top: none;
+    background: #161628;
+}
+
+QLabel#TokenLabel {
+    border-radius: 2;
+    font-size: 10pt;
+    border-bottom: 1px solid #451A37;
+}
+
+QWidget#OutputWidget, QLabel#OutputLabel {
+    font-weight: 400;
+    color: #E2327F;
+    background: transparent;
+    border: none;
+    font-size: 16pt;
+}
+
+QLabel#OutputLabel{
+    qproperty-alignment: AlignCenter;
+}
+
+QLabel#OutputTitle{
+    font-size: 8pt;
+}
+
+QAccordionTreeWidget::item:!active {
+    background-color: 0E0E19;
+}
+
+QAccordionTreeWidget::item:active {
+    background-color: 0E0E19;
+}
+
+QPushButton, QCheckBox {
+    background: #682976;
+    padding: 3px;
+    font-family: "Lato", sans-serif;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+QPushButton {
+    font-weight: bold;
+    font-size: 12px;
+}
+
+QPushButton::pressed {
+    background: 22222A;
+}
+
+QCheckBox::indicator {
+    border: 1px solid #5A5A5A;
+    background: none;
+}
+
+QCheckBox::indicator:checked {
+    border: 1px solid #E2E9FF;
+    background: #B4BACC;
+}
+
+QComboBox {
+    background: #161823;
+    border: 1px solid #451A37;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    background: #6b2855;
+    width: 20px;
+    border-left: 2px solid #333333;
+}
+
+QComboBox::down-arrow {
+    border-image: url(./nomenclate/ui/resource/icons/arrow-down.png);
+}
+
+QCompleter {
+    background-color: #0D0E19;
+}

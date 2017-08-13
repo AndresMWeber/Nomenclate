@@ -159,7 +159,7 @@ class ConfigParse(object):
             return self._default_config(return_type)
 
         try:
-            config_entry = function_type_lookup[type(query_path)](query_path)
+            config_entry = function_type_lookup.get(type(query_path), str)(query_path)
             self.LOG.info('Retrieved config entry:\n%s' % pformat(config_entry, depth=1))
             query_result = self.config_entry_handler.format_query_result(config_entry,
                                                                          query_path,
@@ -169,7 +169,7 @@ class ConfigParse(object):
 
             return query_result
         except IndexError:
-            self.LOG.info('Not sure why but IndexError was found...defaulting to return: %s = %r' %
+            self.LOG.info('IndexError was found...defaulting to return: %s = %r' %
                           (return_type, return_type()))
             return return_type()
 

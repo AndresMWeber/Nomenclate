@@ -12,7 +12,7 @@ from .tools import (
     NomenclateNotifier
 )
 
-MODULE_LOGGER_LEVEL_OVERRIDE = None
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
 class Nomenclate(object):
@@ -37,8 +37,7 @@ class Nomenclate(object):
         :param args: dict, any amount of dictionaries desired as input
         :param kwargs: str, kwargs to pass to the nomenclate tokens
         """
-        if input_dict is None:
-            input_dict = dict()
+        input_dict = dict() if input_dict is None else input_dict
 
         self.notifier = NomenclateNotifier(self.__setattr__)
         self.LOG.info('***CREATING NEW NOMENCLATE OBJECT***')
@@ -46,7 +45,6 @@ class Nomenclate(object):
 
         self.cfg = config.ConfigParse(config_filepath=config_filepath)
         self.format_string_object = formatter.FormatString(format_string=format_string)
-
         self.CONFIG_OPTIONS = dict()
 
         self.reset_from_config(format_target=format_string)
@@ -101,7 +99,7 @@ class Nomenclate(object):
             self.LOG.info('Looking in config for format target: %r' % format_target)
             format_target = self.cfg.get(format_target, return_type=str, throw_null_return_error=True)
             self.LOG.info('Found entry: %r' % format_target)
-        except errors.ResourceNotFoundError:
+        except (errors.ResourceNotFoundError, KeyError):
             pass
 
         self.LOG.info('Format target not found in config, validating as a format string...')
@@ -166,11 +164,13 @@ class Nomenclate(object):
         """Gets the string of the current name of the object
         Returns (string): the name of the object
         """
+        old_state = self.state.copy()
         self.LOG.info('RENDERING NOMENCLATE OBJECT')
         self.LOG.info('STATE IS: %s' % self.state)
-        self.merge_dict(**kwargs)
+        self.merge_dict(kwargs)
         self.LOG.info('STATE IS: %s' % self.state)
         result = rendering.InputRenderer.render_nomenclative(self)
+        self.merge_dict(old_state)
         return result
 
     def get_chain(self, end, start=None, **kwargs):
