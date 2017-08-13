@@ -80,7 +80,7 @@ class FormatWidget(QtWidgets.QStackedWidget):
     def update_format_colors(self, format_string, rich_text_format_string, color_lookup, format_order):
         last_position = 0
         for format_token in format_order:
-            color, rich_color = color_lookup[format_token]
+            _, rich_color = color_lookup[format_token]
             pre_slice = format_string[:last_position]
             work_slice = format_string[last_position:]
             old_length = len(format_string)

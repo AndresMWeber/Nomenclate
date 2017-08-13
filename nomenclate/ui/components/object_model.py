@@ -103,7 +103,7 @@ class QFileItemModel(QtGui.QStandardItemModel):
 
     def entry_exists(self, object_path):
         for row_item in self.data_table:
-            row_object_path, row_label = row_item
+            row_object_path, _ = row_item
             if os.path.normpath(object_path) == row_object_path.text():
                 return True
         return False
@@ -137,6 +137,6 @@ class QFileItemModel(QtGui.QStandardItemModel):
 
     def remove_stale_references(self):
         for row_item in self.data_table:
-            row_object_path, row_object_label = row_item
+            row_object_path, _ = row_item
             if not platforms.current.exists(row_object_path.text()):
                 self.removeRow(row_object_path.index().row())

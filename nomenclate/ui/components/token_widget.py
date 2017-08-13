@@ -107,7 +107,8 @@ class TokenWidget(DefaultFrame):
         if getattr(self.value_widget, 'set_options', None):
             self.value_widget.set_options(options, for_token=True)
 
-    def set_defaults(self, widgets):
+    @staticmethod
+    def set_defaults(widgets):
         for widget in widgets:
             for widget_type in list(utils.INPUT_WIDGETS):
                 if issubclass(type(widget), widget_type):

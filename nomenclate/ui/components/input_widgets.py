@@ -192,7 +192,7 @@ class CompleterTextEntry(QLineEditContextTree):
         elif event.key() == QtCore.Qt.Key_Space and int(event.modifiers() & QtCore.Qt.ControlModifier) == ctrl:
             self.contextMenuEvent(event)
             return
-        
+
         elif event.key() == QtCore.Qt.Key_Escape:
             self.escapePressed.emit(event)
             return
