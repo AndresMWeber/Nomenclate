@@ -130,9 +130,9 @@ def give_children_unique_names(widget):
 
 def walk_search(text, start_position, match_list, direction='backward'):
     end_pos = 0 if direction == 'backward' else len(text) - 1
-    slice = text[start_position:] if direction == 'forward' else reversed(text[0:start_position])
+    text_slice = text[start_position:] if direction == 'forward' else reversed(text[0:start_position])
 
-    for index, char in enumerate(slice):
+    for index, char in enumerate(text_slice):
         dir_op_a = operator.add
         if direction == 'backward':
             index += 1
@@ -169,7 +169,7 @@ def replace_str_absolute(text, replacement, start, end=None):
         output_text += [' '] * (end - len(text) + 1)
 
     replace_char = ' '
-    for index, char in enumerate(output_text):
+    for index, _ in enumerate(output_text):
         if end >= index >= start:
             try:
                 replace_char = replacement[replacement_index]
@@ -253,5 +253,5 @@ def convert_config_lookup_to_options(config_lookup, result=None, parent=None, in
     return result
 
 
-def persistent_hash(input):
-    return int(hashlib.md5(str(input).encode('utf-8')).hexdigest(), 16)
+def persistent_hash(string_input):
+    return int(hashlib.md5(str(string_input).encode('utf-8')).hexdigest(), 16)

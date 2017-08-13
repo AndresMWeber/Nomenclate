@@ -157,7 +157,14 @@ class RenderDate(RenderBase):
     token = 'date'
 
     @classmethod
-    def render(cls, date, token, nomenclate_object, **filter_kwargs):
+    def render(cls,
+               date,
+               token,
+               nomenclate_object,
+               config_query_path=None,
+               return_type=list,
+               use_value_in_query_path=True,
+               **filter_kwargs):
         if date == 'now':
             d = datetime.datetime.now()
         else:
@@ -173,7 +180,14 @@ class RenderVar(RenderBase):
     token = 'var'
 
     @classmethod
-    def render(cls, var, token, nomenclate_object, **filter_kwargs):
+    def render(cls,
+               var,
+               token,
+               nomenclate_object,
+               config_query_path=None,
+               return_type=list,
+               use_value_in_query_path=True,
+               **filter_kwargs):
         var_format = filter_kwargs.get('%s_format' % cls.token, 'A')
         var = cls._get_variation_id(var, var_format.isupper())
         return cls.process_token_augmentations(var, token_attr=getattr(nomenclate_object, token))
@@ -213,10 +227,17 @@ class RenderVersion(RenderBase):
     token = 'version'
 
     @classmethod
-    def render(cls, version, token, nomenclate_object, **filter_kwargs):
+    def render(cls,
+               version,
+               token,
+               nomenclate_object,
+               config_query_path=None,
+               return_type=list,
+               use_value_in_query_path=True,
+               **filter_kwargs):
         padding = filter_kwargs.get('%s_padding' % token, 4)
-        format = filter_kwargs.get('%s_format' % token, '#')
-        version_string = format.replace('#', '%0{0}d')
+        token_format = filter_kwargs.get('%s_format' % token, '#')
+        version_string = token_format.replace('#', '%0{0}d')
         version = version_string.format(padding) % int(version)
         return cls.process_token_augmentations(version, token_attr=getattr(nomenclate_object, token))
 
@@ -225,7 +246,14 @@ class RenderType(RenderBase):
     token = 'type'
 
     @classmethod
-    def render(cls, engine_type, token, nomenclate_object, **filter_kwargs):
+    def render(cls,
+               engine_type,
+               token,
+               nomenclate_object,
+               config_query_path=None,
+               return_type=list,
+               use_value_in_query_path=True,
+               **filter_kwargs):
         return super(RenderType, cls).render(engine_type,
                                              cls.token,
                                              nomenclate_object,

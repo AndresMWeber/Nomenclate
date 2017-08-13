@@ -3,7 +3,6 @@ from . import default as default
 from . import platform_registry as registry
 import nuke
 import nukescripts
-from nukescripts import panels
 
 
 @registry.register_class
@@ -32,7 +31,7 @@ class NukePlatform(default.DefaultPlatform):
 
     @classmethod
     def short_name(cls, node_path):
-        return cls.long_name()
+        return cls.long_name(node_path)
 
     @classmethod
     def long_name(cls, node_path):

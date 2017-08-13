@@ -108,7 +108,8 @@ class NomenclateFileContext(object):
         default_data.update(data or {})
         self.save(data=default_data, filename=filename, full_path_override=full_path_override)
 
-    def valid_preset_file(self, json_file_path):
+    @staticmethod
+    def valid_preset_file(json_file_path):
         if not os.path.exists(json_file_path):
             return False
 
@@ -122,7 +123,7 @@ class NomenclateFileContext(object):
         for settings_folder in self.get_valid_presets_dirs():
             filename = filename if filename else self.filename
             if filename is None and full_path_override is None:
-                files = glob.glob(settings_folder, '*.json')
+                files = glob.glob(os.path.join(settings_folder, '*.json'))
             else:
                 files = [full_path_override] if full_path_override else [os.path.join(settings_folder, filename)]
 

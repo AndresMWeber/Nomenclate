@@ -75,7 +75,7 @@ class InstanceHandlerWidget(DefaultFrame):
 
     def connect_controls(self):
         self.input_format.format_updated.connect(self.set_format)
-        self.input_format.escapePressed.connect(lambda: self.setFocus())
+        self.input_format.escapePressed.connect(self.setFocus)
         self.format_updated.connect(self.generate_token_colors)
         self.format_updated.connect(lambda: self.fold(False))
 
@@ -103,7 +103,7 @@ class InstanceHandlerWidget(DefaultFrame):
             token = token_widget.token.lower()
 
             if token in [str(color).lower() for color in list(color_dict)]:
-                color, rich_color = color_dict.get(token)
+                _, rich_color = color_dict.get(token)
                 token_widget.set_category_title(token, rich_color)
 
     def generate_name(self, object_item, index, override_dict=None):
@@ -131,7 +131,6 @@ class InstanceHandlerWidget(DefaultFrame):
             for default_incr_token in default_incr_tokens:
                 if default_incr_token in token_lower:
                     return {token_lower: index + int(self.NOM.state.get(token_lower, 0) or 0)}
-                    break
         return {}
 
     def fold(self, fold_override=None):
@@ -305,7 +304,8 @@ class InstanceHandlerWidget(DefaultFrame):
 
         self.token_colors_updated.emit(original_format, richtext_format_string, self.TOKEN_COLORS, format_order)
 
-    def get_safe_color(self, format_token, last_color, dark):
+    @staticmethod
+    def get_safe_color(format_token, last_color, dark):
         """ Generates a safe color value from a persistent hash of the token string
             based on perceived contrast ratio against background.
 

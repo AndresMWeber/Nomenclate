@@ -145,8 +145,8 @@ class QFileRenameTreeView(QtWidgets.QTreeView):
             return
 
         newRow = row - 1
-        list = item.takeRow(row)
-        item.insertRow(newRow, list)
+        row_data = item.takeRow(row)
+        item.insertRow(newRow, row_data)
 
 
 class FileListWidget(DefaultFrame):
@@ -236,7 +236,7 @@ class FileListWidget(DefaultFrame):
     def get_object_names(self):
         token_counter = {}
         for row, items in enumerate(self.wgt_list_view.filtered_data_table()):
-            object_item, rename_item = items
+            object_item, _ = items
             override_dict = {}
             token = getattr(object_item, 'increment_token', None)
 
@@ -246,5 +246,6 @@ class FileListWidget(DefaultFrame):
 
             self.request_name.emit(object_item, row, override_dict)
 
-    def set_item_name(self, object_item, object_name):
+    @staticmethod
+    def set_item_name(object_item, object_name):
         object_item.update_target_name(object_name)

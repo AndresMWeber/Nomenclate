@@ -219,11 +219,11 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
     def create_presets_menu(self):
         self.presets_menu = self.menu_bar.addMenu('Presets')
         presets_action_load_from_config = self.presets_menu.addAction('Reload defaults from config.yml')
-        presets_action_load_from_config.triggered.connect(lambda: self.instance_handler.load_settings_from_config())
+        presets_action_load_from_config.triggered.connect(self.instance_handler.load_settings_from_config)
 
         edit_action_load_last_format = self.presets_menu.addAction('Clear all fields')
         edit_action_load_last_format.setShortcut('Ctrl+R')
-        edit_action_load_last_format.triggered.connect(lambda: self.restore_defaults())
+        edit_action_load_last_format.triggered.connect(self.restore_defaults)
 
         edit_action_load_last_format = self.presets_menu.addAction('Load last format')
         edit_action_load_last_format.setShortcut('Ctrl+D')
@@ -275,13 +275,13 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
     def restore_defaults(self):
         gui_save.WidgetState.restore_state(self, defaults=True)
 
-    def save_state(self, mode=False, quit=False):
+    def save_state(self, mode=False, quit_mode=False):
         result = None if not mode else QtWidgets.QFileDialog.getSaveFileName(self, 'Save UI Settings',
                                                                              gui_save.NomenclateFileContext.DEFAULT_PRESETS_PATH,
                                                                              filter='*.json')
         result = self.process_dialog_result(result)
         gui_save.WidgetState.generate_state(self, fullpath_override=result)
-        if not quit:
+        if not quit_mode:
             self.file_saved.emit()
 
     def load_state(self, mode=False):
@@ -291,7 +291,8 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
         result = self.process_dialog_result(result)
         gui_save.WidgetState.restore_state(self, fullpath_override=result)
 
-    def process_dialog_result(self, path):
+    @staticmethod
+    def process_dialog_result(path):
         if path is None:
             return path
         path, file_filter = path
@@ -376,7 +377,8 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
     def set_stylesheet(self):
         self.setStyleSheet(self.combined_stylesheet())
 
-    def add_fonts(self):
+    @staticmethod
+    def add_fonts():
         for font_file in [os.path.join(utils.FONTS_PATH, path) for path in os.listdir(utils.FONTS_PATH)]:
             QtGui.QFontDatabase.addApplicationFont(font_file)
 
@@ -422,11 +424,11 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
     def close(self, save_state=True):
         try:
             QtWidgets.QApplication.instance().removeEventFilter(self)
-        except:
+        except RuntimeError:
             self.LOG.warning('Failed to remove event filter...')
 
         if save_state:
-            self.save_state(quit=True)
+            self.save_state(quit_mode=True)
 
         platforms.current.close(self)
 

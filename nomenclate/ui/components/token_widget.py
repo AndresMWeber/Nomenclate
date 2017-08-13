@@ -14,7 +14,7 @@ MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 try:
     UNICODE_EXISTS = bool(type(unicode))
 except NameError:
-    unicode = lambda s: str(s)
+    unicode = str
 
 
 class TokenWidgetFactory(type(QtCore.QObject)):
@@ -334,6 +334,6 @@ class StaticTokenWidget(TokenWidget):
 
     def connect_controls(self):
         super(StaticTokenWidget, self).connect_controls()
-        self.value_widget.selectionChanged.connect(lambda: self.value_widget.deselect())
+        self.value_widget.selectionChanged.connect(self.value_widget.deselect)
         self.value_widget.setText(self.token)
         self.value_widget.setReadOnly(True)
