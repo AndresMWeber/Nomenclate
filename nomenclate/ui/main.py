@@ -303,10 +303,10 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
         return path if path.endswith(ext) else path + ext
 
     def run_action(self, action_function, qevent, *args, **kwargs):
-        self.LOG.info('Recording + running action %s with qevent %s and args %s, kwargs %s' % (action_function,
-                                                                                               qevent,
-                                                                                               args,
-                                                                                               kwargs))
+        self.LOG.debug('Recording + running action %s with qevent %s and args %s, kwargs %s' % (action_function,
+                                                                                                qevent,
+                                                                                                args,
+                                                                                                kwargs))
         self.last_action_cache = {'function': action_function, 'args': args, 'kwargs': kwargs, 'event': qevent}
         action_function(*args, **kwargs)
 
@@ -328,7 +328,8 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
     def populate_presets(self):
         self.presets_list_menu.clear()
 
-        self.LOG.info('Populating presets with %s' % sorted(gui_save.WidgetState.list_presets()))
+        self.LOG.info('Found %d presets...populating with %s' % (len(gui_save.WidgetState.list_presets()),
+                                                                 sorted(gui_save.WidgetState.list_presets())))
         for preset_file in sorted(gui_save.WidgetState.list_presets()):
             menu_action = self.presets_list_menu.addAction(os.path.basename(preset_file))
             menu_action.triggered.connect(partial(self.run_action,
@@ -337,7 +338,7 @@ class MainDialog(default.DefaultWindow, utils.Cacheable):
                                                   self,
                                                   fullpath_override=preset_file))
         self.presets_list_menu.addSeparator()
-        self.LOG.info('Re-adding load/save preset actions...')
+        self.LOG.debug('Re-adding load/save preset actions...')
         preset_load_action = self.presets_list_menu.addAction(u'Load Preset...')
         preset_load_action.setShortcut('Ctrl+%s+L' % self.DEFAULT_MODIFIER)
         preset_load_action.triggered.connect(lambda: self.run_action(self.load_state, None, True))
