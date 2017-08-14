@@ -203,13 +203,15 @@ class WidgetState(object):
 
                 if widget_storage_class:
                     widget_path = cls.get_widget_path(widget, top_level=ui)
+                    hash_path = cls.get_widget_path(widget, top_level=ui, use_hash=not STORE_WITH_HASH)
+
                     LOG.debug('Attained widget path %s for %s...now loading and setting' % (widget_path, widget))
 
                     if defaults:
                         setting = getattr(widget, 'default_value', None)
                         LOG.debug('Loaded default value %s' % setting)
                     else:
-                        setting = settings.get(widget_path, None)
+                        setting = settings.get(widget_path, None) or settings.get(hash_path, None)
                         LOG.debug('Loaded stored value %s' % setting)
 
                     if setting is not None:
@@ -271,7 +273,7 @@ class WidgetState(object):
         pass
 
     @classmethod
-    def get_widget_path(cls, qwidget, top_level=None, depth_tolerance=15):
+    def get_widget_path(cls, qwidget, top_level=None, depth_tolerance=15, use_hash=STORE_WITH_HASH):
         global MAX_PARENT_DEPTH
         LOG.debug('Starting widget path for widget %s until %s' % (qwidget, top_level))
         widget_path = cls.get_widget_name(qwidget)
@@ -285,7 +287,7 @@ class WidgetState(object):
                 break
 
         MAX_PARENT_DEPTH = max(MAX_PARENT_DEPTH, depth)
-        widget_path = widget_path if not STORE_WITH_HASH else utils.persistent_hash(widget_path)
+        widget_path = widget_path if not use_hash else utils.persistent_hash(widget_path)
         LOG.debug(
             'Attained widget path %s with final parent at depth %d, deepest: %d' % (
                 widget_path, depth, MAX_PARENT_DEPTH))
