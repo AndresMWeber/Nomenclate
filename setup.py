@@ -49,11 +49,6 @@ setup(
     description=description,
     long_description=long_description,
     keywords='naming conventions labels config convention name parsing parse',
-    entry_points={
-        'console_scripts': [
-            'nomenclate = nomenclate.app:run',
-        ]
-    },
     classifiers=[
         'License :: OSI Approved :: MIT License',
         'Development Status :: 4 - Beta',
