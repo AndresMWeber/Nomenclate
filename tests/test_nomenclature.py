@@ -18,7 +18,8 @@ class TestNomenclateBase(basetest.TestBase):
         self.nom.side.set('left')
         self.nom.name.set('testObject')
         self.nom.type.set('locator')
-        self.nom.var.set('A')
+        self.nom.var.set(0)
+        self.nom.var.case = 'upper'
         self.fixtures = [self.cfg, self.nom, self.test_format_b, self.test_format]
 
     @property
@@ -26,7 +27,7 @@ class TestNomenclateBase(basetest.TestBase):
         return {'childtype': 'token',
                 'purpose': 'filler',
                 'side': 'left',
-                'var': 'A',
+                'var': 0,
                 'location': 'top',
                 'type': 'locator',
                 'name': 'testObject',
@@ -46,7 +47,7 @@ class TestNomenclateBase(basetest.TestBase):
     @property
     def partial_vars(self):
         return {'side': 'left',
-                'var': 'A',
+                'var': 0,
                 'type': 'locator',
                 'name': 'testObject'}
 
@@ -83,7 +84,7 @@ class TestNomenclateState(TestNomenclateBase):
                            'purpose': '',
                            'side': 'left',
                            'type': 'locator',
-                           'var': 'A'})
+                           'var': 0})
 
 
 class TestNomenclateResetFromConfig(TestNomenclateBase):
@@ -143,12 +144,12 @@ class TestNomenclateSwapFormats(TestNomenclateBase):
 
         self.nom.LOG.info('(lee) New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
         self.set_values()
-        self.assertEquals(self.nom.get(), 'LOC_hrc_test_l')
+        self.assertEquals(self.nom.get(), 'LOC_hchy_test_l')
 
         self.nom.initialize_format_options(self.raf_path)
 
         self.set_raf_values()
-        self.assertEquals(self.nom.get(), 'test_TLR_hrc')
+        self.assertEquals(self.nom.get(), 'test_TLR_hchy')
         self.nom.LOG.info('%r' % self.nom.get())
         self.nom.LOG.info('(raf) New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
 
@@ -159,13 +160,13 @@ class TestNomenclateSwapFormats(TestNomenclateBase):
         self.nom.LOG.info('(lee) New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
 
         self.set_values()
-        self.assertEquals(self.nom.get(), 'LOC_hrc_test_l')
+        self.assertEquals(self.nom.get(), 'LOC_hchy_test_l')
 
         self.nom.format = self.raf_path
         self.nom.LOG.info('(raf) New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
 
         self.set_raf_values()
-        self.assertEquals(self.nom.get(), 'test_TLR_hrc')
+        self.assertEquals(self.nom.get(), 'test_TLR_hchy')
         self.nom.LOG.info('%r' % self.nom.get())
 
         self.nom.initialize_format_options(self.test_format)
@@ -175,13 +176,13 @@ class TestNomenclateSwapFormats(TestNomenclateBase):
         self.nom.LOG.info('New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
 
         self.set_values()
-        self.assertEquals(self.nom.get(), 'LOC_hrc_test_l')
+        self.assertEquals(self.nom.get(), 'LOC_hchy_test_l')
 
         self.nom.format = self.raf_path
         self.nom.LOG.info('(raf) New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
 
         self.set_raf_values()
-        self.assertEquals(self.nom.get(), 'test_TLR_hrc')
+        self.assertEquals(self.nom.get(), 'test_TLR_hchy')
 
     def test_switch_single_char_format(self):
         self.nom.format = 'a'
@@ -212,18 +213,16 @@ class TestNomenclateSwapFormats(TestNomenclateBase):
         self.assertEquals(self.nom.get(), 'john')
 
     def test_switch_single_format_repeat(self):
-        self.nom.format = 'asdf_asdf'
-        self.nom.LOG.info('New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
-
-        self.nom.asdf = 'john'
-        self.assertEquals(self.nom.get(), 'john')
+        try:
+            self.nom.format = 'asdf_asdf'
+        except nm.core.errors.FormatError:
+            pass
 
     def test_switch_single_format_repeat_different_casing(self):
-        self.nom.format = 'asdf_Asdf'
-        self.nom.LOG.info('New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
-
-        self.nom.asdf = 'john'
-        self.assertEquals(self.nom.get(), 'john_Asdf')
+        try:
+            self.nom.format = 'asdf_Asdf'
+        except nm.core.errors.FormatError:
+            pass
 
     def set_values(self):
         self.nom.name = 'test'
@@ -284,12 +283,6 @@ class TestNomenclateGet(TestNomenclateBase):
         self.nom.location.set('rear')
         self.assertEquals(self.nom.get(), 'l_rr_testObjectA_LOC')
         self.nom.state = previous_state
-
-
-class TestNomenclateGetChain(TestNomenclateBase):
-    def test_get_chain(self):
-        self.assertRaises(NotImplementedError, self.nom.get_chain, (0, 5))
-        # self.assertIsNone(self.nom.get_chain(0, 5))
 
 
 class TestNomenclateEq(TestNomenclateBase):

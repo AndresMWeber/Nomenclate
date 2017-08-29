@@ -51,20 +51,19 @@ class TestTokenAttrGet(TestTokenAttrBase):
 class TestTokenStr(TestTokenAttrBase):
     def test_label_valid(self):
         token_attr = tokens.TokenAttr('bob', 'name')
-        self.assertEquals(str(token_attr), 'bob')
+        self.assertEquals(str(token_attr), repr(token_attr))
 
     def test_label_empty(self):
         token_attr = tokens.TokenAttr('', 'name')
-        self.assertEquals(str(token_attr), '')
+        self.assertEquals(str(token_attr), repr(token_attr))
 
 
 class TestTokenRepr(TestTokenAttrBase):
     @staticmethod
     def build_repr(token_attr):
-        return '<%s %s(%s):%r>' % (token_attr.__class__.__name__,
-                                   token_attr.token,
-                                   token_attr.raw_token,
-                                   token_attr.label)
+        return '<%s (%s): %r>' % (token_attr.__class__.__name__,
+                                 token_attr.token,
+                                 token_attr.to_json())
 
     def test_label_valid(self):
         token_attr = tokens.TokenAttr('bob', 'name')
@@ -110,6 +109,7 @@ class TestTokenEq(TestTokenAttrBase):
     def test_non_token(self):
         self.assertFalse(tokens.TokenAttr('Bob', 'name') == '<TokenAttr name(name):\'Bob\'>')
 
+
 class TestTokenNe(TestTokenAttrBase):
     def test_equal(self):
         self.assertFalse(tokens.TokenAttr('Bob', 'name') != tokens.TokenAttr('Bob', 'name'))
@@ -122,6 +122,7 @@ class TestTokenNe(TestTokenAttrBase):
 
     def test_non_token(self):
         self.assertRaises(AttributeError, tokens.TokenAttr('Bob', 'name').__ne__, '<TokenAttr name(name):\'Bob\'>')
+
 
 class TestTokenLe(TestTokenAttrBase):
     def test_equal(self):

@@ -4,9 +4,9 @@
     It also imports the version as __version__ from nomenclate.version for convenience
 
 """
+from . import settings
 from . import core
 from . import version
-from . import settings
 
 __version__ = version.__version__
 Nom = core.nomenclature.Nomenclate

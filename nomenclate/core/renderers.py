@@ -10,7 +10,7 @@ from .tools import (
     flatten
 )
 
-MODULE_LOGGER_LEVEL_OVERRIDE = None
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
 
 
 @add_metaclass(rendering.InputRenderer)
@@ -40,12 +40,8 @@ class RenderBase(object):
             if use_value_in_query_path:
                 config_query_path += [value]
 
-        cls.LOG.info('Attempting to default render %s with value %s and kwargs %s' % (token, value, filter_kwargs))
-        config_matches = cls.get_config_match(value,
-                                              token,
-                                              config_query_path,
-                                              return_type,
-                                              nomenclate_object,
+        cls.LOG.info('Attempting to default render %r with value %s and kwargs %s' % (token, value, filter_kwargs))
+        config_matches = cls.get_config_match(value, token, config_query_path, return_type, nomenclate_object,
                                               **filter_kwargs)
 
         options = cls.flatten_input(config_matches, value)
@@ -65,13 +61,11 @@ class RenderBase(object):
         :return: str, final augmented string
         """
         cls.LOG.info('Processing augmentations for token attr %r and applying to value %r' % (token_attr, value))
-        value = str(value)
-        case_value = getattr(token_attr, 'case')
-
-        value = getattr(value, case_value, str)() or value
-        value = getattr(token_attr, 'prefix') + value
-        value = value + getattr(token_attr, 'suffix')
-
+        value = getattr(str, token_attr.case, str)(value)
+        value = '{PREFIX}{VALUE}{SUFFIX}'.format(PREFIX=token_attr.prefix,
+                                                 VALUE=value,
+                                                 SUFFIX=token_attr.suffix)
+        cls.LOG.info('Processed as %r' % value)
         return value
 
     @classmethod
@@ -92,6 +86,7 @@ class RenderBase(object):
         :param nomenclate_object: nomenclate.core.nomenclature.Nomenclate, instance to query against (has config data)
         :return: object, whatever return type was specified
         """
+        cls.LOG.info('finding config matches for path %s' % entry_path)
         try:
             return nomenclate_object.cfg.get(entry_path, return_type=return_type)
         except exceptions.ResourceNotFoundError:
@@ -134,7 +129,7 @@ class RenderBase(object):
         """
         options = list(options)
         criteria_matches = list(options)
-
+        cls.LOG.info('Processing criteria kwargs %s' % filter_kwargs)
         for criteria_function_name, criteria in iteritems(filter_kwargs):
             if not criteria_function_name and not criteria:
                 continue
@@ -189,7 +184,8 @@ class RenderVar(RenderBase):
                use_value_in_query_path=True,
                **filter_kwargs):
         var_format = filter_kwargs.get('%s_format' % cls.token, 'A')
-        var = cls._get_variation_id(var, var_format.isupper())
+        if isinstance(var, int):
+            var = cls._get_variation_id(var, var_format.isupper())
         return cls.process_token_augmentations(var, token_attr=getattr(nomenclate_object, token))
 
     @staticmethod
@@ -236,8 +232,7 @@ class RenderVersion(RenderBase):
                use_value_in_query_path=True,
                **filter_kwargs):
         padding = filter_kwargs.get('%s_padding' % token, 4)
-        token_format = filter_kwargs.get('%s_format' % token, '#')
-        version_string = token_format.replace('#', '%0{0}d')
+        version_string = '%0{0}d'
         version = version_string.format(padding) % int(version)
         return cls.process_token_augmentations(version, token_attr=getattr(nomenclate_object, token))
 

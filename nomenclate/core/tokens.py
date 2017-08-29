@@ -2,11 +2,12 @@
 from six import iteritems
 from . import errors as exceptions
 import nomenclate.settings as settings
+from . import tools
 
-MODULE_LEVEL_OVERRIDE = None
+MODULE_LEVEL_OVERRIDE = settings.INFO
 
 
-class TokenAttr(object):
+class TokenAttr(tools.Serializable):
     """ A TokenAttr represents a string token that we want to replace in a given nomenclate.core.formatter.FormatString
         It has 3 augmentation properties:
 
@@ -19,9 +20,11 @@ class TokenAttr(object):
         either the given prefix or suffix no matter what.
 
     """
+    SERIALIZE_ATTRS = ['token', 'label', 'case', 'prefix', 'suffix']
+
     LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LEVEL_OVERRIDE)
 
-    def __init__(self, label=None, token=None):
+    def __init__(self, label=None, token='', case='', prefix='', suffix=''):
         """
 
         :param label: str, the label is represents the value we want to replace the given token with
@@ -32,11 +35,12 @@ class TokenAttr(object):
         except exceptions.ValidationError:
             label = None
         self.validate_entries(token)
+
         self.raw_string = label if label is not None else ""
         self.raw_token = token
-        self.case_setting = ""
-        self.prefix_setting = ""
-        self.suffix_setting = ""
+        self.case = case
+        self.prefix = prefix
+        self.suffix = suffix
 
     @property
     def token(self):
@@ -68,38 +72,6 @@ class TokenAttr(object):
         self.raw_string = label
         self.LOG.debug('%r and the raw_string is %s' % (self, self.raw_string))
 
-    @property
-    def case(self):
-        """ Get or set the current TokenAttr's case. Setting the case to either 'upper' or 'lower' means it will be validated and then
-            added as the internal "raw_token" which will be used to look up any given config value or be used if
-            no config value is found.
-
-        """
-        return self.case_setting
-
-    @case.setter
-    def case(self, case):
-        if case in ['upper', 'lower']:
-            self.case_setting = case
-
-    @property
-    def prefix(self):
-        return self.prefix_setting
-
-    @prefix.setter
-    def prefix(self, prefix):
-        if isinstance(prefix, str):
-            self.prefix_setting = prefix
-
-    @property
-    def suffix(self):
-        return self.suffix_setting
-
-    @suffix.setter
-    def suffix(self, suffix):
-        if isinstance(suffix, str):
-            self.suffix_setting = suffix
-
     def set(self, value):
         self.label = value
 
@@ -112,8 +84,10 @@ class TokenAttr(object):
                 raise exceptions.ValidationError('Invalid type %s, expected %s' % (type(entry), str))
 
     def __eq__(self, other):
-        if isinstance(other, type(self)):
-            return self.token == other.token and self.label == other.label
+        if isinstance(other, self.__class__):
+            self_attrs = [getattr(self, attr) for attr in self.SERIALIZE_ATTRS]
+            other_attrs = [getattr(other, attr) for attr in self.SERIALIZE_ATTRS]
+            return self_attrs == other_attrs
         else:
             return False
 
@@ -131,140 +105,110 @@ class TokenAttr(object):
 
     def __ge__(self, other):
         return ((self.token, self.label) >= (other.token, other.label))
-    
+
     def __str__(self):
-        return str(self.label)
+        return '%r' % (self)
 
     def __repr__(self):
-        return '<%s %s(%s):%r>' % (self.__class__.__name__, self.token, self.raw_token, self.label)
+        return '<%s (%s): %r>' % (self.__class__.__name__, self.raw_token, self.to_json())
+
+    def to_json(self):
+        return {"token": self.raw_token,
+                "label": self.raw_string,
+                "case": self.case,
+                "prefix": self.prefix,
+                "suffix": self.suffix,
+                }
 
 
-
-class TokenAttrDictHandler(object):
+class TokenAttrDictHandler(tools.Serializable):
     LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LEVEL_OVERRIDE)
 
-    def __init__(self, nomenclate_object):
-        self.nom = nomenclate_object
-        self.LOG.info('Initializing TokenAttrDictHandler with default values %s' % self.empty_state)
-        self.set_token_attrs(self.empty_state)
-
-    @property
-    def tokens(self):
-        return [token.token for token in self.token_attrs]
-
-    @property
-    def token_attrs(self):
-        return self.gen_object_token_attributes(self)
-
-    @property
-    def state(self):
-        return dict((name_attr.token, name_attr.label) for name_attr in self.token_attrs)
-
-    @state.setter
-    def state(self, input_dict):
-        self.set_token_attrs(input_dict)
-
-    @property
-    def empty_state(self):
-        self.LOG.info("Generating empty initial state from format order: %s" % self.nom.format_order)
-        return {token: "" for token in self.nom.format_order}
-
-    @property
-    def unset_token_attrs(self):
-        return [token_attr for token_attr in self.token_attrs if token_attr.label == '']
-
-    @property
-    def token_attr_dict(self):
-        return dict([(attr.token, attr.label) for attr in self.token_attrs])
+    def __init__(self, token_attrs):
+        self.token_attrs = {token_attr.lower(): TokenAttr('', token_attr) for token_attr in token_attrs}
 
     def reset(self):
-        for token_attr in self.token_attrs:
+        for _, token_attr in iteritems(self.token_attrs):
             token_attr.set('')
 
-    def set_token_attrs(self, input_dict):
-        if not input_dict:
-            self.LOG.info('No changes to make, ignoring...')
-            return
-
-        self.LOG.info('Setting token attributes %s against current state %s' % (input_dict, self.state))
-
-        for input_attr_name, input_attr_value in iteritems(input_dict):
-            self.set_token_attr(input_attr_name, input_attr_value)
-
-        self.LOG.info('Finished setting attributes on TokenDict %s' % [attr for attr in list(self.token_attrs)])
-
-    def set_token_attr(self, token, value):
-        self.LOG.info('set_token_attr() - Setting TokenAttr %s with value %r' % (token, value))
-        token_attrs = list(self.token_attrs)
-
-        if token not in [token_attr.token for token_attr in token_attrs]:
-            self.LOG.warning('Token did not exist, creating %r=%r...' % (token, value))
-            self._create_token_attr(token, value)
-        else:
-            for token_attr in token_attrs:
-                self.LOG.debug('Checking if token %r is equal to preexisting token %r' % (token, token_attr.token))
-                if token == token_attr.token:
-                    self.LOG.debug('Found matching token, setting value to %r' % value)
-                    token_attr.label = value
-                    break
-
-        if hasattr(self.nom, 'token_dict'):
-            token_attr_instance = getattr(self, token.lower())
-            self.LOG.info('Passing token attr %r to the nomenclate object instance for updating' % token_attr_instance)
-            self.nom.notifier.notify_observer(token.lower(), token_attr_instance)
-
-    def get_token_attr(self, token):
-        token_attr = getattr(self, token.lower())
-        if token_attr is None:
-            msg = 'Instance has no %s token attribute set.' % token
-            self.LOG.warn(msg)
-            raise exceptions.SourceError(msg)
-        else:
-            return token_attr
-
-    def _create_token_attr(self, token, value):
-        self.LOG.debug('_create_token_attr(%s:%s)' % (token, repr(value)))
-        self.__dict__[token.lower()] = TokenAttr(label=value, token=token)
-
     def purge_tokens(self, token_attrs=None):
-        """ Removes tokens not found in the format order
+        """ Removes all specified token_attrs that exist in instance.token_attrs
+        
+        :param token_attrs: list(str), list of string values of tokens to remove.  If None, removes all
         """
         if token_attrs is None:
-            token_attrs = self.tokens
+            token_attrs = list(self.token_attrs)
+        else:
+            token_attrs = [token_attr.token for _, token_attr in iteritems(self.token_attrs) if
+                           token_attr.token in token_attrs]
+
         self.LOG.info('Starting purge for target tokens %s' % token_attrs)
-        for token_attr in [_ for _ in token_attrs if _ in self.tokens]:
+
+        for token_attr in token_attrs:
             self.LOG.info('Deleting TokenAttr %s' % token_attr)
             delattr(self, token_attr)
 
-    @staticmethod
-    def gen_object_token_attributes(obj):
-        for name, value in iteritems(obj.__dict__):
-            if isinstance(value, TokenAttr):
-                yield value
+    @classmethod
+    def from_json(cls, json_blob):
+        instance = cls(list(json_blob))
+        instance.merge_json(json_blob)
+        return instance
 
-    @staticmethod
-    def _validate_name_in_format_order(name, format_order):
-        """ For quick checking if a key token is part of the format order
-        """
-        if name not in format_order:
-            raise exceptions.FormatError('The name token %s is not found in the current format ordering' %
-                                         format_order)
+    def merge_json(self, json_blob):
+        self.LOG.info('Merging token attributes %s against current tokens: %s' % (json_blob, self.token_attrs))
+        for token_name, token_attr_blob in iteritems(json_blob):
+            token_name = token_name.lower()
+            try:
+                if not isinstance(token_attr_blob, dict):
+                    token_attr_blob = {'token': token_name, 'label': token_attr_blob}
+                    self.LOG.info('Detected single string input for token %s, treating as label input.' % token_name)
+                self.LOG.info('Attempting to merge TokenAttr: %s with blob %s' % (token_name, token_attr_blob))
+                self.token_attrs[token_name].merge_serialization(token_attr_blob)
+            except KeyError:
+                self.LOG.info('Token %s did not exist, added and set with input %s' % (token_name, token_attr_blob))
+                setattr(self, token_name, TokenAttr.from_json(token_attr_blob))
+        self.LOG.info('Finished setting attributes on TokenDict %s' % [attr for attr in list(self.token_attrs)])
+
+    def to_json(self):
+        return {token.lower(): token_attr.to_json() for token, token_attr in iteritems(self.token_attrs)}
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return all(map(lambda x: x[0] == x[1], zip(sorted(self.token_attrs, key=lambda x: x.token),
-                                                       sorted(other.token_attrs, key=lambda x: x.token))))
+            return all(map(lambda x: x[0] == x[1],
+                           zip(sorted([t for _, t in iteritems(self.token_attrs)], key=lambda x: x.token),
+                               sorted([t for _, t in iteritems(other.token_attrs)], key=lambda x: x.token))))
         return False
 
     def __getattr__(self, name):
         try:
-            return self.__dict__[name]
-        except KeyError:
-            object.__getattribute__(self.__dict__, name)
+            value = object.__getattribute__(self, name)
+        except AttributeError:
+            try:
+                value = self.token_attrs[name]
+            except KeyError:
+                raise AttributeError
+        return value
+
+    def __delattr__(self, item):
+        try:
+            object.__delattr__(self, item)
+        except AttributeError:
+            try:
+                self.token_attrs.pop(item)
+            except KeyError:
+                raise AttributeError
 
     def __str__(self):
-        return ' '.join(['%s:%r' % (token_attr.token, token_attr.label) for token_attr in self.token_attrs])
+        return ' '.join(
+            ['%s:%r' % (token_attr.token, token_attr.label) for _, token_attr in iteritems(self.token_attrs)])
 
     def __repr__(self):
         return '<%s %s>' % (self.__class__.__name__,
-                            ' '.join(['%s:%s' % (_.token, _.label) for _ in self.token_attrs]))
+                            ' '.join(['%s:%s' % (token_attr.token, token_attr.label) for _, token_attr in
+                                      iteritems(self.token_attrs)]))
+
+    def __iter__(self):
+        return iteritems(self.token_attrs)
+
+    def __getitem__(self, item):
+        return self.token_attrs.get(item)

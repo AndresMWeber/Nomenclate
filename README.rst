@@ -136,15 +136,15 @@ Use this tool via package level functions
 
     # Now entering all these values by properties is fun and all, however there is a convenience function that can digest dictionaries
     >>> test_nom = nomenclate.Nom()
-    >>> test_nom.merge_dict({'name':'test', 'location':'rear', 'type':'group'})
+    >>> test_nom.merge_serialization({'name':'test', 'location':'rear', 'type':'group'})
     >>> test_nom.get()
 
-    # As you might have guessed, using state and merge_dict you can pass naming values from instance to instance (as you can see __eq__ has been defined for Nomenclate instances):
+    # As you might have guessed, using state and merge_serialization you can pass naming values from instance to instance (as you can see __eq__ has been defined for Nomenclate instances):
     >>> nom_a = nomenclate.Nom(name='test', location='rear')
     >>> nom_b = nomenclate.Nom()
     >>> nom_b == nom_a
     False
-    >>> nom_b.merge_dict(nom_a.state)
+    >>> nom_b.merge_serialization(nom_a.state)
     >>> nom_b == nom_a
     True
 
@@ -152,7 +152,7 @@ Use this tool via package level functions
     >>> nom_b.token_dict.reset() # Internal function to be made into a public method later...
     >>> nom_b == nom_a
     False
-    >>> nom_b.merge_dict(nom_a)
+    >>> nom_b.merge_serialization(nom_a)
     >>> nom_b == nom_a
     True
 

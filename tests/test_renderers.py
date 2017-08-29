@@ -17,7 +17,7 @@ class TestRenderersBase(basetest.TestBase):
                                 'location': 'rear',
                                 'name': 'test',
                                 'decorator': '',
-                                'var': 'A',
+                                'var': 0,
                                 'childtype': 'joints',
                                 'purpose': 'offset',
                                 'type': 'group'}
@@ -33,23 +33,27 @@ class TestInputRendererBase(TestRenderersBase):
         super(TestInputRendererBase, self).setUp()
         self.ir = rendering.InputRenderer
         self.nom = nom.Nomenclate()
+        self.fixtures.append([self.ir, self.nom])
+
+    def set_values(self):
         self.nom.side.set('left')
         self.nom.name.set('testObject')
         self.nom.type.set('locator')
-        self.nom.var.set('A')
-        self.fixtures.append([self.ir, self.nom])
+        self.nom.var.set(0)
+        self.nom.var.case = 'upper'
 
 
 class TestInputRendererProcessTokenAugmentations(TestInputRendererBase):
     def test_from_nomenclate_upper(self):
+        self.set_values()
         self.nom.side.case = 'upper'
-        self.assertEquals(self.nom.get(),
-                          'L_testObjectA_LOC')
+        self.assertEquals(self.nom.get(), 'L_testObjectA_LOC')
 
     def test_from_nomenclate_lower(self):
+        self.set_values()
+        print('\n%s\n' % self.nom.state, self.nom.decorator)
         self.nom.side.case = 'lower'
-        self.assertEquals(self.nom.get(),
-                          'l_testObjectA_LOC')
+        self.assertEquals(self.nom.get(), 'l_testObjectA_LOC')
 
     def test_from_upper(self):
         token_attr = tokens.TokenAttr('test', 'name')
@@ -69,7 +73,7 @@ class TestInputRendererProcessTokenAugmentations(TestInputRendererBase):
                           'Test')
 
     def test_from_prefix(self):
-        token_attr = tokens.TokenAttr('test', 'name')
+        token_attr = tokens.TokenAttr(label='test', token='name')
         token_attr.prefix = 'v'
         self.assertEquals(renderers.RenderBase.process_token_augmentations('Test', token_attr),
                           'vTest')
@@ -127,24 +131,56 @@ class TestInputRendererGetVariationId(TestInputRendererBase):
 
 class TestInputRendererRenderUniqueTokens(TestInputRendererBase):
     def test_all_replaced(self):
-        test_values = {'var': 'A', 'type': 'locator', 'side': 'left', 'version': 5}
+        test_values = tokens.TokenAttrDictHandler(['var', 'type', 'side', 'version'])
+        test_values['var'].set(0)
+        test_values['type'].set('locator')
+        test_values['side'].set('left')
+        test_values['version'].set(5)
+        test_values = test_values.to_json()
+
+        self.nom.merge_dict(test_values)
+        self.nom.version.padding = 3
+        self.nom.version.prefix = 'v'
         self.ir.render_unique_tokens(self.nom, test_values)
-        self.assertEquals(test_values,
-                          {'var': 'A', 'type': 'LOC', 'side': 'l', 'version': 'v005'})
+        self.assertEquals({token: test_values[token]['label'] for token in list(test_values)},
+                          {'var': 'a', 'type': 'LOC', 'side': 'l', 'version': 'v005'})
+
 
     def test_some_replaced(self):
-        test_values = {'var': 'A', 'type': 'locator', 'side': 'left', 'version': 5}
+        test_values = tokens.TokenAttrDictHandler(['var', 'type', 'side', 'version'])
+        test_values['var'].set(0)
+        test_values['type'].set('locator')
+        test_values['side'].set('left')
+        test_values['version'].set(5)
+        test_values = test_values.to_json()
+
+        self.nom.merge_dict(test_values)
+        self.nom.version.padding = 3
+        self.nom.version.prefix = 'v'
         self.ir.render_unique_tokens(self.nom, test_values)
         self.assertEquals(test_values,
                           {'var': 'A', 'type': 'LOC', 'side': 'l', 'version': 'v005'})
 
+
     def test_default_renderer(self):
-        test_values = {'var': 'A',
-                       'type': 'locator',
-                       'side': 'left',
-                       'version': 5,
-                       'john': 'six',
-                       'purpose': 'hierarchy'}
+        test_values = tokens.TokenAttrDictHandler(['var',
+                                                   'type',
+                                                   'side',
+                                                   'version',
+                                                   'john',
+                                                   'purpose'])
+        test_values['var'].set(0)
+        test_values['type'].set('locator')
+        test_values['side'].set('left')
+        test_values['version'].set(5)
+        test_values['john'].set('six')
+        test_values['purpose'].set('hierarchy')
+
+        test_values = test_values.to_json()
+
+        self.nom.merge_dict(test_values)
+        self.nom.version.padding = 3
+        self.nom.version.prefix = 'v'
 
         self.nom.format = self.nom.format + '_john'
         self.ir.render_unique_tokens(self.nom, test_values)
@@ -156,14 +192,22 @@ class TestInputRendererRenderUniqueTokens(TestInputRendererBase):
                            'john': 'six',
                            'purpose': 'hrc'})
 
+
     def test_empty(self):
         test_values = {}
         self.ir.render_unique_tokens(self.nom, test_values)
         self.assertEquals(test_values,
                           {})
 
+
     def test_none_replaced(self):
-        test_values = {'name': 'test', 'blah': 'marg', 'not_me': 'haha', 'la': 5}
+        test_values = tokens.TokenAttrDictHandler(['name', 'blah', 'not_me', 'la'])
+        test_values['name'].set('test')
+        test_values['blah'].set('blah')
+        test_values['not_me'].set('not_me')
+        test_values['la'].set(5)
+        test_values = test_values.to_json()
+
         self.nom.merge_dict(test_values)
         test_values_unchanged = test_values.copy()
         test_values_unchanged['la'] = '5'

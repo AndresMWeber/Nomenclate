@@ -2,6 +2,7 @@ from six import iteritems
 import nomenclate.core.rendering as rendering
 import nomenclate.core.processing as processing
 import nomenclate.core.errors as exceptions
+import nomenclate.core.tokens as tokens
 from . import basetest
 
 
@@ -12,14 +13,23 @@ class TestNomenclativeBase(basetest.TestBase):
         self.nomenclative_valid_short = processing.Nomenclative('side_name_type')
         self.nomenclative_invalid = processing.Nomenclative('test_labelside')
 
-        self.token_test_dict = {'side': 'left',
-                                'location': 'rear',
-                                'name': 'test',
-                                'decorator': '',
-                                'var': 'A',
-                                'childtype': 'joints',
-                                'purpose': 'offset',
-                                'type': 'group'}
+        test_values = tokens.TokenAttrDictHandler(['side',
+                                                   'location',
+                                                   'name',
+                                                   'decorator',
+                                                   'var',
+                                                   'childtype',
+                                                   'purpose',
+                                                   'type'])
+        test_values['side'].set('left')
+        test_values['location'].set('rear')
+        test_values['name'].set('test')
+        test_values['decorator'].set('')
+        test_values['var'].set('A')
+        test_values['childtype'].set('joints')
+        test_values['purpose'].set('offset')
+        test_values['type'].set('group')
+        self.token_test_dict = test_values.to_json()
 
         self.fixtures.append([self.nomenclative_valid,
                               self.nomenclative_valid_short,
@@ -71,8 +81,15 @@ class TestNomenclativeAddMatch(TestNomenclativeBase):
                           'left_test_group')
 
     def test_overlap(self):
-        test_dict = {'name': 'left', 'side': 'left'}
-        test_overlap = {'side_name': 'overlapped'}
+        test_dict = tokens.TokenAttrDictHandler(['name', 'side'])
+        test_dict['name'].set('left')
+        test_dict['side'].set('left')
+        test_dict = test_dict.to_json()
+
+        test_overlap = tokens.TokenAttrDictHandler(['side_name'])
+        test_overlap['side_name'].set('overlapped')
+        test_overlap = test_overlap.to_json()
+
         rendering.InputRenderer._prepend_token_match_objects(test_dict, self.nomenclative_valid_short.raw_formatted_string)
         rendering.InputRenderer._prepend_token_match_objects(test_overlap, self.nomenclative_valid_short.raw_formatted_string)
 

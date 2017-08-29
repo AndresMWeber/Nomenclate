@@ -3,8 +3,40 @@ import collections
 from pprint import pformat
 import nomenclate.settings as settings
 
-MODULE_LOGGER_LEVEL_OVERRIDE = None
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
+
+
+class Serializable(object):
+    SERIALIZE_ATTRS = []
+
+    def serialize(self):
+        return self.to_json()
+
+    def deserialize(self, blob):
+        return self.from_json(blob)
+
+    def merge_serialization(self, blob):
+        return self.merge_json(blob)
+
+    def to_json(self):
+        return {attr: getattr(self, attr) for attr in self.SERIALIZE_ATTRS}
+
+    def merge_json(self, json_blob):
+        LOG.info('Merging blob %s to instance %r' % (json_blob, self))
+        for search_attr in self.SERIALIZE_ATTRS:
+            try:
+                setattr(self, search_attr, json_blob[search_attr])
+                LOG.info('Successfully merged %s = %s' % (search_attr, json_blob[search_attr]))
+            except KeyError:
+                LOG.info('Ignoring non existent %s = %s' % (search_attr, json_blob[search_attr]))
+                pass
+        LOG.info('State of instance is now %r' % self)
+        return True
+
+    @classmethod
+    def from_json(cls, json_blob):
+        return cls(**{attr: json_blob.get(attr, None) for attr in cls.SERIALIZE_ATTRS})
 
 
 class NomenclateNotifier(object):
@@ -18,9 +50,7 @@ class NomenclateNotifier(object):
 
     def notify_observer(self, *args, **kwargs):
         for observer_function in self.observers:
-            LOG.info('Notifying %s with args %s and kwargs %s' % (observer_function.__name__,
-                                                                  args,
-                                                                  kwargs))
+            LOG.info('Notifying %s with args %s and kwargs %s' % (observer_function.__name__, args, kwargs))
             observer_function(*args, **kwargs)
 
 

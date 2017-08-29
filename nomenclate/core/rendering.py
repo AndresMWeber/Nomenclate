@@ -6,7 +6,7 @@ import string
 import nomenclate.settings as settings
 from . import processing
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
 
 
 class InputRenderer(type):
@@ -22,66 +22,66 @@ class InputRenderer(type):
         return cls
 
     @classmethod
-    def render_unique_tokens(cls, nomenclate_object, input_dict):
-        cls.LOG.info('Current list of render functions: %s' % list(cls.RENDER_FUNCTIONS))
-        cls.LOG.info('Checking against input dictionary %s' % input_dict)
-        non_empty_token_entries = {_k: _v for _k, _v in iteritems(input_dict) if not _v == ''}
+    def render_unique_tokens(cls, nomenclate_object, token_values):
+        cls.LOG.info('Current list of render functions: %s with %r' % (list(cls.RENDER_FUNCTIONS),
+                                                                       token_values))
 
-        for token, value in iteritems(non_empty_token_entries):
-            cls.LOG.info('Checking for unique token on token %s:%r' % (token, value))
-            for func in cls.get_valid_render_functions(token):
-                cls.LOG.info(
-                    'Finding render function for token %s in functions: %s' % (func, list(cls.RENDER_FUNCTIONS)))
-                renderer = cls.RENDER_FUNCTIONS.get(func, None)
-                if func == 'default':
-                    renderer.token = token
-                cls.LOG.info('Finding token specific render function for token %r with renderer %s' % (token, renderer))
+        for token, token_settings in iteritems(token_values):
+            if token_settings.get('label') is not None and hasattr(nomenclate_object, token):
+                value = token_settings.pop('label')
+                token_settings.pop('token')
+
+                cls.LOG.info('Checking for unique token on token %s:%r' % (token, value))
+
+                renderer = cls.get_valid_render_function(token)
+                cls.LOG.info('Finding token specific render function for token %r with renderer %s' % (token,
+                                                                                                       renderer))
 
                 if callable(getattr(renderer, 'render')):
                     cls.LOG.info('render_unique_tokens() - Rendering token %r: %r, token settings=%s' %
-                                 (token, value, nomenclate_object.get_token_settings(token)))
-
-                    rendered_token = renderer.render(value,
-                                                     token,
-                                                     nomenclate_object,
-                                                     **nomenclate_object.get_token_settings(token))
+                                 (token, value, token_settings))
+                    token_config = nomenclate_object.get_token_settings(token)
+                    # token_config.update(token_settings)
+                    rendered_token = renderer.render(value, token, nomenclate_object, **token_config)
                     cls.LOG.info('Unique token %s rendered as: %s' % (token, rendered_token))
 
-                    input_dict[token] = rendered_token
+                    token_settings['label'] = rendered_token
 
     @classmethod
-    def get_valid_render_functions(cls, token_name):
-        render_functions = []
+    def get_valid_render_function(cls, token_name):
+        token_name = token_name.lower()
+        renderer = None
+
         for func in list(cls.RENDER_FUNCTIONS):
             is_sub_token = token_name.replace(func, '').isdigit()
             is_token_renderer = not token_name.replace(func, '')
             if is_sub_token or is_token_renderer:
-                render_functions.append(func)
-        render_functions = render_functions or ['default']
-        cls.LOG.info('Found valid render functions for token %s: %s' % (token_name, render_functions))
-        return render_functions
+                cls.LOG.info('Found valid render function for token %s: %s' % (token_name, func))
+                renderer = func
+
+        return cls.RENDER_FUNCTIONS.get(renderer or 'default')
 
     @classmethod
     def render_nomenclative(cls, nomenclate_object):
         nomenclative = processing.Nomenclative(nomenclate_object.format)
-        token_values = nomenclate_object.token_dict.token_attr_dict
+        token_values = nomenclate_object.token_dict.to_json()
         cls.LOG.info('render_nomenclative() - Current state is %s with nomenclative %s' % (token_values, nomenclative))
         cls.render_unique_tokens(nomenclate_object, token_values)
-        rendered_nomenclative = nomenclate_object.format
+        render_template = nomenclate_object.format
         cls.LOG.info('Finished rendering unique tokens.')
-        cls._prepend_token_match_objects(token_values, rendered_nomenclative)
-
-        for token, match_value in iteritems(token_values):
-            nomenclative.add_match(*match_value)
+        cls._prepend_token_match_objects(token_values, render_template)
+        for token, match in iteritems(token_values):
+            nomenclative.add_match(*match)
 
         cls.LOG.info('Before processing state has been updated to:\n%s' % nomenclative)
-        rendered_nomenclative = cls.cleanup_formatted_string(nomenclative.process_matches())
-        cls.LOG.info('Finally converted to %s' % rendered_nomenclative)
-        return rendered_nomenclative
+        render_template = cls.cleanup_formatted_string(nomenclative.process_matches())
+        cls.LOG.info('Finally converted to %s' % render_template)
+        return render_template
 
     @classmethod
     def _prepend_token_match_objects(cls, token_values, incomplete_nomenclative):
-        for token, value in iteritems(token_values):
+        for token, token_settings in iteritems(token_values):
+            value = token_settings['label']
             regex_token = token.replace('(', '\(').replace(')', '\)')
             re_token = settings.REGEX_TOKEN_SEARCH.format(TOKEN=regex_token,
                                                           TOKEN_CAPITALIZED=regex_token.capitalize())

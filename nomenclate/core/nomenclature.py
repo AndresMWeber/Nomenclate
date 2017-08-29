@@ -9,15 +9,17 @@ from . import formatter
 from . import rendering
 from .tools import (
     combine_dicts,
-    NomenclateNotifier
+    Serializable
 )
 
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
-class Nomenclate(object):
+class Nomenclate(Serializable):
     """This class deals with renaming of objects in an approved pattern
     """
+    SERIALIZE_ATTRS = ['format_string_object', 'token_dict',]
+
     LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
     CONFIG_PATH = ['overall_config']
 
@@ -38,8 +40,6 @@ class Nomenclate(object):
         :param kwargs: str, kwargs to pass to the nomenclate tokens
         """
         input_dict = dict() if input_dict is None else input_dict
-
-        self.notifier = NomenclateNotifier(self.__setattr__)
         self.LOG.info('***CREATING NEW NOMENCLATE OBJECT***')
         self.LOG.info('Nomenclate init passed args %s and kwargs %s...processing' % (args, kwargs))
 
@@ -48,10 +48,9 @@ class Nomenclate(object):
         self.CONFIG_OPTIONS = dict()
 
         self.reset_from_config(format_target=format_string)
-        self.token_dict = tokens.TokenAttrDictHandler(self)
+        self.token_dict = tokens.TokenAttrDictHandler(self.format_string_object.format_order)
 
         self.merge_dict(input_dict, *args, **kwargs)
-        self._update_tokens()
 
     @property
     def empty_tokens(self):
@@ -67,7 +66,7 @@ class Nomenclate(object):
 
     @property
     def state(self):
-        return self.token_dict.state
+        return self.token_dict.to_json()
 
     @state.setter
     def state(self, input_object):
@@ -173,38 +172,6 @@ class Nomenclate(object):
         self.merge_dict(old_state)
         return result
 
-    def get_chain(self, end, start=None, **kwargs):
-        """ Returns a list of names based on index values
-
-        :param end: int, integer for end of sequence
-        :param start: (int, optional definition of start position
-        :return: list(str), generated object names
-        """
-        # TODO: rework this entire function, very dirty function.
-        """
-        var_attr = self.token_dict.get_token_attr(self.VARIATION_PATH[-1])
-        var_orig = var_attr.get()
-
-        var_start, n_type = self._get_alphanumeric_index(var_orig)
-
-        if start is None:
-            start = var_start
-        names = []
-        for index in range(start, end + 1):
-            if n_type in ['char_hi', 'char_lo']:
-                capital = True if n_type == 'char_hi' else False
-                var_attr.set(self._get_variation_id(index, capital))
-
-            else:
-                var_attr.set(str(index))
-            if 'var' in kwargs:
-                kwargs.pop("var", None)
-            names.append(self.get(**kwargs))
-        var_attr.set(var_orig)
-        return names
-        """
-        raise NotImplementedError
-
     def merge_dict(self, *args, **kwargs):
         """ Takes variable inputs, compiles them into a dictionary then merges it to the current nomenclate's state
 
@@ -214,9 +181,9 @@ class Nomenclate(object):
         input_dict = self._convert_input(*args, **kwargs)
         self._sift_and_init_configs(input_dict)
         self.LOG.info('Done sifting, now input is %s' % input_dict)
-        self.LOG.info('Starting merge, state is %s' % self.token_dict.state)
-        self.token_dict.state = input_dict
-        self.LOG.info('Finished merge, state is %s' % self.token_dict.state)
+        self.LOG.info('Starting merge, state is %s' % self.token_dict.token_attrs)
+        self.token_dict.merge_serialization(input_dict)
+        self.LOG.info('Finished merge, state is %s' % self.token_dict.token_attrs)
 
     def get_token_settings(self, token, default=None):
         """ Get the value for a specific token as a dictionary or replace with default
@@ -231,25 +198,6 @@ class Nomenclate(object):
             if '%s_' % token in key and not callable(key) and not isinstance(value, tokens.TokenAttr):
                 setting_dict[key] = self.__dict__.get(key, default)
         return setting_dict
-
-    def _update_tokens(self, specific_tokens=None):
-        """ Synchronizes all nomenclate token attributes with values from the token_dict
-
-        :param specific_tokens: list(str): list of tokens to update, otherwise updates all tokens
-        """
-        self.LOG.info('Force Updating all TokenAttrs')
-        if hasattr(self, 'token_dict'):
-            specific_tokens = specific_tokens if specific_tokens is not None else list(self.token_dict.state)
-
-            self.LOG.info('Updating nomenclate with %s' % specific_tokens)
-            state = {token: getattr(self.token_dict, token) for token in specific_tokens}
-
-            self.LOG.info('Updating nomenclate attributes with state %s' % state)
-
-            for token, token_attr_instance in iteritems(state):
-                setattr(self, token, token_attr_instance)
-
-            self.LOG.info('Finished updating Nomenclate object and token_dict.')
 
     def _purge_tokens(self, token_attrs):
         """ Removes specified token attrs from the instance and from the instance's token_dict to keep synchronized
@@ -342,24 +290,28 @@ class Nomenclate(object):
 
         """
         self.LOG.info('<%s>.__setattr__(%r, %r)' % (self.__class__.__name__, key, value))
-        token_dict_attr = getattr(getattr(self, 'token_dict', None), key, None)
-        is_not_value_token_attr = not isinstance(value, tokens.TokenAttr)
-        is_token_dict_attr_token_attr = isinstance(token_dict_attr, tokens.TokenAttr)
-
-        if all([hasattr(self, 'token_dict'), is_not_value_token_attr, is_token_dict_attr_token_attr]):
-            self.LOG.debug('User setting TokenAttr %r -> %r' % (token_dict_attr, value))
-            self.token_dict.set_token_attr(key, value)
-            # object.__setattr__(self, key, token_dict_attr)
+        if hasattr(self, 'token_dict') and hasattr(self.token_dict, key):
+            self.LOG.debug('User setting TokenAttr %r -> %r' % (getattr(self.token_dict, key), value))
+            object.__setattr__(self.token_dict, key, value)
         else:
             self.LOG.debug('User setting attribute %s to %r' % (key, value))
             object.__setattr__(self, key, value)
+
+    def __getattr__(self, item):
+        try:
+            value = object.__getattribute__(self, item)
+        except AttributeError as error:
+            try:
+                value = getattr(object.__getattribute__(self, 'token_dict'), item)
+            except AttributeError:
+                raise error
+        return value
 
     def __dir__(self):
         """ Taken from:
             http://techqa.info/programming/question/15507848/the-correct-way-to-override-the-__dir__-method-in-python
 
         """
-
         def get_attrs(obj):
             return obj.__dict__.keys()
 
@@ -380,3 +332,12 @@ class Nomenclate(object):
             return list(attrs)
 
         return dir_augment(self)
+
+    def to_json(self):
+        return {getattr(self, attr).to_json() for attr in self.SERIALIZE_ATTRS}
+
+    def from_json(cls, json_blob):
+        pass
+
+    def merge_json(self, json_blob):
+        pass
