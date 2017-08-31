@@ -73,7 +73,7 @@ class InputRenderer(type):
         for token, match in iteritems(token_values):
             nomenclative.add_match(*match)
 
-        cls.LOG.info('Before processing state has been updated to:\n%s' % nomenclative)
+        cls.LOG.info('Before processing state has been updated to: %s' % nomenclative)
         render_template = cls.cleanup_formatted_string(nomenclative.process_matches())
         cls.LOG.info('Finally converted to %s' % render_template)
         return render_template

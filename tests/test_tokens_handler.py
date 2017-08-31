@@ -20,12 +20,6 @@ class TestGetTokenAttr(TestTokenAttrBase):
     def test_get_not_existing(self):
         self.assertRaises(AttributeError, getattr, self.token_attr_dict_handler, 'no')
 
-    def test_deleted(self):
-        token_attr = self.token_attr_dict_handler.name
-        delattr(self.token_attr_dict_handler, token_attr.token)
-        self.assertRaises(AttributeError, getattr, self.token_attr_dict_handler, 'name')
-        setattr(self.token_attr_dict_handler, token_attr.token, token_attr)
-
 
 class TestTokenAttrs(TestTokenAttrBase):
     def test_get(self):
@@ -44,12 +38,12 @@ class TestPurge(TestTokenAttrBase):
     def test_default(self):
         handler = tokens.TokenAttrList(self.nomenclate.state)
         handler.purge_tokens()
-        self.assertEquals(list(handler.token_attrs), [])
+        self.assertEquals(handler.token_attrs, [])
 
     def test_input(self):
         handler = tokens.TokenAttrList(self.nomenclate.state)
-        handler.purge_tokens(list(handler.token_attrs))
-        self.assertEquals(list(handler.token_attrs), [])
+        handler.purge_tokens([token.token for token in handler.token_attrs])
+        self.assertEquals(handler.token_attrs, [])
 
 
 class TestEq(TestTokenAttrBase):

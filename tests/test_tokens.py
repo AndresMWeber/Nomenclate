@@ -19,10 +19,10 @@ class TestTokenAttrInstantiate(TestTokenAttrBase):
         self.fixtures.append(tokens.TokenAttr('test', 'test'))
 
     def test_invalid_instantiate_token_list(self):
-        self.assertRaises(exceptions.ValidationError, tokens.TokenAttr, 'test', [])
+        self.assertRaises(exceptions.ValidationError, tokens.TokenAttr, [], 'test')
 
     def test_invalid_instantiate_token_dict(self):
-        self.assertRaises(exceptions.ValidationError, tokens.TokenAttr, 'test', {})
+        self.assertRaises(exceptions.ValidationError, tokens.TokenAttr, {}, 'test')
 
     def test_valid_instantiate_token(self):
         self.assertEquals(tokens.TokenAttr('test', {}).label, "")

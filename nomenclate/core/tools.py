@@ -3,7 +3,7 @@ import collections
 from pprint import pformat
 import nomenclate.settings as settings
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
 LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
 
 
@@ -23,20 +23,19 @@ class Serializable(object):
         return {attr: getattr(self, attr) for attr in self.SERIALIZE_ATTRS}
 
     def merge_json(self, json_blob):
-        LOG.info('Merging blob %s to instance %r' % (json_blob, self))
-        for search_attr in self.SERIALIZE_ATTRS:
-            try:
-                setattr(self, search_attr, json_blob[search_attr])
-                LOG.info('Successfully merged %s = %s' % (search_attr, json_blob[search_attr]))
-            except KeyError:
-                LOG.info('Ignoring non existent %s = %s' % (search_attr, json_blob[search_attr]))
-                pass
+        LOG.info('Merging blob %s to instance %r with serializable attributes %s' % (json_blob,
+                                                                                     self,
+                                                                                     self.SERIALIZE_ATTRS))
+        for search_attr in [attr for attr in self.SERIALIZE_ATTRS if json_blob.get(attr) is not None]:
+            json_attr = json_blob[search_attr]
+            setattr(self, search_attr, json_attr)
+            LOG.info('Successfully merged %s = %s' % (search_attr, json_attr))
         LOG.info('State of instance is now %r' % self)
         return True
 
     @classmethod
     def from_json(cls, json_blob):
-        return cls(**{attr: json_blob.get(attr, None) for attr in cls.SERIALIZE_ATTRS})
+        return cls(**{attr: json_blob[attr] for attr in cls.SERIALIZE_ATTRS if json_blob.get(attr) is not None})
 
 
 class NomenclateNotifier(object):

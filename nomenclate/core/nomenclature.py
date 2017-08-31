@@ -12,13 +12,13 @@ from .tools import (
     Serializable
 )
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
 
 
 class Nomenclate(Serializable):
     """This class deals with renaming of objects in an approved pattern
     """
-    SERIALIZE_ATTRS = ['format_string_object', 'token_dict',]
+    SERIALIZE_ATTRS = ['format_string_object', 'token_dict', ]
 
     LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
     CONFIG_PATH = ['overall_config']
@@ -199,20 +199,6 @@ class Nomenclate(Serializable):
                 setting_dict[key] = self.__dict__.get(key, default)
         return setting_dict
 
-    def _purge_tokens(self, token_attrs):
-        """ Removes specified token attrs from the instance and from the instance's token_dict to keep synchronized
-
-        :param token_attrs: list(str), list of token attributes to remove
-        :return: None
-        """
-        self.token_dict.purge_tokens(token_attrs)
-
-        for token_attr in token_attrs:
-            self.LOG.info('Purging nomenclate attribute - %s' % str(token_attr))
-            delattr(self, token_attr)
-
-        self.LOG.info('Finished purging Nomenclate object and token_dict.')
-
     def _update_tokens_from_swap_format(self, original_format, original_format_order, remove_obsolete_tokens=True):
         """ Updates tokens based on a swap format call that will maintain synchronicity between token_dict and attrs
             If there was an accidental setting already set to one of the attrs that should now be a token attr due
@@ -235,11 +221,22 @@ class Nomenclate(Serializable):
             new_tokens = [token for token in set(new_format_order) - set(old_format_order)
                           if not hasattr(self, token) or isinstance(getattr(self, token, ''), str)]
 
-            self.LOG.info('\nToken Status:\n\tObselete tokens: %s\n\tNew tokens: %s' % (old_tokens, new_tokens))
+            self.LOG.info('Token Status: Removed (%d) obsolete token(s)\tAdded (%d) new token(s)' % (len(old_tokens),
+                                                                                                     len(new_tokens)))
 
             self.merge_dict(dict.fromkeys(new_tokens, ''))
+
+
             if remove_obsolete_tokens:
-                self._purge_tokens(old_tokens)
+                self.token_dict.purge_tokens(old_tokens)
+
+                for new_token in new_tokens:
+                    self.LOG.info('Clearing attributes on Nomenclate for new tokens %s just in case.' % new_tokens)
+                    try:
+                        delattr(self, new_token)
+                    except AttributeError:
+                        pass
+
         else:
             self.LOG.info('No change necessary to update internal token set')
 
@@ -290,19 +287,23 @@ class Nomenclate(Serializable):
 
         """
         self.LOG.info('<%s>.__setattr__(%r, %r)' % (self.__class__.__name__, key, value))
-        if hasattr(self, 'token_dict') and hasattr(self.token_dict, key):
-            self.LOG.debug('User setting TokenAttr %r -> %r' % (getattr(self.token_dict, key), value))
-            object.__setattr__(self.token_dict, key, value)
+        if hasattr(self, 'token_dict') and key in [s.lower() for s in self.format_order]:
+            if getattr(self.token_dict, key):
+                self.LOG.info('Setting Nomenclate existing TokenAttr %r -> %r' % (getattr(self.token_dict, key), value))
+                getattr(self.token_dict, key).set(value)
+            else:
+                self.LOG.info('Creating missing TokenAttr before setting %r -> %r' % (key, value))
+                self.token_dict.merge_serialization({key: value})
         else:
             self.LOG.debug('User setting attribute %s to %r' % (key, value))
             object.__setattr__(self, key, value)
 
     def __getattr__(self, item):
         try:
-            value = object.__getattribute__(self, item)
+            value = getattr(object.__getattribute__(self, 'token_dict'), item)
         except AttributeError as error:
             try:
-                value = getattr(object.__getattribute__(self, 'token_dict'), item)
+                value = object.__getattribute__(self, item)
             except AttributeError:
                 raise error
         return value
@@ -312,6 +313,7 @@ class Nomenclate(Serializable):
             http://techqa.info/programming/question/15507848/the-correct-way-to-override-the-__dir__-method-in-python
 
         """
+
         def get_attrs(obj):
             return obj.__dict__.keys()
 
@@ -321,6 +323,8 @@ class Nomenclate(Serializable):
                 # obj is an instance
                 instance_class = obj.__class__
                 attrs.update(get_attrs(instance_class))
+                if hasattr(obj, 'token_dict'):
+                    attrs.update([token_attr.token for token_attr in obj.token_dict.token_attrs])
             else:
                 # obj is a class
                 instance_class = obj
@@ -337,7 +341,7 @@ class Nomenclate(Serializable):
         return {getattr(self, attr).to_json() for attr in self.SERIALIZE_ATTRS}
 
     def from_json(cls, json_blob):
-        pass
+        raise NotImplementedError
 
     def merge_json(self, json_blob):
-        pass
+        raise NotImplementedError

@@ -137,6 +137,6 @@ class Nomenclative(object):
                 raise exceptions.OverlapError(msg)
 
     def __str__(self):
-        matches = '' if not self.token_matches else '\n'.join(map(str, self.token_matches))
-        return '%s:%s' % (self.raw_formatted_string, matches)
+        matches = ' ' if not self.token_matches else ' '.join(map(str, self.token_matches))
+        return 'format: %s: %s' % (self.raw_formatted_string, matches)
 

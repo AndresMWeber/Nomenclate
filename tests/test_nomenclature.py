@@ -1,3 +1,4 @@
+from six import iteritems
 import unittest
 import nomenclate as nm
 import nomenclate.core.configurator as config
@@ -76,7 +77,7 @@ class TestNomenclateState(TestNomenclateBase):
         self.nom.state = previous_state
 
     def test_state_valid(self):
-        self.assertEquals(self.nom.state,
+        self.assertEquals({token: token_attr_dict['label'] for token, token_attr_dict in iteritems(self.nom.state)},
                           {'childtype': '',
                            'decorator': '',
                            'location': '',
@@ -163,8 +164,10 @@ class TestNomenclateSwapFormats(TestNomenclateBase):
         self.assertEquals(self.nom.get(), 'LOC_hchy_test_l')
 
         self.nom.format = self.raf_path
+        print('\nnom state 3 is %s \n' % self.nom.state)
         self.nom.LOG.info('(raf) New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
-
+        print('\nnom state 3 is %s \n' % self.nom.state)
+        print('\nheight 1 is %r \n' % self.nom.height)
         self.set_raf_values()
         self.assertEquals(self.nom.get(), 'test_TLR_hchy')
         self.nom.LOG.info('%r' % self.nom.get())
@@ -232,7 +235,9 @@ class TestNomenclateSwapFormats(TestNomenclateBase):
         self.nom.purpose = 'hierarchy'
 
     def set_raf_values(self):
+        print('\n%r\n' % self.nom.height)
         self.nom.height = 'top'
+        print('\n%r\n' % self.nom.height)
         self.nom.height.case = 'upper'
         self.nom.depth = 'rear'
         self.nom.depth.case = 'upper'
@@ -258,7 +263,7 @@ class TestNomenclateMergeDict(TestNomenclateBase):
         _ = {}
         _.update(self.partial_vars)
         _.update(self.missing_partials)
-        self.assertDictEqual(nom.state, _)
+        self.assertDictEqual({token: token_attr_dict['label'] for token, token_attr_dict in iteritems(nom.state)}, _)
 
     def test_not_Found_in_format_merge(self):
         nom = nm.Nom()
@@ -300,6 +305,7 @@ class TestNomenclateEq(TestNomenclateBase):
         other.name = 'ronald'
         other.var = 'C'
         other.type = 'joint'
+        print(other, '\n', self.nom)
         self.assertFalse(other == self.nom)
 
 
@@ -316,7 +322,7 @@ class TestNomenclateUnset(TestNomenclateBase):
         _.update(self.partial_vars)
         _.update(self.missing_partials)
 
-        self.assertDictEqual(nom.state, _)
+        self.assertDictEqual({token: token_attr_dict['label'] for token, token_attr_dict in iteritems(nom.state)}, _)
         self.assertDictEqual(nom.empty_tokens, self.missing_partials)
 
     def test_create_empty(self):
@@ -326,7 +332,8 @@ class TestNomenclateUnset(TestNomenclateBase):
 
     def test_full(self):
         nom = nm.Nom(self.fill_vars)
-        self.assertDictEqual(nom.state, self.fill_vars)
+        self.assertDictEqual({token: token_attr_dict['label'] for token, token_attr_dict in iteritems(nom.state)},
+                             self.fill_vars)
         self.assertDictEqual(nom.empty_tokens, {})
 
 
@@ -348,7 +355,7 @@ class TestNomenclateDir(TestNomenclateBase):
     def test_default(self):
         nom = nm.Nom()
         for item in nom.tokens:
-            self.assertIn(item, dir(nom))
+            self.assertIn(item.token, dir(nom))
 
     def test_merge_dict(self):
         nom = nm.Nom()
@@ -359,6 +366,6 @@ class TestNomenclateDir(TestNomenclateBase):
 
     def test_swap_format(self):
         nom = nm.Nom()
-        nom.format = ['format', 'riggers', 'raffaele_fragapane']
+        nom.format = ['naming_formats', 'riggers', 'raffaele_fragapane']
         for item in nom.tokens:
-            self.assertIn(item, dir(nom))
+            self.assertIn(item.token, dir(nom))
