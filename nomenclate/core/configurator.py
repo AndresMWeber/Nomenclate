@@ -11,7 +11,7 @@ from .tools import (
     gen_dict_key_matches
 )
 
-MODULE_LOGGER_LEVEL_OVERRIDE = None
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
 class ConfigEntryFormatter(object):

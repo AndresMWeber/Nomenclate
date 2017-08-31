@@ -4,7 +4,7 @@ from . import errors as exceptions
 import nomenclate.settings as settings
 from . import tools
 
-MODULE_LEVEL_OVERRIDE = settings.DEBUG
+MODULE_LEVEL_OVERRIDE = settings.QUIET
 
 
 class TokenAttr(tools.Serializable):

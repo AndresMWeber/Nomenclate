@@ -10,7 +10,7 @@ from .tools import (
     flatten
 )
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
 @add_metaclass(rendering.InputRenderer)

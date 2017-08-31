@@ -6,7 +6,7 @@ import string
 import nomenclate.settings as settings
 from . import processing
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
 class InputRenderer(type):
