@@ -13,7 +13,7 @@ class TestNomenclativeBase(basetest.TestBase):
         self.nomenclative_valid_short = processing.Nomenclative('side_name_type')
         self.nomenclative_invalid = processing.Nomenclative('test_labelside')
 
-        test_values = tokens.TokenAttrDictHandler(['side',
+        test_values = tokens.TokenAttrList(['side',
                                                    'location',
                                                    'name',
                                                    'decorator',
@@ -81,12 +81,12 @@ class TestNomenclativeAddMatch(TestNomenclativeBase):
                           'left_test_group')
 
     def test_overlap(self):
-        test_dict = tokens.TokenAttrDictHandler(['name', 'side'])
+        test_dict = tokens.TokenAttrList(['name', 'side'])
         test_dict['name'].set('left')
         test_dict['side'].set('left')
         test_dict = test_dict.to_json()
 
-        test_overlap = tokens.TokenAttrDictHandler(['side_name'])
+        test_overlap = tokens.TokenAttrList(['side_name'])
         test_overlap['side_name'].set('overlapped')
         test_overlap = test_overlap.to_json()
 

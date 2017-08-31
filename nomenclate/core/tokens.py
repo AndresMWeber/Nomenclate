@@ -24,7 +24,7 @@ class TokenAttr(tools.Serializable):
 
     LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LEVEL_OVERRIDE)
 
-    def __init__(self, label=None, token='', case='', prefix='', suffix=''):
+    def __init__(self, token='', label=None, case='', prefix='', suffix=''):
         """
 
         :param label: str, the label is represents the value we want to replace the given token with
@@ -121,15 +121,19 @@ class TokenAttr(tools.Serializable):
                 }
 
 
-class TokenAttrDictHandler(tools.Serializable):
+class TokenAttrList(tools.Serializable):
     LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LEVEL_OVERRIDE)
 
     def __init__(self, token_attrs):
-        self.token_attrs = {token_attr.lower(): TokenAttr('', token_attr) for token_attr in token_attrs}
+        self.token_attrs = [TokenAttr(token_attr, '') for token_attr in token_attrs]
 
     def reset(self):
-        for _, token_attr in iteritems(self.token_attrs):
+        for token_attr in self.token_attrs:
             token_attr.set('')
+
+    @property
+    def unset_token_attrs(self):
+        return [token_attr for token_attr in self.token_attrs if token_attr.label == '']
 
     def purge_tokens(self, token_attrs=None):
         """ Removes all specified token_attrs that exist in instance.token_attrs
@@ -137,16 +141,15 @@ class TokenAttrDictHandler(tools.Serializable):
         :param token_attrs: list(str), list of string values of tokens to remove.  If None, removes all
         """
         if token_attrs is None:
-            token_attrs = list(self.token_attrs)
+            token_attrs = self.token_attrs
         else:
-            token_attrs = [token_attr.token for _, token_attr in iteritems(self.token_attrs) if
-                           token_attr.token in token_attrs]
+            token_attrs = [token_attr.token for token_attr in self.token_attrs if token_attr.token in token_attrs]
 
         self.LOG.info('Starting purge for target tokens %s' % token_attrs)
 
         for token_attr in token_attrs:
             self.LOG.info('Deleting TokenAttr %s' % token_attr)
-            delattr(self, token_attr)
+            self.token_attrs.remove(token_attr)
 
     @classmethod
     def from_json(cls, json_blob):
@@ -179,36 +182,24 @@ class TokenAttrDictHandler(tools.Serializable):
                                sorted([t for _, t in iteritems(other.token_attrs)], key=lambda x: x.token))))
         return False
 
-    def __getattr__(self, name):
+    def __getattr__(self, item):
         try:
-            value = object.__getattribute__(self, name)
+            return object.__getattribute__(self, item)
         except AttributeError:
             try:
-                value = self.token_attrs[name]
+                return [token_attr for token_attr in self.token_attrs if token_attr.token == item][0]
             except KeyError:
-                raise AttributeError
-        return value
-
-    def __delattr__(self, item):
-        try:
-            object.__delattr__(self, item)
-        except AttributeError:
-            try:
-                self.token_attrs.pop(item)
-            except KeyError:
-                raise AttributeError
+                pass
+        raise AttributeError
 
     def __str__(self):
-        return ' '.join(
-            ['%s:%r' % (token_attr.token, token_attr.label) for _, token_attr in iteritems(self.token_attrs)])
+        return ' '.join(['%s:%r' % (token_attr.token, token_attr.label) for token_attr in self.token_attrs])
 
     def __repr__(self):
-        return '<%s %s>' % (self.__class__.__name__,
-                            ' '.join(['%s:%s' % (token_attr.token, token_attr.label) for _, token_attr in
-                                      iteritems(self.token_attrs)]))
+        return '<%s %s>' % (self.__class__.__name__, self.token_attrs)
 
     def __iter__(self):
         return iteritems(self.token_attrs)
 
     def __getitem__(self, item):
-        return self.token_attrs.get(item)
+        return [token_attr for token_attr in self.token_attrs if token_attr.token == item][0]

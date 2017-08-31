@@ -56,30 +56,30 @@ class TestInputRendererProcessTokenAugmentations(TestInputRendererBase):
         self.assertEquals(self.nom.get(), 'l_testObjectA_LOC')
 
     def test_from_upper(self):
-        token_attr = tokens.TokenAttr('test', 'name')
+        token_attr = tokens.TokenAttr('name', 'test')
         token_attr.case = 'upper'
         self.assertEquals(renderers.RenderBase.process_token_augmentations('test', token_attr),
                           'TEST')
 
     def test_from_lower(self):
-        token_attr = tokens.TokenAttr('test', 'name')
+        token_attr = tokens.TokenAttr('name', 'test')
         token_attr.case = 'lower'
         self.assertEquals(renderers.RenderBase.process_token_augmentations('Test', token_attr),
                           'test')
 
     def test_from_none(self):
-        token_attr = tokens.TokenAttr('test', 'name')
+        token_attr = tokens.TokenAttr('name', 'test')
         self.assertEquals(renderers.RenderBase.process_token_augmentations('Test', token_attr),
                           'Test')
 
     def test_from_prefix(self):
-        token_attr = tokens.TokenAttr(label='test', token='name')
+        token_attr = tokens.TokenAttr(token='name', label='test')
         token_attr.prefix = 'v'
         self.assertEquals(renderers.RenderBase.process_token_augmentations('Test', token_attr),
                           'vTest')
 
     def test_from_suffix(self):
-        token_attr = tokens.TokenAttr('test', 'name')
+        token_attr = tokens.TokenAttr('name', 'test')
         token_attr.suffix = '_r'
         self.assertEquals(renderers.RenderBase.process_token_augmentations('test', token_attr),
                           'test_r')
@@ -131,7 +131,7 @@ class TestInputRendererGetVariationId(TestInputRendererBase):
 
 class TestInputRendererRenderUniqueTokens(TestInputRendererBase):
     def test_all_replaced(self):
-        test_values = tokens.TokenAttrDictHandler(['var', 'type', 'side', 'version'])
+        test_values = tokens.TokenAttrList(['var', 'type', 'side', 'version'])
         test_values['var'].set(0)
         test_values['type'].set('locator')
         test_values['side'].set('left')
@@ -147,7 +147,7 @@ class TestInputRendererRenderUniqueTokens(TestInputRendererBase):
 
 
     def test_some_replaced(self):
-        test_values = tokens.TokenAttrDictHandler(['var', 'type', 'side', 'version'])
+        test_values = tokens.TokenAttrList(['var', 'type', 'side', 'version'])
         test_values['var'].set(0)
         test_values['type'].set('locator')
         test_values['side'].set('left')
@@ -163,7 +163,7 @@ class TestInputRendererRenderUniqueTokens(TestInputRendererBase):
 
 
     def test_default_renderer(self):
-        test_values = tokens.TokenAttrDictHandler(['var',
+        test_values = tokens.TokenAttrList(['var',
                                                    'type',
                                                    'side',
                                                    'version',
@@ -201,7 +201,7 @@ class TestInputRendererRenderUniqueTokens(TestInputRendererBase):
 
 
     def test_none_replaced(self):
-        test_values = tokens.TokenAttrDictHandler(['name', 'blah', 'not_me', 'la'])
+        test_values = tokens.TokenAttrList(['name', 'blah', 'not_me', 'la'])
         test_values['name'].set('test')
         test_values['blah'].set('blah')
         test_values['not_me'].set('not_me')

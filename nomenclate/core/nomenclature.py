@@ -48,7 +48,7 @@ class Nomenclate(Serializable):
         self.CONFIG_OPTIONS = dict()
 
         self.reset_from_config(format_target=format_string)
-        self.token_dict = tokens.TokenAttrDictHandler(self.format_string_object.format_order)
+        self.token_dict = tokens.TokenAttrList(self.format_string_object.format_order)
 
         self.merge_dict(input_dict, *args, **kwargs)
 
@@ -58,7 +58,7 @@ class Nomenclate(Serializable):
 
     @property
     def tokens(self):
-        return list(self.token_dict.state)
+        return list(self.token_dict)
 
     @property
     def format_order(self):
