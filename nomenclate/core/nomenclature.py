@@ -12,7 +12,7 @@ from .tools import (
     Serializable
 )
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.INFO
+MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
 class Nomenclate(Serializable):

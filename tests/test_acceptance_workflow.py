@@ -120,6 +120,7 @@ class TestAcceptanceNamingFiletypes(basetest.TestBase):
     def test_saving_maya_file(self):
         n = nom.Nomenclate(name='SH010', var=0, ext='mb', initials='aw', discipline='animation', version=5)
         n.var.case = 'upper'
+        n.version.prefix = 'v'
         n.initialize_format_options('working_file')
         self.assertEquals(n.format, 'name_discipline_lodDecoratorVar_version_initials.ext')
         self.assertEquals(n.get(), 'SH010_ANIM_A_v005_aw.mb')
@@ -128,6 +129,8 @@ class TestAcceptanceNamingFiletypes(basetest.TestBase):
     def test_saving_movie_file(self):
         n = nom.Nomenclate()
         n.initialize_format_options('techops_file')
+        n.version.prefix = 'v'
+        n.version1.prefix = 'v'
         n.merge_dict({'shot': 'LSC_sh01',
                       'version': 8,
                       'name': 'Nesquick',
