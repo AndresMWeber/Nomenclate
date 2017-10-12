@@ -64,7 +64,7 @@ Features
 -  User-customizable YAML/human-readable config file
 -  Easy object property or dictionary state manipulation
 -  Cross-Python compatible: Tested and working with Python 2.7 and 3.5
--  Cross-Platform compatible: Works under Linux/Mac OS/Windows environments
+-  Cross-Platform compatible: Works under Linux, Mac OS ,Windows environments
 -  Full module/class documentation
 -  Sensible token value entry/conversion (like ``side='left'`` with automatic token syntax replacement)
 
@@ -72,7 +72,7 @@ Installation
 ============
 Windows, etc.
 -------------
-A universal installation method (that works on Windows, Mac OS X, Linux, …, and always provides the latest version) is to use `pip`:
+A universal installation method (that works on Windows, Mac OS X, Linux, ..., and always provides the latest version) is to use `pip`:
 
 .. code-block:: bash
 
@@ -252,8 +252,8 @@ Currently this package supports Python 2.7, 3.5 and 3.6
 Attribution
 ===========
 WPZOOM Developer Icon Set by WPZOOM License_ Source_ - Designed by David Ferreira.
-.. _License: http://creativecommons.org/licenses/by-sa/3.0/
-.. _Source: http://www.wpzoom.com
+    .. _License: http://creativecommons.org/licenses/by-sa/3.0/
+    .. _Source: http://www.wpzoom.com
 
 Icon made by iconauth_ from www.flaticon.com
-.. _iconauth: https://www.flaticon.com/authors/freepik
+    .. _iconauth: https://www.flaticon.com/authors/freepik

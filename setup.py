@@ -15,7 +15,7 @@ with open(convert_path('%s/version.py' % __package__)) as ver_file:
 with codecs.open(join(abspath(dirname(__file__)), 'README.rst'), encoding='utf-8') as readme_file:
     long_description = readme_file.read()
 
-description = 'A tool for generating strings based on a preset naming convention.',
+description = 'A tool for generating strings based on a preset naming convention.'
 
 install_requires = [
     'python-dateutil',
