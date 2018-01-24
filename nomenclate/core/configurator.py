@@ -159,12 +159,12 @@ class ConfigParse(object):
 
         try:
             config_entry = function_type_lookup.get(type(query_path), str)(query_path)
-            self.LOG.info('Retrieved config entry:\n%s' % str(config_entry, depth=1))
+            self.LOG.info('Retrieved config entry:\n%s' % str(config_entry))
             query_result = self.config_entry_handler.format_query_result(config_entry,
                                                                          query_path,
                                                                          return_type=return_type,
                                                                          preceding_depth=preceding_depth)
-            self.LOG.info('Converted config entry:\n%s' % str(query_result, depth=1))
+            self.LOG.info('Converted config entry:\n%s' % str(query_result))
 
             return query_result
         except IndexError:

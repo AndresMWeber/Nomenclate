@@ -126,14 +126,11 @@ def gen_dict_key_matches(key, dictionary, _path=None, full_path=False):
     """
     if _path is None:
         _path = []
-    LOG.debug('\nThe searching for key %s in dictionary:\n %s\n' % (key, str(dictionary)))
     for k, v in iteritems(dictionary):
         _path.append(k)
         if k == key:
-            LOG.debug('\n\t\tkey %s matches query string %s, yielding!' % (k, key))
             yield (_path, v) if full_path else v
         elif isinstance(v, dict):
-            LOG.debug('\n\t\tvalue is a dictionary, iterating through %s!' % str(v))
             for result in gen_dict_key_matches(key, v, _path):
                 yield result
 
