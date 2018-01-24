@@ -1,6 +1,5 @@
 from six import iteritems
 import collections
-from pprint import pformat
 import nomenclate.settings as settings
 
 MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
@@ -80,7 +79,7 @@ def combine_dicts(*args, **kwargs):
     :return: dict, compiled dictionary
     """
     dicts = [arg for arg in args if isinstance(arg, dict)]
-    LOG.debug('dicts are %s' % pformat(dicts))
+    LOG.debug('dicts are %s' % str(dicts))
     dicts.append(kwargs)
     super_dict = collections.defaultdict(dict)
 
@@ -88,7 +87,7 @@ def combine_dicts(*args, **kwargs):
         for k, v in iteritems(d):
             if k:
                 super_dict[k] = v
-    LOG.debug('super dict is %s' % pformat(dict(super_dict)))
+    LOG.debug('super dict is %s' % str(dict(super_dict)))
     return dict(super_dict)
 
 
@@ -127,14 +126,14 @@ def gen_dict_key_matches(key, dictionary, _path=None, full_path=False):
     """
     if _path is None:
         _path = []
-    LOG.debug('\nThe searching for key %s in dictionary:\n %s\n' % (key, pformat(dict(dictionary))))
+    LOG.debug('\nThe searching for key %s in dictionary:\n %s\n' % (key, str(dictionary)))
     for k, v in iteritems(dictionary):
         _path.append(k)
         if k == key:
             LOG.debug('\n\t\tkey %s matches query string %s, yielding!' % (k, key))
             yield (_path, v) if full_path else v
         elif isinstance(v, dict):
-            LOG.debug('\n\t\tvalue is a dictionary, iterating through %s!' % pformat(v))
+            LOG.debug('\n\t\tvalue is a dictionary, iterating through %s!' % str(v))
             for result in gen_dict_key_matches(key, v, _path):
                 yield result
 
