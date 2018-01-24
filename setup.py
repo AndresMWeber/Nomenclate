@@ -47,7 +47,7 @@ setup(
     author=__author__,
     author_email=__author_email__,
     description=description,
-    long_description=long_description,
+    long_description="`Online Documentation (ReadTheDocs) <http://nomenclate.readthedocs.io/en/latest/>`_",
     keywords='naming conventions labels config convention name parsing parse',
     classifiers=[
         'License :: OSI Approved :: MIT License',
