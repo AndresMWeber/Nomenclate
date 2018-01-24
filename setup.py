@@ -39,7 +39,7 @@ dev_requires = ['twine', 'Sphinx', 'docutils', 'docopt']
 setup(
     name=__package__,
     version=main_ns['__version__'],
-    packages=find_packages(),
+    packages=find_packages(exclude=("tests",)),
     package_data={'configYML': ['nomenclate/core/*.yml']},
     include_package_data=True,
     url=__url__,
