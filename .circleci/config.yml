@@ -194,15 +194,9 @@ workflows:
   test_python_versions:
     jobs:
       - build
-      - test_35:
-        requires:
-          - build
-      - test_36:
-        requires:
-          - test_35
       - deploy:
         requires:
-          - test36
+          - build
         filters:
           tags:
             only: /[0-9]+(\.[0-9]+)*/
