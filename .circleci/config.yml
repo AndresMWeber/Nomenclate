@@ -35,7 +35,6 @@ jobs:
           command: |
             coveralls
 
-
   test_35:
     docker:
       - image: circleci/python:3.5
@@ -66,7 +65,6 @@ jobs:
       - store_test_results:
           path: ~/test-reports
 
-
   test_36:
     docker:
       - image: circleci/python:3.6
@@ -96,7 +94,6 @@ jobs:
             nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=/root/test-reports/noselog35.xml --cover-package=nomenclate
       - store_test_results:
           path: ~/test-reports
-
 
   deploy:
     docker:
