@@ -1,16 +1,20 @@
 import codecs
+import os
+import sys
 from os.path import abspath, dirname, join
 from distutils.util import convert_path
 from setuptools import setup, find_packages
+from setuptools.command.install import install
 
 __author__ = 'Andres Weber'
 __author_email__ = 'andresmweber@gmail.com'
 __package__ = 'nomenclate'
-__url__ = 'https://github.com/andresmweber/nomenclate'
+__url__ = 'https://github.com/andresmweber/%s' % __package__
 
 main_ns = {}
 with open(convert_path('%s/version.py' % __package__)) as ver_file:
     exec (ver_file.read(), main_ns)
+__version__ = main_ns['__version__']
 
 with codecs.open(join(abspath(dirname(__file__)), 'README.rst'), encoding='utf-8') as readme_file:
     long_description = readme_file.read()
@@ -33,6 +37,19 @@ tests_requires = [
     'pyfakefs',
     'tox'
 ]
+
+class VerifyVersionCommand(install):
+    """Custom command to verify that the git tag matches our version"""
+    description = 'verify that the git tag matches our version'
+
+    def run(self):
+        tag = os.getenv('CIRCLE_TAG')
+
+        if tag != __version__:
+            info = "Git tag: {0} does not match the version of this app: {1}".format(
+                tag, __version__
+            )
+            sys.exit(info)
 
 dev_requires = ['twine', 'Sphinx', 'docutils', 'docopt']
 
@@ -67,5 +84,8 @@ setup(
     extras_require={
         'tests': tests_requires,
         'dev': dev_requires
+    },
+    cmdclass={
+        'verify': VerifyVersionCommand,
     }
 )
