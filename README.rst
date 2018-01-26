@@ -10,8 +10,8 @@ Nomenclate: A tool set for automating and generating strings based on arbitrary 
 .. image:: https://badge.fury.io/py/nomenclate.svg
     :target: https://badge.fury.io/py/nomenclate
 
-.. image:: https://travis-ci.org/AndresMWeber/Nomenclate.svg?branch=master
-    :target: https://travis-ci.org/AndresMWeber/Nomenclate
+.. image:: https://circleci.com/gh/AndresMWeber/Nomenclate.svg?style=svg
+    :target: https://circleci.com/gh/AndresMWeber/Nomenclate
 
 .. image:: https://coveralls.io/repos/github/AndresMWeber/Nomenclate/badge.svg?branch=master
     :target: https://coveralls.io/github/AndresMWeber/Nomenclate?branch=master

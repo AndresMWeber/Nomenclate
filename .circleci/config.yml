@@ -194,18 +194,17 @@ workflows:
   test_python_versions:
     jobs:
       - build
-      - test_35
-      - test_36
-
-  build_and_deploy:
-    jobs:
-      - build:
-          filters:
-            tags:
-              only: /.*/
+      - test_35:
+        requires:
+          - build
+      - test_36:
+        requires:
+          - build
       - deploy:
           requires:
             - build
+            - test35
+            - test36
           filters:
             tags:
               only: /[0-9]+(\.[0-9]+)*/
