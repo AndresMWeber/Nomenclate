@@ -44,7 +44,9 @@ jobs:
 
       - run:
           name: upload coverage
-          command: coveralls
+          command: |
+              . ~/nomenclate_venv/bin/activate
+              coveralls
 
   test_35:
     docker:
