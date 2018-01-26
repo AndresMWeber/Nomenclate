@@ -30,6 +30,8 @@ jobs:
       - run: |
           PYTHON_VERSION=27
           export PYTHON_VERSION >> "$BASH_ENV"
+          TEST_PATH=~/test-results
+          export TEST_PATH >> "$BASH_ENV"
 
       - run:
           name: run tests
@@ -72,6 +74,9 @@ jobs:
       - run: |
           PYTHON_VERSION=35
           export PYTHON_VERSION >> "$BASH_ENV"
+          TEST_PATH=~/test-results
+          export TEST_PATH >> "$BASH_ENV"
+
       - run:
           name: run tests
           command: make test-unit3
@@ -109,6 +114,8 @@ jobs:
       - run: |
           PYTHON_VERSION=36
           export PYTHON_VERSION >> "$BASH_ENV"
+          TEST_PATH=~/test-results
+          export TEST_PATH >> "$BASH_ENV"
       - run:
           name: run tests
           command: make test-unit3
