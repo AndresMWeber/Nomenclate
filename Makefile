@@ -30,7 +30,7 @@ test-unit3:
 
 upload-coverage:
 	. ~/nvenv/bin/activate
-	coveralls
+	~/nvenv/bin/coveralls
 
 load-git-tag:
 	GIT_TAG=`git describe --tags`
@@ -40,7 +40,7 @@ verify-git-tag: make-venv load-git-tag
 	. ~/nvenv/bin/activate
 	echo $(CIRCLE_TAG)
 	echo $(GIT_TAG)
-	python setup.py verify
+	~/nvenv/bin/python setup.py verify
 
 init-pypirc:
 	echo -e "[pypi]" >> ~/.pypirc
@@ -49,4 +49,4 @@ init-pypirc:
 
 upload-to-pypi:
 	. ~/nvenv/bin/activate
-	twine upload dist/*
+	~/nvenv/bin/twine upload dist/*
