@@ -54,10 +54,8 @@ jobs:
 
     steps:
       - run:
-          name: install virtualenv and make report dir
-          command: |
-              pip install virtualenv
-              mkdir ~/test-results
+          name: make report dir
+          command: mkdir ~/test-results
 
       - checkout
 
@@ -69,10 +67,10 @@ jobs:
       - run:
           name: install dependencies
           command: |
-              python -m virtualenv ~/nomenclate_venv
+              python3 -m venv ~/nomenclate_venv
               . ~/nomenclate_venv/bin/activate
-              pip install -r requirements.txt
-              pip install coveralls nose
+              pip3 install -r requirements.txt
+              pip3 install coveralls nose
 
       - save_cache:
           paths:
@@ -97,7 +95,7 @@ jobs:
 
     steps:
       - run:
-          name: install virtualenv and make report dir
+          name: make report dir
           command: mkdir ~/test-results
 
       - checkout
