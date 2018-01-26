@@ -194,3 +194,5 @@ workflows:
   test_python_versions:
     jobs:
       - build
+      - test35
+      - test36
