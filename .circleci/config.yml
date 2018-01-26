@@ -199,12 +199,10 @@ workflows:
           - build
       - test_36:
         requires:
-          - build
+          - test_35
       - deploy:
-          requires:
-            - build
-            - test35
-            - test36
-          filters:
-            tags:
-              only: /[0-9]+(\.[0-9]+)*/
+        requires:
+          - test36
+        filters:
+          tags:
+            only: /[0-9]+(\.[0-9]+)*/
