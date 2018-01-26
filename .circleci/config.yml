@@ -147,7 +147,10 @@ jobs:
       - run: echo export GIT_TAG=git describe --tags >> "$BASH_ENV"
       - run:
           name: verify git tag vs. version
-          command: make verify-git-tag
+          command: |
+              GIT_TAG=`git describe --tags`
+              export GIT_TAG >> "$BASH_ENV"
+              make verify-git-tag
 
       - run:
           name: init .pypirc

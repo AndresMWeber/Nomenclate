@@ -32,11 +32,8 @@ upload-coverage:
 	. ~/nvenv/bin/activate
 	~/nvenv/bin/coveralls
 
-load-git-tag:
-	GIT_TAG=`git describe --tags`
-	export GIT_TAG >> "$BASH_ENV"
 
-verify-git-tag: make-venv load-git-tag
+verify-git-tag: make-venv
 	. ~/nvenv/bin/activate
 	echo $(CIRCLE_TAG)
 	echo $(GIT_TAG)
