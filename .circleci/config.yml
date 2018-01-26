@@ -179,14 +179,14 @@ jobs:
             echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc
 
       - run:
-        name: create packages
-        command: make package
+          name: create packages
+          command: make package
 
       - run:
-        name: upload to pypi
-        command: |
-          . ~/nomenclate_venv/bin/activate
-          twine upload dist/*
+          name: upload to pypi
+          command: |
+            . ~/nomenclate_venv/bin/activate
+            twine upload dist/*
 
 
 workflows:
