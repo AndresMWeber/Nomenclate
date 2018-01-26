@@ -162,6 +162,7 @@ jobs:
           command: |
             python -m virtualenv ~/nomenclate_venv/
             . ~/nomenclate_venv/bin/activate
+            echo $CIRCLE_TAG
             python setup.py verify
 
       - run:
