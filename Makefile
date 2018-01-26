@@ -22,11 +22,11 @@ install-deps3: make-venv3
 
 test-unit:
 	. ~/nvenv/bin/activate
-	~/nvenv/bin/python -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=$TEST_PATH/noselog$PYTHON_VERSION.xml --cover-package=nomenclate
+	~/nvenv/bin/python -m nose -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=$TEST_PATH/noselog$PYTHON_VERSION.xml --cover-package=nomenclate
 
 test-unit3:
 	. ~/nvenv/bin/activate
-	~/nvenv/bin/python3 -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=$TEST_PATH/noselog$PYTHON_VERSION.xml --cover-package=nomenclate
+	~/nvenv/bin/python3 -m nose -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=$TEST_PATH/noselog$PYTHON_VERSION.xml --cover-package=nomenclate
 
 upload-coverage:
 	. ~/nvenv/bin/activate
