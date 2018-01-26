@@ -28,8 +28,8 @@ jobs:
           key: v1-requirements-{{ checksum "requirements.txt" }}
 
       - run: |
-          echo export TEST_PATH=~/test-results >> "$BASH_ENV"
-          echo export PYTHON_VERSION=27 >> "$BASH_ENV"
+          PYTHON_VERSION=27
+          export PYTHON_VERSION >> "$BASH_ENV"
 
       - run:
           name: run tests
@@ -62,7 +62,7 @@ jobs:
 
       - run:
           name: install dependencies
-          command: make install-deps-py3
+          command: make install-deps3
 
       - save_cache:
           paths:
@@ -70,11 +70,11 @@ jobs:
           key: v1-requirements-{{ checksum "requirements.txt" }}
 
       - run: |
-          echo export TEST_PATH=~/test-results >> "$BASH_ENV"
-          echo export PYTHON_VERSION=35 >> "$BASH_ENV"
+          PYTHON_VERSION=35
+          export PYTHON_VERSION >> "$BASH_ENV"
       - run:
           name: run tests
-          command: make test-unit
+          command: make test-unit3
 
       - store_test_results:
           path: ~/test-results
@@ -99,7 +99,7 @@ jobs:
 
       - run:
           name: install dependencies
-          command: make install-deps-py3
+          command: make install-deps3
 
       - save_cache:
           paths:
@@ -107,11 +107,11 @@ jobs:
           key: v1-requirements-{{ checksum "requirements.txt" }}
 
       - run: |
-          echo export TEST_PATH=~/test-results >> "$BASH_ENV"
-          echo export PYTHON_VERSION=36 >> "$BASH_ENV"
+          PYTHON_VERSION=36
+          export PYTHON_VERSION >> "$BASH_ENV"
       - run:
           name: run tests
-          command: make test-unit
+          command: make test-unit3
 
       - store_test_results:
           path: ~/test-results
