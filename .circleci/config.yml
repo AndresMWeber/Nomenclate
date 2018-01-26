@@ -23,8 +23,8 @@ jobs:
       - run:
           name: install dependencies
           command: |
-              python -m virtualenv ~/nomeclate_venv
-              . ~/nomeclate_venv/bin/activate
+              python -m virtualenv ~/nomenclate_venv
+              . ~/nomenclate_venv/bin/activate
               pip install -r requirements.txt
               pip install coveralls nose
 
