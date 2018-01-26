@@ -140,11 +140,6 @@ jobs:
 
 workflows:
   version: 2
-  run_tests:
-    jobs:
-      - build
-      - test_35
-      - test_36
   build_and_deploy:
     jobs:
       - build:
