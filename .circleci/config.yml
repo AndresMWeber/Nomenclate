@@ -8,10 +8,10 @@ jobs:
 
     steps:
       - run:
-        name: install virtualenv and make report dir
-        command: |
-          pip install virtualenv
-          mkdir /root/test-reports
+          name: install virtualenv and make report dir
+          command: |
+              pip install virtualenv
+              mkdir /root/test-results
 
       - checkout
 
@@ -23,10 +23,10 @@ jobs:
       - run:
           name: install dependencies
           command: |
-            python -m virtualenv ~/nomeclate_nenv
-            . ~/nomeclate_nenv/bin/activate
-            pip install -r requirements.txt
-            pip install coveralls nose
+              python -m virtualenv ~/nomeclate_nenv
+              . ~/nomeclate_nenv/bin/activate
+              pip install -r requirements.txt
+              pip install coveralls nose
 
       - save_cache:
           paths:
@@ -37,15 +37,14 @@ jobs:
           name: run tests
           command: |
             . ~/nomenclate_venv/bin/activate
-            nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=/root/test-reports/noselog27.xml --cover-package=nomenclate
+            nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=/root/test-results/noselog27.xml --cover-package=nomenclate
 
       - store_test_results:
-          path: /root/test-reports
+          path: /root/test-results
 
       - run:
           name: upload coverage
-          command: |
-            coveralls
+          command: coveralls
 
   test_35:
     docker:
@@ -55,10 +54,10 @@ jobs:
 
     steps:
       - run:
-        name: install virtualenv and make report dir
-        command: |
-          pip install virtualenv
-          mkdir /root/test-reports
+          name: install virtualenv and make report dir
+          command: |
+              pip install virtualenv
+              mkdir /root/test-results
 
       - checkout
 
@@ -70,10 +69,10 @@ jobs:
       - run:
           name: install dependencies
           command: |
-            python -m virtualenv ~/nomenclate_venv
-            . ~/nomenclate_venv/bin/activate
-            pip install -r requirements.txt
-            pip install coveralls nose
+              python -m virtualenv ~/nomenclate_venv
+              . ~/nomenclate_venv/bin/activate
+              pip install -r requirements.txt
+              pip install coveralls nose
 
       - save_cache:
           paths:
@@ -83,11 +82,11 @@ jobs:
       - run:
           name: run tests
           command: |
-            . ~/nomenclate_venv/bin/activate
-            nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=/root/test-reports/noselog35.xml --cover-package=nomenclate
+              . ~/nomenclate_venv/bin/activate
+              nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=/root/test-results/noselog35.xml --cover-package=nomenclate
 
       - store_test_results:
-          path: /root/test-reports
+          path: /root/test-results
 
   test_36:
     docker:
@@ -97,10 +96,10 @@ jobs:
 
     steps:
       - run:
-        name: install virtualenv and make report dir
-        command: |
-          pip install virtualenv
-          mkdir /root/test-reports
+          name: install virtualenv and make report dir
+          command: |
+              pip install virtualenv
+              mkdir /root/test-results
 
       - checkout
 
@@ -126,10 +125,10 @@ jobs:
           name: run tests
           command: |
             . ~/nomenclate_venv/bin/activate
-            nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=/root/test-reports/noselog35.xml --cover-package=nomenclate
+            nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=/root/test-results/noselog35.xml --cover-package=nomenclate
 
       - store_test_results:
-          path: /root/test-reports
+          path: /root/test-results
 
   deploy:
     docker:
