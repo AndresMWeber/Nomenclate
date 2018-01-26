@@ -24,7 +24,7 @@ jobs:
 
       - save_cache:
           paths:
-            - ~/nomenclate_venv/
+            - ~/nvenv/
           key: v1-requirements-{{ checksum "requirements.txt" }}
 
       - run:
@@ -67,7 +67,7 @@ jobs:
 
       - save_cache:
           paths:
-            - ~/nomenclate_venv/
+            - ~/nvenv/
           key: v1-requirements-{{ checksum "requirements.txt" }}
 
       - run:
@@ -106,7 +106,7 @@ jobs:
 
       - save_cache:
           paths:
-            - ~/nomenclate_venv/
+            - ~/nvenv/
           key: v1-requirements-{{ checksum "requirements.txt" }}
 
       - run:
@@ -141,7 +141,7 @@ jobs:
 
       - save_cache:
           paths:
-            - ~/nomenclate_venv/
+            - ~/nvenv/
           key: v1-dependencies-{{ checksum "requirements.txt" }}
 
       - run: echo export GIT_TAG=git describe --tags >> "$BASH_ENV"
