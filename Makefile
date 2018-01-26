@@ -1,25 +1,22 @@
 update-and-push:
 	sh ./update-and-push.sh version
 
-nvenv: ~/nomenclate_venv/
-nvenv/bin/activate: nvenv/bin/activate
-nvenv/bin/pip: nvenv/bin/pip
-nvenv/bin/pip3: nvenv/bin/pip3
-nvenv/bin/py: nvenv/bin/python
-nvenv/bin/py3: nvenv/bin/python3
+nvenv: make-venv
+
+nvenv3: make-venv3
 
 make-venv:
 	pip install virtualenv
 	python -m virtualenv nvenv
 
-make-venv-py3:
+make-venv3:
 	python3 -m venv nvenv
 
 install-deps: make-venv
 	nvenv/bin/pip install -r requirements.txt
 	nvenv/bin/pip install coveralls nose
 
-install-deps-py3: make-venv-py3
+install-deps3: make-venv3
 	nvenv/bin/pip3 install -r requirements.txt
 	nvenv/bin/pip3 install coveralls nose
 
