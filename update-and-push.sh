@@ -13,6 +13,6 @@ if [ -n "${version+set}" ]; then
     git tag $version
     echo "Tagged."
 
-    git push origin master --tags
+    git push origin master --tags --force
     echo "Pushed!"
 fi

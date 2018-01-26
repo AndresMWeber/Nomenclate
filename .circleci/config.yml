@@ -144,7 +144,6 @@ jobs:
             - ~/nvenv/
           key: v1-dependencies-{{ checksum "requirements.txt" }}
 
-      - run: echo export GIT_TAG=git describe --tags >> "$BASH_ENV"
       - run:
           name: verify git tag vs. version
           command: |
