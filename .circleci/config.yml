@@ -193,15 +193,4 @@ workflows:
   version: 2
   test_python_versions:
     jobs:
-      - build:
-        filters:
-          tags:
-            only: /.*/
-      - deploy:
-        requires:
-          - build
-        filters:
-          tags:
-            only: /[0-9]+(\.[0-9]+)*/
-          branches:
-            ignore: /.*/
+      - build
