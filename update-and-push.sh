@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
-echo "Updating project to $version"
 
-sed -i "/^__version__/c\__version__ = '$version'" ./nomenclate/version.py
-echo "Updated version.py"
+if [ -n "${version+set}" ]; then
+    echo "Updating project to $version"
 
-git add -A
-git commit -m "versioned up to $version"
-echo "Committed."
+    sed -i "/^__version__/c\__version__ = '$version'" ./nomenclate/version.py
+    echo "Updated version.py"
 
-git tag $version
-echo "Tagged."
+    git add -A
+    git commit -m "versioned up to $version"
+    echo "Committed."
 
-git push origin master --tags
-echo "Pushed!"
+    git tag $version
+    echo "Tagged."
+
+    git push origin master --tags
+    echo "Pushed!"
+fi
