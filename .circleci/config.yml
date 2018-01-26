@@ -5,16 +5,16 @@ jobs:
       - image: circleci/python:2.7.13
     working_directory: ~/Nomenclate
     steps:
+      -run: pip install virtualenv
       - checkout
       - restore_cache:
           keys:
           - v1-dependencies-{{ checksum "requirements.txt" }}
           - v1-dependencies-
-
       - run:
           name: install dependencies
           command: |
-            python -m venv venv
+            python -m virtualenv venv
             . venv/bin/activate
             pip install -r requirements.txt
             pip install coveralls nose
@@ -35,11 +35,13 @@ jobs:
           command: |
             coveralls
 
+
   test_35:
     docker:
       - image: circleci/python:3.5
     working_directory: ~/Nomenclate
     steps:
+      -run: pip install virtualenv
       - checkout
       - restore_cache:
           keys:
@@ -59,15 +61,18 @@ jobs:
       - run:
           name: run tests
           command: |
+            . venv/bin/activate
             nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=/root/test-reports/noselog35.xml --cover-package=nomenclate
       - store_test_results:
           path: ~/test-reports
+
 
   test_36:
     docker:
       - image: circleci/python:3.6
     working_directory: ~/Nomenclate
     steps:
+      -run: pip install virtualenv
       - checkout
       - restore_cache:
           keys:
@@ -76,7 +81,7 @@ jobs:
       - run:
           name: install dependencies
           command: |
-            python -m venv venv
+            python -m virtualenv venv
             . venv/bin/activate
             pip install -r requirements.txt
             pip install coveralls nose
@@ -87,14 +92,18 @@ jobs:
       - run:
           name: run tests
           command: |
+            . venv/bin/activate
             nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=/root/test-reports/noselog35.xml --cover-package=nomenclate
       - store_test_results:
           path: ~/test-reports
+
+
   deploy:
     docker:
       - image: circleci/python:2.7.13
     working_directory: ~/Nomenclate
     steps:
+      -run: pip install virtualenv
       - checkout
       - restore_cache:
           keys:
@@ -103,7 +112,7 @@ jobs:
       - run:
           name: install dependencies
           command: |
-            python -m venv venv
+            python -m virtualenv venv
             . venv/bin/activate
             pip install -r requirements.txt
             pip install coveralls nose
@@ -114,7 +123,7 @@ jobs:
       - run:
           name: verify git tag vs. version
           command: |
-            python -m venv venv
+            python -m virtualenv venv
             . venv/bin/activate
             python setup.py verify
       - run:
