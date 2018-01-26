@@ -1,6 +1,6 @@
 version: 2
 jobs:
-  test_27:
+  build:
     docker:
       - image: circleci/python:2.7.13
     working_directory: ~/Nomenclate
@@ -142,18 +142,18 @@ workflows:
   version: 2
   run_tests:
     jobs:
-      - test_27
+      - build
       - test_35
       - test_36
   build_and_deploy:
     jobs:
-      - test_27:
+      - build:
           filters:
             tags:
               only: /.*/
       - deploy:
           requires:
-            - test_27
+            - build
           filters:
             tags:
               only: /[0-9]+(\.[0-9]+)*/
