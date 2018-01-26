@@ -189,8 +189,8 @@ workflows:
       - build
       - test_35
       - test_36
-      deploy:
-        requires:
-          - build
-          - test_35
-          - test_36
+      - deploy:
+          requires:
+            - build
+            - test_35
+            - test_36
