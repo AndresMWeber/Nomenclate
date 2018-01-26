@@ -101,7 +101,7 @@ jobs:
       - run:
           name: install virtualenv and make report dir
           command: |
-              pip install virtualenv
+              pip3 install virtualenv
               mkdir ~/test-results
 
       - checkout
@@ -114,10 +114,10 @@ jobs:
       - run:
           name: install dependencies
           command: |
-            python -m virtualenv ~/nomenclate_venv
+            python3 -m virtualenv ~/nomenclate_venv
             . ~/nomenclate_venv/bin/activate
-            pip install -r requirements.txt
-            pip install coveralls nose
+            pip3 install -r requirements.txt
+            pip3 install coveralls nose
 
       - save_cache:
           paths:
@@ -129,7 +129,6 @@ jobs:
           name: run tests
           command: |
             . ~/nomenclate_venv/bin/activate
-            echo $TEST_PATH
             nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=$TEST_PATH/noselog36.xml --cover-package=nomenclate
 
       - store_test_results:
