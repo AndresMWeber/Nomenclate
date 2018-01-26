@@ -15,36 +15,32 @@ jobs:
 
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "requirements.txt" }}
-          - v1-dependencies-
+          - v1-requirements-{{ checksum "requirements.txt" }}
+          - v1-requirements-
 
       - run:
           name: install dependencies
-          command: |
-              python -m virtualenv ~/nomenclate_venv
-              . ~/nomenclate_venv/bin/activate
-              pip install -r requirements.txt
-              pip install coveralls nose
+          command: make install-deps
 
       - save_cache:
           paths:
             - ~/nomenclate_venv/
-          key: v1-dependencies-{{ checksum "requirements.txt" }}
-      - run:  echo export TEST_PATH=~/test-results >> "$BASH_ENV"
+          key: v1-requirements-{{ checksum "requirements.txt" }}
+
+      - run: |
+          echo export TEST_PATH=~/test-results >> "$BASH_ENV"
+          echo export PYTHON_VERSION=27 >> "$BASH_ENV"
+
       - run:
           name: run tests
-          command: |
-            . ~/nomenclate_venv/bin/activate
-            nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=$TEST_PATH/noselog27.xml --cover-package=nomenclate
+          command: make test-unit
 
       - store_test_results:
           path: ~/test-results
 
       - run:
           name: upload coverage
-          command: |
-              . ~/nomenclate_venv/bin/activate
-              coveralls
+          command: make upload-coverage
 
   test_35:
     docker:
@@ -61,28 +57,24 @@ jobs:
 
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "requirements.txt" }}
-          - v1-dependencies-
+          - v1-requirements-{{ checksum "requirements.txt" }}
+          - v1-requirements-
 
       - run:
           name: install dependencies
-          command: |
-              python3 -m venv ~/nomenclate_venv
-              . ~/nomenclate_venv/bin/activate
-              pip3 install -r requirements.txt
-              pip3 install coveralls nose
+          command: make install-deps-py3
 
       - save_cache:
           paths:
             - ~/nomenclate_venv/
-          key: v1-dependencies-{{ checksum "requirements.txt" }}
+          key: v1-requirements-{{ checksum "requirements.txt" }}
 
-      - run:  echo export TEST_PATH=~/test-results >> "$BASH_ENV"
+      - run: |
+          echo export TEST_PATH=~/test-results >> "$BASH_ENV"
+          echo export PYTHON_VERSION=35 >> "$BASH_ENV"
       - run:
           name: run tests
-          command: |
-              . ~/nomenclate_venv/bin/activate
-              nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=$TEST_PATH/noselog35.xml --cover-package=nomenclate
+          command: make test-unit
 
       - store_test_results:
           path: ~/test-results
@@ -107,23 +99,19 @@ jobs:
 
       - run:
           name: install dependencies
-          command: |
-            python3 -m venv ~/nomenclate_venv
-            . ~/nomenclate_venv/bin/activate
-            pip3 install -r requirements.txt
-            pip3 install coveralls nose
+          command: make install-deps-py3
 
       - save_cache:
           paths:
             - ~/nomenclate_venv/
           key: v1-dependencies-{{ checksum "requirements.txt" }}
 
-      - run:  echo export TEST_PATH=~/test-results >> "$BASH_ENV"
+      - run: |
+          echo export TEST_PATH=~/test-results >> "$BASH_ENV"
+          echo export PYTHON_VERSION=36 >> "$BASH_ENV"
       - run:
           name: run tests
-          command: |
-            . ~/nomenclate_venv/bin/activate
-            nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=$TEST_PATH/noselog36.xml --cover-package=nomenclate
+          command: make test-unit
 
       - store_test_results:
           path: ~/test-results
@@ -135,8 +123,6 @@ jobs:
     working_directory: ~/Nomenclate
 
     steps:
-      - run: pip install virtualenv
-
       - checkout
 
       - restore_cache:
@@ -146,31 +132,21 @@ jobs:
 
       - run:
           name: install dependencies
-          command: |
-            python -m virtualenv ~/nomenclate_venv/
-            . ~/nomenclate_venv/bin/activate
-            pip install -r requirements.txt
-            pip install coveralls nose
+          command: make install-deps
 
       - save_cache:
           paths:
             - ~/nomenclate_venv/
           key: v1-dependencies-{{ checksum "requirements.txt" }}
 
+      - run: echo export GIT_TAG=git describe --tags >> "$BASH_ENV"
       - run:
           name: verify git tag vs. version
-          command: |
-            python -m virtualenv ~/nomenclate_venv/
-            . ~/nomenclate_venv/bin/activate
-            echo $CIRCLE_TAG
-            python setup.py verify
+          command: make verify-git-tag
 
       - run:
           name: init .pypirc
-          command: |
-            echo -e "[pypi]" >> ~/.pypirc
-            echo -e "username = $PYPI_USERNAME" >> ~/.pypirc
-            echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc
+          command: make init-pypirc
 
       - run:
           name: create packages
@@ -178,9 +154,8 @@ jobs:
 
       - run:
           name: upload to pypi
-          command: |
-            . ~/nomenclate_venv/bin/activate
-            twine upload dist/*
+          command: make upload-to-pypi
+
 
 
 workflows:
