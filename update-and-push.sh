@@ -11,5 +11,5 @@ echo "Committed."
 git tag $version
 echo "Tagged."
 
-git push --tags
+git push origin master --tags
 echo "Pushed!"

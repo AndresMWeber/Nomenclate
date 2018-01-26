@@ -1,41 +1,42 @@
 update-and-push:
 	sh ./update-and-push.sh version
 
+nvenv: ~/nomenclate_venv/
+nvenv/bin/activate: nvenv/bin/activate
+nvenv/bin/pip: nvenv/bin/pip
+nvenv/bin/pip3: nvenv/bin/pip3
+nvenv/bin/py: nvenv/bin/python
+nvenv/bin/py3: nvenv/bin/python3
+
 make-venv:
 	pip install virtualenv
-	python -m virtualenv ~/nomenclate_venv
-
+	python -m virtualenv nvenv
 
 make-venv-py3:
-	python3 -m venv ~/nomenclate_venv
+	python3 -m venv nvenv
 
+install-deps: make-venv
+	nvenv/bin/pip install -r requirements.txt
+	nvenv/bin/pip install coveralls nose
 
-activate-venv:
-	. ~/nomenclate_venv/bin/activate
+install-deps-py3: make-venv-py3
+	nvenv/bin/pip3 install -r requirements.txt
+	nvenv/bin/pip3 install coveralls nose
 
-
-install-deps: make-venv activate-venv
-	pip install -r requirements.txt
-	pip install coveralls nose
-
-
-install-deps-py3: make-venv-py3 activate-venv
-	pip3 install -r requirements.txt
-	pip3 install coveralls nose
-
-
-test-unit: activate-venv
+test-unit:
+	. nvenv/bin/activate
 	nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=$TEST_PATH/noselog$PYTHON_VERSION.xml --cover-package=nomenclate
 
-
-upload-coverage: activate-venv
+upload-coverage:
+	. nvenv/bin/activate
 	coveralls
 
 load-git-tag:
 	GIT_TAG=`git describe --tags`
 	echo export GIT_TAG >> "$BASH_ENV"
 
-verify-git-tag: make-venv activate-venv load-git-tag
+verify-git-tag: make-venv load-git-tag
+	. nvenv/bin/activate
 	echo $CIRCLE_TAG
 	echo $GIT_TAG
 	python setup.py verify
@@ -45,5 +46,6 @@ init-pypirc:
 	echo -e "username = $PYPI_USERNAME" >> ~/.pypirc
 	echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc
 
-upload-to-pypi: activate-venv
+upload-to-pypi:
+	. nvenv/bin/activate
 	twine upload dist/*
