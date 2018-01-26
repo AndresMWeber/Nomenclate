@@ -32,13 +32,12 @@ jobs:
           paths:
             - ~/nomenclate_venv/
           key: v1-dependencies-{{ checksum "requirements.txt" }}
-
+      - run:  TEST_PATH=~/test-results
       - run:
           name: run tests
           command: |
             . ~/nomenclate_venv/bin/activate
-            test_path = ~/test-results
-            nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=$test_path/noselog27.xml --cover-package=nomenclate
+            nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=$TEST_PATH/noselog27.xml --cover-package=nomenclate
 
       - store_test_results:
           path: ~/test-results
@@ -80,12 +79,12 @@ jobs:
             - ~/nomenclate_venv/
           key: v1-dependencies-{{ checksum "requirements.txt" }}
 
+      - run:  TEST_PATH=~/test-results
       - run:
           name: run tests
           command: |
               . ~/nomenclate_venv/bin/activate
-              test_path = ~/test-results
-              nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=$test_path/noselog35.xml --cover-package=nomenclate
+              nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=$TEST_PATH/noselog35.xml --cover-package=nomenclate
 
       - store_test_results:
           path: ~/test-results
@@ -123,12 +122,13 @@ jobs:
             - ~/nomenclate_venv/
           key: v1-dependencies-{{ checksum "requirements.txt" }}
 
+      - run:  TEST_PATH=~/test-results
       - run:
           name: run tests
           command: |
             . ~/nomenclate_venv/bin/activate
-            test_path = ~/test-results
-            nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=$test_path/noselog36.xml --cover-package=nomenclate
+            echo $TEST_PATH
+            nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=$TEST_PATH/noselog36.xml --cover-package=nomenclate
 
       - store_test_results:
           path: ~/test-results
