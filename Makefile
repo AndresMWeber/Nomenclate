@@ -35,8 +35,6 @@ upload-coverage:
 
 verify-git-tag: make-venv
 	. ~/nvenv/bin/activate
-	echo $(CIRCLE_TAG)
-	echo $(GIT_TAG)
 	~/nvenv/bin/python setup.py verify
 
 init-pypirc:
