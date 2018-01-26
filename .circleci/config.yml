@@ -36,7 +36,7 @@ jobs:
             nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=/root/test-reports/noselog27.xml --cover-package=nomenclate
 
       - store_test_results:
-          path: ~/test-reports
+          path: /root/test-reports
 
       - run:
           name: upload coverage
@@ -79,7 +79,7 @@ jobs:
             nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=/root/test-reports/noselog35.xml --cover-package=nomenclate
 
       - store_test_results:
-          path: ~/test-reports
+          path: /root/test-reports
 
   test_36:
     docker:
@@ -88,7 +88,9 @@ jobs:
     working_directory: ~/Nomenclate
 
     steps:
-      - run: pip install virtualenv
+      - run: |
+        pip install virtualenv
+        mkdir /root/test-reports
 
       - checkout
 
@@ -117,7 +119,7 @@ jobs:
             nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=/root/test-reports/noselog35.xml --cover-package=nomenclate
 
       - store_test_results:
-          path: ~/test-reports
+          path: /root/test-reports
 
   deploy:
     docker:
