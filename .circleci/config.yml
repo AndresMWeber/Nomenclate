@@ -158,7 +158,7 @@ jobs:
 
       - run:
           name: create packages
-          command: make package
+          command: make dist
 
       - run:
           name: upload to pypi

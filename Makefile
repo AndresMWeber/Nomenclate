@@ -37,6 +37,13 @@ verify-git-tag: make-venv
 	. ~/nvenv/bin/activate
 	~/nvenv/bin/python setup.py verify
 
+dist:
+	# create a source distribution
+	~/nvenv/bin/python setup.py sdist
+
+	# create a wheel
+	~/nvenv/bin/python setup.py bdist_wheel
+
 init-pypirc:
 	echo -e "[pypi]" >> ~/.pypirc
 	echo -e "username = $PYPI_USERNAME" >> ~/.pypirc
