@@ -191,6 +191,12 @@ jobs:
 
 workflows:
   version: 2
+  test_python_versions:
+    jobs:
+      - build
+      - test_35
+      - test_36
+
   build_and_deploy:
     jobs:
       - build:
@@ -203,5 +209,3 @@ workflows:
           filters:
             tags:
               only: /[0-9]+(\.[0-9]+)*/
-            branches:
-              ignore: /.*/
