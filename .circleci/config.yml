@@ -32,6 +32,7 @@ jobs:
       - run:
           name: run tests
           command: |
+            . ~/nomenclate_venv/bin/activate
             nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=/root/test-reports/noselog27.xml --cover-package=nomenclate
 
       - store_test_results:
