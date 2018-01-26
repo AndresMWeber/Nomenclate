@@ -44,11 +44,6 @@ dist:
 	# create a wheel
 	~/nvenv/bin/python setup.py bdist_wheel
 
-init-pypirc:
-	echo [pypi] >> ~/.pypirc
-	echo username = $(PYPI_USERNAME) >> ~/.pypirc
-	echo password = $(PYPI_PASSWORD) >> ~/.pypirc
-
 upload-to-pypi:
 	. ~/nvenv/bin/activate
 	~/nvenv/bin/twine upload dist/*

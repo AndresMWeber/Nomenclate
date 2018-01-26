@@ -154,9 +154,9 @@ jobs:
       - run:
           name: init .pypirc
           command: |
-              echo $PYPI_PASSWORD
-              echo $PYPI_USERNAME
-              make init-pypirc
+              echo [pypi] >> ~/.pypirc
+              echo username = $PYPI_USERNAME >> ~/.pypirc
+              echo password = $PYPI_PASSWORD >> ~/.pypirc
 
       - run:
           name: create packages
