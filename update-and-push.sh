@@ -10,7 +10,7 @@ if [ -n "${version+set}" ]; then
     git commit -m "versioned up to $version"
     echo "Committed."
 
-    git tag $version
+    git tag $version --force
     echo "Tagged."
 
     git push origin master --tags --force
