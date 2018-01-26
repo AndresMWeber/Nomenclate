@@ -141,7 +141,7 @@ workflows:
       - test_36
   build_and_deploy:
     jobs:
-      - build:
+      - test_27:
           filters:
             tags:
               only: /.*/
