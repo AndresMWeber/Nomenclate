@@ -45,9 +45,9 @@ dist:
 	~/nvenv/bin/python setup.py bdist_wheel
 
 init-pypirc:
-	echo -e "[pypi]" >> ~/.pypirc
-	echo -e "username = $PYPI_USERNAME" >> ~/.pypirc
-	echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc
+	echo pypi >> ~/.pypirc
+	echo username = $(PYPI_USERNAME) >> ~/.pypirc
+	echo password = $(PYPI_PASSWORD) >> ~/.pypirc
 
 upload-to-pypi:
 	. ~/nvenv/bin/activate
