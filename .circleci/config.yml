@@ -11,7 +11,7 @@ jobs:
           name: install virtualenv and make report dir
           command: |
               pip install virtualenv
-              mkdir /root/test-results
+              mkdir ~/test-results
 
       - checkout
 
@@ -37,10 +37,11 @@ jobs:
           name: run tests
           command: |
             . ~/nomenclate_venv/bin/activate
-            nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=/root/test-results/noselog27.xml --cover-package=nomenclate
+            test_path = ~/test-results
+            nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=$test_path/noselog27.xml --cover-package=nomenclate
 
       - store_test_results:
-          path: /root/test-results
+          path: ~/test-results
 
       - run:
           name: upload coverage
@@ -57,7 +58,7 @@ jobs:
           name: install virtualenv and make report dir
           command: |
               pip install virtualenv
-              mkdir /root/test-results
+              mkdir ~/test-results
 
       - checkout
 
@@ -83,10 +84,11 @@ jobs:
           name: run tests
           command: |
               . ~/nomenclate_venv/bin/activate
-              nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=/root/test-results/noselog35.xml --cover-package=nomenclate
+              test_path = ~/test-results
+              nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=$test_path/noselog35.xml --cover-package=nomenclate
 
       - store_test_results:
-          path: /root/test-results
+          path: ~/test-results
 
   test_36:
     docker:
@@ -99,7 +101,7 @@ jobs:
           name: install virtualenv and make report dir
           command: |
               pip install virtualenv
-              mkdir /root/test-results
+              mkdir ~/test-results
 
       - checkout
 
@@ -125,10 +127,11 @@ jobs:
           name: run tests
           command: |
             . ~/nomenclate_venv/bin/activate
-            nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=/root/test-results/noselog35.xml --cover-package=nomenclate
+            test_path = ~/test-results
+            nosetests -c tests/nose.cfg --with-coverage --nologcapture --with-xunit --xunit-file=$test_path/noselog36.xml --cover-package=nomenclate
 
       - store_test_results:
-          path: /root/test-results
+          path: ~/test-results
 
   deploy:
     docker:
