@@ -1,10 +1,9 @@
 import nomenclate as nm
 import nomenclate.core.tokens as tokens
-import nomenclate.core.errors as exceptions
-from . import basetest
+from tests.basetest import TestBase
 
 
-class TestTokenAttrBase(basetest.TestBase):
+class TestTokenAttrBase(TestBase):
     def setUp(self):
         super(TestTokenAttrBase, self).setUp()
         self.nomenclate = nm.Nom()

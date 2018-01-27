@@ -3,10 +3,10 @@ import nomenclate.core.renderers as renderers
 import nomenclate.core.processing as processing
 import nomenclate.core.tokens as tokens
 import nomenclate.core.nomenclature as nom
-from . import basetest
+from tests.basetest import TestBase
 
 
-class TestRenderersBase(basetest.TestBase):
+class TestRenderersBase(TestBase):
     def setUp(self):
         super(TestRenderersBase, self).setUp()
         self.nomenclative_valid = processing.Nomenclative('side_location_nameDecoratorVar_childtype_purpose_type')
@@ -145,7 +145,6 @@ class TestInputRendererRenderUniqueTokens(TestInputRendererBase):
         self.assertEquals({token: test_values[token]['label'] for token in list(test_values)},
                           {'var': 'a', 'type': 'LOC', 'side': 'l', 'version': 'v005'})
 
-
     def test_some_replaced(self):
         test_values = tokens.TokenAttrList(['var', 'type', 'side', 'version'])
         test_values['var'].set(0)
@@ -161,14 +160,13 @@ class TestInputRendererRenderUniqueTokens(TestInputRendererBase):
         self.assertEquals(test_values,
                           {'var': 'A', 'type': 'LOC', 'side': 'l', 'version': 'v005'})
 
-
     def test_default_renderer(self):
         test_values = tokens.TokenAttrList(['var',
-                                                   'type',
-                                                   'side',
-                                                   'version',
-                                                   'john',
-                                                   'purpose'])
+                                            'type',
+                                            'side',
+                                            'version',
+                                            'john',
+                                            'purpose'])
         test_values['var'].set(0)
         test_values['type'].set('locator')
         test_values['side'].set('left')
@@ -192,13 +190,11 @@ class TestInputRendererRenderUniqueTokens(TestInputRendererBase):
                            'john': 'six',
                            'purpose': 'hrc'})
 
-
     def test_empty(self):
         test_values = {}
         self.ir.render_unique_tokens(self.nom, test_values)
         self.assertEquals(test_values,
                           {})
-
 
     def test_none_replaced(self):
         test_values = tokens.TokenAttrList(['name', 'blah', 'not_me', 'la'])

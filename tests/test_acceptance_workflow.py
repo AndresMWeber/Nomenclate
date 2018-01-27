@@ -1,8 +1,8 @@
 import nomenclate.core.nomenclature as nom
-from . import basetest
+from tests.basetest import TestBase
 
 
-class TestCreation(basetest.TestBase):
+class TestCreation(TestBase):
     def test_initialize_with_dict_only_one(self):
         n = nom.Nomenclate({'name': 'test'})
         n.new = 'default'
@@ -58,7 +58,6 @@ class TestCreation(basetest.TestBase):
         n.side = 'left'
         n.type = 'locator'
         n.location = 'rear'
-        n.LOG.info(str(n.state))
         n.var.case = 'upper'
         self.assertEquals(n.get(), 'l_rr_testJA_joint_offset_LOC')
         self.fixtures.append(n)
@@ -112,11 +111,11 @@ class TestCreation(basetest.TestBase):
         self.fixtures.extend([n_secondary, n_initial])
 
 
-class TestAcceptanceMaya(basetest.TestBase):
+class TestAcceptanceMaya(TestBase):
     pass
 
 
-class TestAcceptanceNamingFiletypes(basetest.TestBase):
+class TestAcceptanceNamingFiletypes(TestBase):
     def test_saving_maya_file(self):
         n = nom.Nomenclate(name='SH010', var=0, ext='mb', initials='aw', discipline='animation', version=5)
         n.var.case = 'upper'
@@ -155,7 +154,7 @@ class TestAcceptanceNamingFiletypes(basetest.TestBase):
         self.fixtures.append(n)
 
 
-class TestAcceptanceParsingExisting(basetest.TestBase):
+class TestAcceptanceParsingExisting(TestBase):
     def test_normal_maya_node(self):
         pass
 

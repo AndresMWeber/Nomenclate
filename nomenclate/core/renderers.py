@@ -10,12 +10,10 @@ from .tools import (
     flatten
 )
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
 @add_metaclass(rendering.InputRenderer)
 class RenderBase(object):
-    LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
     token = 'default'
 
     @classmethod
@@ -40,7 +38,6 @@ class RenderBase(object):
             if use_value_in_query_path:
                 config_query_path += [value]
 
-        cls.LOG.info('Attempting to default render %r with value %s and kwargs %s' % (token, value, filter_kwargs))
         config_matches = cls.get_config_match(value, token, config_query_path, return_type, nomenclate_object,
                                               **filter_kwargs)
 
@@ -60,12 +57,10 @@ class RenderBase(object):
         :param token_attr: nomenclate.core.tokens.TokenAttr, the processed TokenAttr to be used to query settings.
         :return: str, final augmented string
         """
-        cls.LOG.info('Processing augmentations for token attr %r and applying to value %r' % (token_attr, value))
         value = getattr(str, token_attr.case, str)(value)
         value = '{PREFIX}{VALUE}{SUFFIX}'.format(PREFIX=token_attr.prefix,
                                                  VALUE=value,
                                                  SUFFIX=token_attr.suffix)
-        cls.LOG.info('Processed as %r' % value)
         return value
 
     @classmethod
@@ -86,11 +81,9 @@ class RenderBase(object):
         :param nomenclate_object: nomenclate.core.nomenclature.Nomenclate, instance to query against (has config data)
         :return: object, whatever return type was specified
         """
-        cls.LOG.info('finding config matches for path %s' % entry_path)
         try:
             return nomenclate_object.cfg.get(entry_path, return_type=return_type)
         except exceptions.ResourceNotFoundError:
-            cls.LOG.warning('No entry for token %s - defaulting to current: %s' % (token, query_string))
             return query_string
 
     @classmethod
@@ -105,7 +98,6 @@ class RenderBase(object):
         :param query_string: str, string we are looking for if the input is a dictionary
         :return: list, flattened list.
         """
-        cls.LOG.info('Flattening input %s for matches with %s' % (options, query_string))
         if not isinstance(options, (dict, list)):
             options = [options]
         else:
@@ -113,7 +105,6 @@ class RenderBase(object):
                 options = list(gen_dict_key_matches(query_string, options))
 
             options = list(flatten(options))
-        cls.LOG.info('Flattened to %s' % options)
         return options
 
     @classmethod
@@ -129,7 +120,6 @@ class RenderBase(object):
         """
         options = list(options)
         criteria_matches = list(options)
-        cls.LOG.info('Processing criteria kwargs %s' % filter_kwargs)
         for criteria_function_name, criteria in iteritems(filter_kwargs):
             if not criteria_function_name and not criteria:
                 continue
@@ -137,14 +127,12 @@ class RenderBase(object):
 
             try:
                 builtin_func = getattr(moves.builtins, criteria_function_name)
-                cls.LOG.info('Filtering options: %s with criteria: %s' % (options, criteria_function_name))
                 criteria_matches = [option for option in options if builtin_func(option) == criteria]
             except AttributeError:
-                cls.LOG.warning('Criteria function %r is invalid...skipping' % criteria_function_name)
+                pass
 
             if not criteria_matches:
                 criteria_matches = [min(options, key=lambda x: abs(builtin_func(x) - criteria))]
-        cls.LOG.info('Found criteria matches: %s ...returning first' % criteria_matches)
         return criteria_matches[0] if criteria_matches else options[0]
 
 

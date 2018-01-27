@@ -4,8 +4,6 @@ from . import errors as exceptions
 import nomenclate.settings as settings
 from . import tools
 
-MODULE_LEVEL_OVERRIDE = settings.QUIET
-
 
 class TokenAttr(tools.Serializable):
     """ A TokenAttr represents a string token that we want to replace in a given nomenclate.core.formatter.FormatString
@@ -21,8 +19,6 @@ class TokenAttr(tools.Serializable):
 
     """
     SERIALIZE_ATTRS = ['token', 'label', 'case', 'prefix', 'suffix']
-
-    LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LEVEL_OVERRIDE)
 
     def __init__(self, token='', label=None, case='', prefix='', suffix=''):
         """
@@ -68,12 +64,10 @@ class TokenAttr(tools.Serializable):
     @label.setter
     def label(self, label):
         self.validate_entries(label)
-        self.LOG.debug('Setting token attr %s -> %r' % (str(self), label))
         try:
             self.raw_string = int(label)
         except ValueError:
             self.raw_string = label
-        self.LOG.debug('label has been set for %r and the raw_string is %s' % (self, self.raw_string))
 
     def set(self, value):
         self.label = value
@@ -125,8 +119,6 @@ class TokenAttr(tools.Serializable):
 
 
 class TokenAttrList(tools.Serializable):
-    LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LEVEL_OVERRIDE)
-
     def __init__(self, token_attrs):
         self.token_attrs = [TokenAttr(token_attr, '') for token_attr in token_attrs]
 
@@ -148,7 +140,6 @@ class TokenAttrList(tools.Serializable):
         else:
             remove_attrs = [token_attr for token_attr in self.token_attrs if token_attr.token in input_token_attrs]
 
-        self.LOG.info('Starting purge for target tokens %s' % remove_attrs)
         self.token_attrs = [token_attr for token_attr in self.token_attrs if token_attr not in remove_attrs]
 
     @classmethod
@@ -167,20 +158,15 @@ class TokenAttrList(tools.Serializable):
         return any([token_attr for token_attr in self.token_attrs if token_attr.token == token])
 
     def merge_json(self, json_blob):
-        self.LOG.info('Merging token attributes %s against current tokens: %s' % (json_blob, self.token_attrs))
         for token_name, token_attr_blob in iteritems(json_blob):
             token_name = token_name.lower()
             try:
                 if not isinstance(token_attr_blob, dict):
-                    self.LOG.info('Detected single string input for token %s, treating as label input.' % token_name)
                     token_attr_blob = {'token': token_name, 'label': token_attr_blob}
 
-                self.LOG.info('Attempting to merge TokenAttr: %s with blob %s' % (token_name, token_attr_blob))
                 getattr(self, token_name).merge_serialization(token_attr_blob)
             except (AttributeError, IndexError):
-                self.LOG.info('Token %s did not exist, added and set with input %s' % (token_name, token_attr_blob))
                 self.merge_token_attr(TokenAttr.from_json(token_attr_blob))
-        self.LOG.info('Finished setting attributes on TokenDict %s' % self.token_attrs)
 
     def to_json(self):
         return {token_attr.token: token_attr.to_json() for token_attr in self.token_attrs}

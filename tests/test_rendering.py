@@ -3,10 +3,10 @@ import nomenclate.core.rendering as rendering
 import nomenclate.core.processing as processing
 import nomenclate.core.errors as exceptions
 import nomenclate.core.tokens as tokens
-from . import basetest
+from tests.basetest import TestBase
 
 
-class TestNomenclativeBase(basetest.TestBase):
+class TestNomenclativeBase(TestBase):
     def setUp(self):
         super(TestNomenclativeBase, self).setUp()
         self.nomenclative_valid = processing.Nomenclative('side_location_nameDecoratorVar_childtype_purpose_type')

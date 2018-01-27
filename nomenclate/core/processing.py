@@ -3,11 +3,7 @@ from . import errors as exceptions
 import nomenclate.settings as settings
 
 
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
-
-
 class TokenMatch(object):
-    LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
 
     def __init__(self, regex_match, substitution, group_name='token'):
         self.match = regex_match.group(group_name)
@@ -23,7 +19,6 @@ class TokenMatch(object):
         self._validate_adjuster(other)
         adjustment = other.span - len(other.sub) if adjust_by_sub_delta else other.span
         if adjustment:
-            self.LOG.debug('Adjusting %s by %d' % (self, adjustment))
             self._adjust_order(adjustment)
 
     def _validate_adjuster(self, other):
@@ -39,7 +34,6 @@ class TokenMatch(object):
     def _adjust_order(self, adjust_value):
         self.start -= adjust_value
         self.end -= adjust_value
-        self.LOG.debug('New positions are (%d-%d)' % (self.start, self.end))
 
     def overlaps(self, other):
         if self in other or other in self:
@@ -83,7 +77,6 @@ class TokenMatch(object):
 
 
 class Nomenclative(object):
-    LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
 
     def __init__(self, input_str):
         self.raw_formatted_string = input_str
@@ -97,14 +90,8 @@ class Nomenclative(object):
                 continue
 
             if token_match.match == build_str[token_match.start:token_match.end]:
-                self.LOG.debug('Processing: %s - %s - %s\n\t%s' % (token_match.match,
-                                                                   token_match.sub,
-                                                                   token_match.sub,
-                                                                   build_str))
-
                 build_str = build_str[:token_match.start] + token_match.sub + build_str[token_match.end:]
                 self.adjust_other_matches(token_match)
-                self.LOG.debug('Processed as:\n\t%s' % build_str)
         return build_str
 
     def adjust_other_matches(self, adjuster_match):
@@ -121,22 +108,17 @@ class Nomenclative(object):
         try:
             self.validate_match(token_match)
             self.token_matches.append(token_match)
-            self.LOG.info('Added match %s' % self.token_matches[-1])
         except (IndexError, exceptions.OverlapError):
-            msg = 'Not adding match %s as it conflicts with a preexisting match' % token_match
-            self.LOG.warning(msg)
-            raise exceptions.OverlapError(msg)
+            raise exceptions.OverlapError('Not adding match %s as it conflicts with a preexisting match' % token_match)
 
     def validate_match(self, token_match_candidate):
         for token_match in self.token_matches:
             try:
                 token_match.overlaps(token_match_candidate)
             except exceptions.OverlapError:
-                msg = "Cannot add match %s due to overlap with %s" % (token_match, token_match_candidate)
-                self.LOG.error(msg)
-                raise exceptions.OverlapError(msg)
+                raise exceptions.OverlapError(
+                    "Cannot add match %s due to overlap with %s" % (token_match, token_match_candidate))
 
     def __str__(self):
         matches = ' ' if not self.token_matches else ' '.join(map(str, self.token_matches))
         return 'format: %s: %s' % (self.raw_formatted_string, matches)
-

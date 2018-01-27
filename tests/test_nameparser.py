@@ -2,11 +2,11 @@ import unittest
 import itertools
 import datetime
 import nomenclate.core.nameparser as np
-from . import basetest
+from tests.basetest import TestBase
 
 
 @unittest.skip
-class TestNameparser(basetest.TestBase):
+class TestNameparser(TestBase):
     def setUp(self):
         super(TestNameparser, self).setUp()
         self.fixture = np.NameParser()

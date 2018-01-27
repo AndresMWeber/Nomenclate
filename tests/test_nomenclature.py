@@ -2,10 +2,10 @@ from six import iteritems
 import unittest
 import nomenclate as nm
 import nomenclate.core.configurator as config
-from . import basetest
+from tests.basetest import TestBase
 
 
-class TestNomenclateBase(basetest.TestBase):
+class TestNomenclateBase(TestBase):
     def setUp(self):
         super(TestNomenclateBase, self).setUp()
         self.cfg = config.ConfigParse()
@@ -69,13 +69,6 @@ class TestNomenclateState(TestNomenclateBase):
                            'decorator': '', 'childtype': ''})
         self.nom.state = previous_state
 
-    @unittest.skip
-    def test_state_purge(self):
-        previous_state = self.nom.state
-        self.nom.token_dict.purge_name_attrs()
-        self.assertEquals(self.nom.state, {})
-        self.nom.state = previous_state
-
     def test_state_valid(self):
         self.assertEquals({token: token_attr_dict['label'] for token, token_attr_dict in iteritems(self.nom.state)},
                           {'childtype': '',
@@ -111,7 +104,6 @@ class TestNomenclateInitializeFormatOptions(TestNomenclateBase):
 
     def test_switch_multiple_naming_formats_from_config(self):
         self.nom.initialize_format_options(['naming_formats', 'riggers', 'lee_wolland'])
-        self.nom.LOG.info(str(self.nom.format_order))
         self.assertTrue(self.checkEqual(self.nom.format_order,
                                         ['type', 'childtype', 'space', 'purpose', 'name', 'side']))
 
@@ -142,76 +134,48 @@ class TestNomenclateSwapFormats(TestNomenclateBase):
 
     def test_switch_multiple_naming_formats_use_initialize_format_options(self):
         self.nom.initialize_format_options(self.lee_path)
-
-        self.nom.LOG.info('(lee) New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
         self.set_values()
         self.assertEquals(self.nom.get(), 'LOC_hchy_test_l')
-
         self.nom.initialize_format_options(self.raf_path)
-
         self.set_raf_values()
         self.assertEquals(self.nom.get(), 'test_TLR_hchy')
-        self.nom.LOG.info('%r' % self.nom.get())
-        self.nom.LOG.info('(raf) New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
-
         self.nom.initialize_format_options(self.test_format)
 
     def test_switch_multiple_naming_formats_set_format(self):
         self.nom.format = self.lee_path
-        self.nom.LOG.info('(lee) New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
-
         self.set_values()
         self.assertEquals(self.nom.get(), 'LOC_hchy_test_l')
 
         self.nom.format = self.raf_path
-        print('\nnom state 3 is %s \n' % self.nom.state)
-        self.nom.LOG.info('(raf) New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
-        print('\nnom state 3 is %s \n' % self.nom.state)
-        print('\nheight 1 is %r \n' % self.nom.height)
         self.set_raf_values()
         self.assertEquals(self.nom.get(), 'test_TLR_hchy')
-        self.nom.LOG.info('%r' % self.nom.get())
-
         self.nom.initialize_format_options(self.test_format)
 
     def test_switch_single_format(self):
         self.nom.format = self.lee_path
-        self.nom.LOG.info('New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
-
         self.set_values()
         self.assertEquals(self.nom.get(), 'LOC_hchy_test_l')
-
         self.nom.format = self.raf_path
-        self.nom.LOG.info('(raf) New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
-
         self.set_raf_values()
         self.assertEquals(self.nom.get(), 'test_TLR_hchy')
 
     def test_switch_single_char_format(self):
         self.nom.format = 'a'
-        self.nom.LOG.info('New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
-
         self.nom.a = 'john'
         self.assertEquals(self.nom.get(), 'john')
 
     def test_switch_double_format(self):
         self.nom.format = 'af'
-        self.nom.LOG.info('New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
-
         self.nom.af = 'john'
         self.assertEquals(self.nom.get(), 'john')
 
     def test_switch_triple_format(self):
         self.nom.format = 'asd'
-        self.nom.LOG.info('New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
-
         self.nom.asd = 'john'
         self.assertEquals(self.nom.get(), 'john')
 
     def test_switch_single_format_nonsense(self):
         self.nom.format = 'asdf'
-        self.nom.LOG.info('New Format order and format %s: %s' % (self.nom.format, self.nom.format_order))
-
         self.nom.asdf = 'john'
         self.assertEquals(self.nom.get(), 'john')
 

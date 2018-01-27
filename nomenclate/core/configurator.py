@@ -3,14 +3,10 @@ from collections import OrderedDict
 from six import add_metaclass
 import yaml
 import os
-
-import nomenclate.settings as settings
 from . import errors as errors
 from .tools import (
     gen_dict_key_matches
 )
-
-MODULE_LOGGER_LEVEL_OVERRIDE = settings.QUIET
 
 
 class ConfigEntryFormatter(object):
@@ -53,9 +49,9 @@ class ConfigEntryFormatter(object):
         try:
             return FormatterRegistry.get_by_take_and_return_type(query_result_type, return_type)
         except (IndexError, AttributeError, KeyError):
-            msg = 'Could not find function in conversion list for input type %s and return type %s' % \
-                  (query_result_type, return_type)
-            raise IndexError(msg)
+            raise IndexError(
+                'Could not find function in conversion list for input type %s and return type %s' % (
+                query_result_type, return_type))
 
     @staticmethod
     def add_preceding_dict(config_entry, query_path, preceding_depth):
@@ -80,7 +76,6 @@ class ConfigEntryFormatter(object):
 
 
 class ConfigParse(object):
-    LOG = settings.get_module_logger(__name__, module_override_level=MODULE_LOGGER_LEVEL_OVERRIDE)
     config_entry_handler = ConfigEntryFormatter()
 
     def __init__(self, config_filepath='env.yml'):
@@ -105,16 +100,13 @@ class ConfigParse(object):
 
         for search_path in search_paths:
             try:
-                self.LOG.info('Checking for config file at path %s' % search_path)
                 self.validate_config_file(search_path)
-                self.LOG.info('File %s is valid.  Returning.' % config_filepath)
                 return search_path
             except (IOError, OSError):
                 pass
 
-        msg = 'No config file found in current working directory or nomenclate/core and %s is not a valid YAML file'
-        self.LOG.warning(msg)
-        raise errors.SourceError(msg)
+        raise errors.SourceError(
+            'No config file found in current working directory or nomenclate/core and %s is not a valid YAML file')
 
     def rebuild_config_cache(self, config_filepath):
         """ Loads from file and caches all data from the config file in the form of an OrderedDict to self.data
@@ -151,25 +143,18 @@ class ConfigParse(object):
         function_type_lookup = {str: self._get_path_entry_from_string,
                                 list: self._get_path_entry_from_list}
 
-        self.LOG.info(
-            'config.get() - Trying to find %s in config and return_type %s' % (repr(query_path), return_type))
-
         if query_path is None:
             return self._default_config(return_type)
 
         try:
             config_entry = function_type_lookup.get(type(query_path), str)(query_path)
-            self.LOG.info('Retrieved config entry:\n%s' % str(config_entry))
             query_result = self.config_entry_handler.format_query_result(config_entry,
                                                                          query_path,
                                                                          return_type=return_type,
                                                                          preceding_depth=preceding_depth)
-            self.LOG.info('Converted config entry:\n%s' % str(query_result))
 
             return query_result
         except IndexError:
-            self.LOG.info('IndexError was found...defaulting to return: %s = %r' %
-                          (return_type, return_type()))
             return return_type()
 
     def _get_path_entry_from_string(self, query_string, first_found=True, full_path=False):
@@ -197,11 +182,8 @@ class ConfigParse(object):
         """
         cur_data = self.config_file_contents
         try:
-            self.LOG.info('starting path search from list...' % query_path)
             for child in query_path:
-                self.LOG.debug(' -> %s' % child)
                 cur_data = cur_data[child]
-            self.LOG.debug('Found data %s' % cur_data)
             return cur_data
         except (AttributeError, KeyError):
             raise errors.ResourceNotFoundError('Could not find query path %s in the config file contents' %
@@ -213,7 +195,6 @@ class ConfigParse(object):
         :param return_type: type, type of object requested
         :return: object, instance of return_type
         """
-        self.LOG.debug('Returning default for type %s -> %s' % (return_type, repr(return_type())))
         if return_type == list:
             return [k for k in self.config_file_contents]
         return return_type()
