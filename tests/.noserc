@@ -5,3 +5,4 @@ cover-package=nomenclate
 cover-erase=1
 verbosity=1
 cover-html=1
+nologcapture=1
