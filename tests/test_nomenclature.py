@@ -199,9 +199,7 @@ class TestNomenclateSwapFormats(TestNomenclateBase):
         self.nom.purpose = 'hierarchy'
 
     def set_raf_values(self):
-        print('\n%r\n' % self.nom.height)
         self.nom.height = 'top'
-        print('\n%r\n' % self.nom.height)
         self.nom.height.case = 'upper'
         self.nom.depth = 'rear'
         self.nom.depth.case = 'upper'
@@ -264,7 +262,6 @@ class TestNomenclateEq(TestNomenclateBase):
         other.name = 'ronald'
         other.var = 'C'
         other.type = 'joint'
-        print(other, '\n', self.nom)
         self.assertFalse(other == self.nom)
 
 

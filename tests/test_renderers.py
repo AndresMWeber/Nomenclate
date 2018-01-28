@@ -51,7 +51,6 @@ class TestInputRendererProcessTokenAugmentations(TestInputRendererBase):
 
     def test_from_nomenclate_lower(self):
         self.set_values()
-        print('\n%s\n' % self.nom.state, self.nom.decorator)
         self.nom.side.case = 'lower'
         self.assertEquals(self.nom.get(), 'l_testObjectA_LOC')
 

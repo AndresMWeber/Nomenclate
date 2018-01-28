@@ -122,7 +122,6 @@ class TestNameparser(TestBase):
                             self.assertIsNone(side_results)
                         else:
                             for element in [side, permutation]:
-                                print(element, side_results)
                                 self.assertIn(element, side_results)
 
     def test_get_date_specific(self):
@@ -169,7 +168,6 @@ class TestNameparser(TestBase):
                      ('camelCase', True), ('CamelCase', True), ('CAMELCASE', False), ('camelcase', False),
                      ('Camelcase', False), ('Case', False), ('camelCamelCase', True)]:
             test, val = test
-            print (test, val)
             self.assertEquals(self.fixture.is_valid_camel(test), val)
 
     def test_get_casing_permutations(self):
@@ -261,7 +259,6 @@ class TestNameparser(TestBase):
                     match = test_result.get('compound_matches')[0].get('match')
                 except (IndexError, TypeError):
                     pass
-                print (test_result)
                 self.assertEquals((version, match), value)
             else:
                 self.assertEquals(test_result, value)

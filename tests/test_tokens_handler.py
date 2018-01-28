@@ -13,7 +13,6 @@ class TestTokenAttrBase(TestBase):
 
 class TestGetTokenAttr(TestTokenAttrBase):
     def test_get_existing(self):
-        print(self.token_attr_dict_handler)
         self.assertEquals(self.token_attr_dict_handler.name, tokens.TokenAttr('name', ''))
 
     def test_get_not_existing(self):
