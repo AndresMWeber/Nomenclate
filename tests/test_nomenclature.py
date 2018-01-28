@@ -15,7 +15,7 @@ class TestNomenclateBase(TestBase):
         self.nom = nm.Nom()
 
         # Inject our fake config
-        self.nom.cfg = self.cfg
+        self.nom.CFG = self.cfg
         self.nom.side.set('left')
         self.nom.name.set('testObject')
         self.nom.type.set('locator')
@@ -210,14 +210,9 @@ class TestNomenclateSwapFormats(TestNomenclateBase):
 
 class TestNomenclateInitializeOptions(TestNomenclateBase):
     def test_options_stored(self):
-        self.nom.CONFIG_OPTIONS = None
-        self.nom.initialize_options()
-        self.assertIsNotNone(self.nom.CONFIG_OPTIONS)
-
-
-class TestNomenclateInitializeUiOptions(TestNomenclateBase):
-    def test_pass_through(self):
-        self.nom.initialize_ui_options()
+        nm.Nom.CONFIG_OPTIONS = None
+        nm.Nom.initialize_options()
+        self.assertIsNotNone(nm.Nom.CONFIG_OPTIONS)
 
 
 class TestNomenclateMergeDict(TestNomenclateBase):

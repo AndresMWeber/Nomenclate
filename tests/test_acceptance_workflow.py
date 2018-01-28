@@ -59,8 +59,8 @@ class TestCreation(TestBase):
         n.type = 'locator'
         n.location = 'rear'
         n.var.case = 'upper'
-        self.assertEquals(n.get(), 'l_rr_testJA_joint_offset_LOC')
         self.fixtures.append(n)
+        self.assertEquals(n.get(), 'l_rr_testJA_joint_offset_LOC')
 
     def test_initialize_from_nomenclate_object(self):
         n_initial = nom.Nomenclate({'name': 'test', 'type': 'locator', 'var': 0, 'side': 'left', })
@@ -84,6 +84,9 @@ class TestCreation(TestBase):
         n_initial.var.case = 'upper'
         n_secondary = nom.Nomenclate(n_initial, **{'name': 'blah', 'location': 'rear'})
         n_secondary.var.case = 'upper'
+        n_initial.type.len = 3
+        n_secondary.type.len = 3
+        print n_secondary.CFG
         self.assertEquals(n_secondary.get(), 'l_rr_blahA_LOC')
         self.fixtures.extend([n_secondary, n_initial])
 
@@ -120,6 +123,7 @@ class TestAcceptanceNamingFiletypes(TestBase):
         n = nom.Nomenclate(name='SH010', var=0, ext='mb', initials='aw', discipline='animation', version=5)
         n.var.case = 'upper'
         n.version.prefix = 'v'
+        n.discipline.length = 4
         n.initialize_format_options('working_file')
         self.assertEquals(n.format, 'name_discipline_lodDecoratorVar_version_initials.ext')
         self.assertEquals(n.get(), 'SH010_ANIM_A_v005_aw.mb')
@@ -130,6 +134,7 @@ class TestAcceptanceNamingFiletypes(TestBase):
         n.initialize_format_options('techops_file')
         n.version.prefix = 'v'
         n.version1.prefix = 'v'
+        print('before')
         n.merge_dict({'shot': 'LSC_sh01',
                       'version': 8,
                       'name': 'Nesquick',
@@ -146,6 +151,7 @@ class TestAcceptanceNamingFiletypes(TestBase):
                       'version_padding': 1,
                       'version1_format': 'v#',
                       'version1_padding': 1})
+        print('after')
         n.var.case = 'upper'
         self.assertEquals('LSC_sh01_v8_Nesquick_SFX_MS_WIP_v3_2005-09-21-540p_Quicktime.mov', n.get())
         n.date_format = '%m%d%y'

@@ -27,7 +27,10 @@ class Nomenclate(Serializable):
     OPTIONS_PATH = ['options']
     SIDE_PATH = OPTIONS_PATH + ['side']
 
-    def __init__(self, input_dict=None, format_string='', config_filepath='env.yml', *args, **kwargs):
+    CONFIG_OPTIONS = dict()
+    CFG = config.ConfigParse(config_filepath=settings.DEFAULT_YML_CONFIG_FILE)
+
+    def __init__(self, input_dict=None, format_string='', *args, **kwargs):
         """
 
         :param input_dict: dict, In case the user just passes a dictionary as the first arg in the init, we will merge it.
@@ -36,15 +39,10 @@ class Nomenclate(Serializable):
         :param args: dict, any amount of dictionaries desired as input
         :param kwargs: str, kwargs to pass to the nomenclate tokens
         """
-        input_dict = dict() if input_dict is None else input_dict
-        self.cfg = config.ConfigParse(config_filepath=config_filepath)
         self.format_string_object = formatter.FormatString(format_string=format_string)
-        self.CONFIG_OPTIONS = dict()
-
-        self.reset_from_config(format_target=format_string)
+        self.initialize_format_options(format_target=format_string)
         self.token_dict = tokens.TokenAttrList(self.format_string_object.format_order)
-
-        self.merge_dict(input_dict, *args, **kwargs)
+        self.merge_dict(input_dict or dict(), *args, **kwargs)
 
     @property
     def empty_tokens(self):
@@ -76,37 +74,36 @@ class Nomenclate(Serializable):
         return str(self.format_string_object)
 
     @format.setter
-    def format(self, format_target, remove_obsolete_tokens=True):
+    def format(self, format_target, remove_obsolete=True):
         """ Changes the internal self.format_string_object format target based on input.  Also checks to see if input
             is an entry in the config file in case we want to switch to a preexisting config format.
 
         :param format_target: str, input for the new format type.  All strings will be the new tokens.
-        :param remove_obsolete_tokens: bool, dictates whether we are removing the obselete tokens or not that
+        :param remove_obsolete: bool, dictates whether we are removing the obselete tokens or not that
                previously existed
         :return: None
         """
         original_format, original_format_order = (self.format, self.format_order)
 
         try:
-            format_target = self.cfg.get(format_target, return_type=str, throw_null_return_error=True)
+            format_target = self.CFG.get(format_target, return_type=str, throw_null_return_error=True)
         except (errors.ResourceNotFoundError, KeyError):
             pass
 
         self.format_string_object.swap_format(format_target)
-        self._update_tokens_from_swap_format(original_format,
-                                             original_format_order,
-                                             remove_obsolete_tokens=remove_obsolete_tokens)
+        self._update_tokens_from_swap_format(original_format, original_format_order, remove_obsolete=remove_obsolete)
 
-    def reset_from_config(self, format_target=''):
-        self.initialize_config_settings()
-        self.initialize_format_options(format_target=format_target)
-        self.initialize_options()
-        self.initialize_ui_options()
+    @classmethod
+    def reset_from_config(cls):
+        cls.initialize_overall_config_settings()
+        cls.initialize_options()
 
-    def initialize_config_settings(self, input_dict=None):
-        input_dict = self.cfg.get(self.CONFIG_PATH, return_type=dict) if input_dict is None else input_dict
+    @classmethod
+    def initialize_overall_config_settings(cls, input_dict=None):
+        input_dict = input_dict or cls.CFG.get(cls.CONFIG_PATH, return_type=dict)
         for setting, value in iteritems(input_dict):
-            setattr(self, setting, value)
+            setattr(cls, setting, value)
+
     def initialize_format_options(self, format_target=''):
         """ First attempts to use format_target as a config path or gets the default format
             if it's invalid or is empty.
@@ -122,20 +119,14 @@ class Nomenclate(Serializable):
             else:
                 raise errors.FormatError
         except errors.FormatError:
-            format_target = self.cfg.get(self.DEFAULT_FORMAT_PATH, return_type=str)
-            self.format_string_object.swap_format(format_target)
+            self.format_string_object.swap_format(self.CFG.get(self.DEFAULT_FORMAT_PATH, return_type=str))
 
-    def initialize_options(self):
+    @classmethod
+    def initialize_options(cls):
         """ Stores options from the config file
 
         """
-        self.CONFIG_OPTIONS = self.cfg.get(self.CONFIG_PATH, return_type=dict)
-
-    def initialize_ui_options(self):
-        """ Placeholder for all categories/sub-lists within options to be recorded here
-
-        """
-        return self.format
+        cls.CONFIG_OPTIONS = cls.CFG.get(cls.CONFIG_PATH, return_type=dict)
 
     def get(self, **kwargs):
         """Gets the string of the current name of the object
@@ -154,10 +145,12 @@ class Nomenclate(Serializable):
         :param kwargs: str, any number of kwargs that represent token:value pairs
         """
         input_dict = self._convert_input(*args, **kwargs)
-        self._sift_and_init_configs(input_dict)
-        self.token_dict.merge_serialization(input_dict)
+        if input_dict:
+            self._sift_and_init_configs(input_dict)
+            self.token_dict.merge_serialization(input_dict)
 
-    def get_token_settings(self, token, default=None):
+    @classmethod
+    def get_token_settings(cls, token, default=None):
         """ Get the value for a specific token as a dictionary or replace with default
 
         :param token: str, token to query the nomenclate for
@@ -166,19 +159,19 @@ class Nomenclate(Serializable):
         """
         setting_dict = {}
 
-        for key, value in iteritems(self.__dict__):
+        for key, value in iteritems(cls.__dict__):
             if '%s_' % token in key and not callable(key) and not isinstance(value, tokens.TokenAttr):
-                setting_dict[key] = self.__dict__.get(key, default)
+                setting_dict[key] = cls.__dict__.get(key, default)
         return setting_dict
 
-    def _update_tokens_from_swap_format(self, original_format, original_format_order, remove_obsolete_tokens=True):
+    def _update_tokens_from_swap_format(self, original_format, original_format_order, remove_obsolete=True):
         """ Updates tokens based on a swap format call that will maintain synchronicity between token_dict and attrs
             If there was an accidental setting already set to one of the attrs that should now be a token attr due
             to the format swap, we wipe it and add a new TokenAttr to the Nomenclate attribute.
 
         :param original_format: str, original format string to compare to
         :param original_format_order: list(str), the original format order to compare to
-        :param remove_obsolete_tokens: bool, whether to remove obsolete tokens
+        :param remove_obsolete: bool, whether to remove obsolete tokens
                                              if off: persistent state across format swaps of missing tokens
         """
         old_format_order = [_.lower() for _ in original_format_order]
@@ -192,8 +185,7 @@ class Nomenclate(Serializable):
 
             self.merge_dict(dict.fromkeys(new_tokens, ''))
 
-
-            if remove_obsolete_tokens:
+            if remove_obsolete:
                 self.token_dict.purge_tokens(old_tokens)
 
                 for new_token in new_tokens:
@@ -222,7 +214,7 @@ class Nomenclate(Serializable):
             if (k not in map(str.lower, self.format_order) and
                     any([f_order.lower() in k for f_order in self.format_order])):
                 try:
-                    self.cfg.get(self.CONFIG_PATH + [k])
+                    self.CFG.get(self.CONFIG_PATH + [k])
                 except errors.ResourceNotFoundError:
                     pass
                 finally:
@@ -230,8 +222,8 @@ class Nomenclate(Serializable):
 
         for key, val in iteritems(configs):
             input_dict.pop(key, None)
-
-        self.initialize_config_settings(input_dict=configs)
+        if configs:
+            self.initialize_overall_config_settings(input_dict=configs)
 
     def __eq__(self, other):
         return self.token_dict == other.token_dict

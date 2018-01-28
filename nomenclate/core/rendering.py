@@ -27,9 +27,7 @@ class InputRenderer(type):
                 renderer = cls.get_valid_render_function(token)
                 if callable(getattr(renderer, 'render')):
                     token_config = nomenclate_object.get_token_settings(token)
-                    # token_config.update(token_settings)
                     rendered_token = renderer.render(value, token, nomenclate_object, **token_config)
-
                     token_settings['label'] = rendered_token
 
     @classmethod
@@ -38,9 +36,7 @@ class InputRenderer(type):
         renderer = None
 
         for func in list(cls.RENDER_FUNCTIONS):
-            is_sub_token = token_name.replace(func, '').isdigit()
-            is_token_renderer = not token_name.replace(func, '')
-            if is_sub_token or is_token_renderer:
+            if token_name.replace(func, '').isdigit() or not token_name.replace(func, ''):
                 renderer = func
 
         return cls.RENDER_FUNCTIONS.get(renderer or 'default')

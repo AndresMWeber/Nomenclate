@@ -12,3 +12,4 @@ from . import tools
 from . import renderers
 from . import processing
 
+nomenclature.Nomenclate.reset_from_config()

@@ -1,5 +1,7 @@
 # Is not a hard coded (word) and does not end with any non word characters or capitals (assuming camel)
 
+DEFAULT_YML_CONFIG_FILE = 'env.yml'
+
 SEPARATORS = r'\(\)\{\}\[\]<>.()_\-'
 REGEX_SINGLE_PARENTHESIS = r'(\()|(\))'
 REGEX_PARENTHESIS = r'([\(\)]+)'
