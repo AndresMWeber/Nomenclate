@@ -10,11 +10,10 @@ __author__ = 'Andres Weber'
 __author_email__ = 'andresmweber@gmail.com'
 __package__ = 'nomenclate'
 __url__ = 'https://github.com/andresmweber/%s' % __package__
+__version__ = '0.0.0'
 
-main_ns = {}
-with open(convert_path('%s/version.py' % __package__)) as ver_file:
-    exec (ver_file.read(), main_ns)
-__version__ = main_ns['__version__']
+with codecs.open(abspath(join(__package__, 'version.py'))) as ver_file:
+    exec(ver_file.read())
 
 with codecs.open(join(abspath(dirname(__file__)), 'README.rst'), encoding='utf-8') as readme_file:
     long_description = readme_file.read()
@@ -38,21 +37,24 @@ tests_requires = [
     'tox'
 ]
 
+
 class VerifyVersionCommand(install):
     """Custom command to verify that the git tag matches our version"""
     description = 'verify that the git tag matches our version'
+
     def run(self):
         tag = os.getenv('GIT_TAG')
         if tag != __version__:
             info = "Git tag: {0} does not match the version of this app: {1}".format(tag, __version__)
             sys.exit(info)
 
+
 dev_requires = ['twine', 'Sphinx', 'docutils', 'docopt']
 
 setup(
     name=__package__,
-    version=main_ns['__version__'],
-    packages=find_packages(),
+    version=__version__,
+    packages=find_packages(exclude=['tests', '*.tests', '*.tests.*']),
     package_data={'configYML': ['nomenclate/core/*.yml']},
     include_package_data=True,
     url=__url__,
