@@ -1,8 +1,8 @@
 import nomenclate.core.nomenclature as nom
-from . import basetest
+from tests.basetest import TestBase
 
 
-class TestCreation(basetest.TestBase):
+class TestCreation(TestBase):
     def test_initialize_with_dict_only_one(self):
         n = nom.Nomenclate({'name': 'test'})
         n.new = 'default'
@@ -58,10 +58,9 @@ class TestCreation(basetest.TestBase):
         n.side = 'left'
         n.type = 'locator'
         n.location = 'rear'
-        n.LOG.info(str(n.state))
         n.var.case = 'upper'
-        self.assertEquals(n.get(), 'l_rr_testJA_joint_offset_LOC')
         self.fixtures.append(n)
+        self.assertEquals(n.get(), 'l_rr_testJA_joint_offset_LOC')
 
     def test_initialize_from_nomenclate_object(self):
         n_initial = nom.Nomenclate({'name': 'test', 'type': 'locator', 'var': 0, 'side': 'left', })
@@ -85,6 +84,8 @@ class TestCreation(basetest.TestBase):
         n_initial.var.case = 'upper'
         n_secondary = nom.Nomenclate(n_initial, **{'name': 'blah', 'location': 'rear'})
         n_secondary.var.case = 'upper'
+        n_initial.type.len = 3
+        n_secondary.type.len = 3
         self.assertEquals(n_secondary.get(), 'l_rr_blahA_LOC')
         self.fixtures.extend([n_secondary, n_initial])
 
@@ -112,15 +113,16 @@ class TestCreation(basetest.TestBase):
         self.fixtures.extend([n_secondary, n_initial])
 
 
-class TestAcceptanceMaya(basetest.TestBase):
+class TestAcceptanceMaya(TestBase):
     pass
 
 
-class TestAcceptanceNamingFiletypes(basetest.TestBase):
+class TestAcceptanceNamingFiletypes(TestBase):
     def test_saving_maya_file(self):
         n = nom.Nomenclate(name='SH010', var=0, ext='mb', initials='aw', discipline='animation', version=5)
         n.var.case = 'upper'
         n.version.prefix = 'v'
+        n.discipline.length = 4
         n.initialize_format_options('working_file')
         self.assertEquals(n.format, 'name_discipline_lodDecoratorVar_version_initials.ext')
         self.assertEquals(n.get(), 'SH010_ANIM_A_v005_aw.mb')
@@ -155,7 +157,7 @@ class TestAcceptanceNamingFiletypes(basetest.TestBase):
         self.fixtures.append(n)
 
 
-class TestAcceptanceParsingExisting(basetest.TestBase):
+class TestAcceptanceParsingExisting(TestBase):
     def test_normal_maya_node(self):
         pass
 

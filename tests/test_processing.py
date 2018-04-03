@@ -1,10 +1,10 @@
 import re
 import nomenclate.core.processing as processing
 import nomenclate.core.errors as exceptions
-from . import basetest
+from tests.basetest import TestBase
 
 
-class TokenMatchBase(basetest.TestBase):
+class TokenMatchBase(TestBase):
     def setUp(self):
         super(TokenMatchBase, self).setUp()
         self.regex_custom_group_match = next(re.compile(r'(?P<look>test)').finditer('test'))

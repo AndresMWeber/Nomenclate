@@ -1,9 +1,9 @@
 import nomenclate.core.formatter as formatter
 import nomenclate.core.errors as exceptions
-from . import basetest
+from tests.basetest import TestBase
 
 
-class TestFormatStringBase(basetest.TestBase):
+class TestFormatStringBase(TestBase):
     def setUp(self):
         super(TestFormatStringBase, self).setUp()
         self.fs = formatter.FormatString()

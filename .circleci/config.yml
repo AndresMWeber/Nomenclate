@@ -1,0 +1,185 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/python:2.7.13
+
+    working_directory: ~/Nomenclate
+
+    steps:
+      - run:
+          name: install virtualenv and make report dir
+          command: mkdir ~/test-results
+
+      - checkout
+
+      - restore_cache:
+          keys:
+          - v1-requirements-{{ checksum "requirements.txt" }}
+          - v1-requirements-
+
+      - run:
+          name: install dependencies
+          command: make install-deps
+
+      - save_cache:
+          paths:
+            - ~/nvenv/
+          key: v1-requirements-{{ checksum "requirements.txt" }}
+
+      - run:
+          name: run tests
+          command: |
+              PYTHON_VERSION=27
+              export PYTHON_VERSION >> "$BASH_ENV"
+              TEST_PATH=~/test-results
+              export TEST_PATH >> "$BASH_ENV"
+              make test-unit
+
+      - store_test_results:
+          path: ~/test-results
+
+      - run:
+          name: upload coverage
+          command: make upload-coverage
+
+  test_35:
+    docker:
+      - image: circleci/python:3.5
+
+    working_directory: ~/Nomenclate
+
+    steps:
+      - run:
+          name: make report dir
+          command: mkdir ~/test-results
+
+      - checkout
+
+      - restore_cache:
+          keys:
+          - v1-requirements-{{ checksum "requirements.txt" }}
+          - v1-requirements-
+
+      - run:
+          name: install dependencies
+          command: make install-deps3
+
+      - save_cache:
+          paths:
+            - ~/nvenv/
+          key: v1-requirements-{{ checksum "requirements.txt" }}
+
+      - run:
+          name: run tests
+          command: |
+              PYTHON_VERSION=35
+              export PYTHON_VERSION >> "$BASH_ENV"
+              TEST_PATH=~/test-results
+              export TEST_PATH >> "$BASH_ENV"
+              make test-unit3
+
+      - store_test_results:
+          path: ~/test-results
+
+  test_36:
+    docker:
+      - image: circleci/python:3.6
+
+    working_directory: ~/Nomenclate
+
+    steps:
+      - run:
+          name: make report dir
+          command: mkdir ~/test-results
+
+      - checkout
+
+      - restore_cache:
+          keys:
+          - v1-requirements-{{ checksum "requirements.txt" }}
+          - v1-requirements-
+
+      - run:
+          name: install dependencies
+          command: make install-deps3
+
+      - save_cache:
+          paths:
+            - ~/nvenv/
+          key: v1-requirements-{{ checksum "requirements.txt" }}
+
+      - run:
+          name: run tests
+          command: |
+              PYTHON_VERSION=36
+              export PYTHON_VERSION >> "$BASH_ENV"
+              TEST_PATH=~/test-results
+              export TEST_PATH >> "$BASH_ENV"
+              make test-unit3
+
+      - store_test_results:
+          path: ~/test-results
+
+  deploy:
+    docker:
+      - image: circleci/python:2.7.13
+
+    working_directory: ~/Nomenclate
+
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+          - v1-requirements-{{ checksum "requirements.txt" }}
+          - v1-requirements-
+
+      - run:
+          name: install dependencies
+          command: make install-deps
+
+      - save_cache:
+          paths:
+            - ~/nvenv/
+          key: v1-requirements-{{ checksum "requirements.txt" }}
+
+      - run:
+          name: verify git tag vs. version
+          command: |
+              GIT_TAG=`git describe --tags`
+              export GIT_TAG >> "$BASH_ENV"
+              make verify-git-tag
+
+      - run:
+          name: init .pypirc
+          command: |
+              echo [pypi] >> ~/.pypirc
+              echo username = $PYPI_USERNAME >> ~/.pypirc
+              echo password = $PYPI_PASSWORD >> ~/.pypirc
+
+      - run:
+          name: create packages
+          command: make dist
+
+      - run:
+          name: upload to pypi
+          command: make upload-to-pypi
+
+
+
+workflows:
+  version: 2
+  test_python_versions:
+    jobs:
+      - build
+      - test_35
+      - test_36
+      - deploy:
+          requires:
+            - build
+            - test_35
+            - test_36
+          filters:
+            tags:
+              only: /[0-9]+(\.[0-9]+)*/

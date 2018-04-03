@@ -5,14 +5,12 @@ import json
 from tempfile import mkstemp
 from pyfakefs import fake_filesystem
 from collections import OrderedDict
-from os.path import expanduser
-
 import nomenclate.core.configurator as config
 import nomenclate.core.errors as exceptions
-from . import basetest
+from tests.basetest import TestBase
 
 
-class TestConfiguratorBase(basetest.TestBase):
+class TestConfiguratorBase(TestBase):
     def setUp(self):
         super(TestConfiguratorBase, self).setUp()
         self.maxDiff = 1000

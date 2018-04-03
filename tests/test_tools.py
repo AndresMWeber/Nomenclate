@@ -1,6 +1,6 @@
 from collections import OrderedDict
 import nomenclate as nm
-from . import basetest
+from tests.basetest import TestBase
 from nomenclate.core.tools import (
     combine_dicts,
     gen_dict_key_matches,
@@ -8,7 +8,7 @@ from nomenclate.core.tools import (
 )
 
 
-class TestCombineDicts(basetest.TestBase):
+class TestCombineDicts(TestBase):
     def test_with_dict_with_nomenclate_object(self):
         self.assertDictEqual(combine_dicts({1: 1, 2: 2, 3: 3}, nm.Nom(name='test', purpose='lots').state),
                              {'decorator': '', 1: 1, 2: 2, 3: 3, 'name': 'test', 'type': '', 'side': '',
@@ -39,7 +39,7 @@ class TestCombineDicts(basetest.TestBase):
                              {'parse': 'test', 'plush': 5, 1: 1, 2: 2, 3: 3})
 
 
-class TestGenDictKeyMatches(basetest.TestBase):
+class TestGenDictKeyMatches(TestBase):
     def test_with_nested(self):
         self.checkEqual(list(gen_dict_key_matches('name', {1: 1, 2: 2, 3: 3, 'test': {'name': 'mesh',
                                                                                       'test': {'name': 'bah'}},
@@ -102,7 +102,7 @@ class TestGenDictKeyMatches(basetest.TestBase):
             ['node', 'texturing'])
 
 
-class TestGetKeysContaining(basetest.TestBase):
+class TestGetKeysContaining(TestBase):
     def test_simple(self):
         self.assertEquals(get_keys_containing('test', {'test': 1}), 1)
 

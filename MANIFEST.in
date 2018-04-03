@@ -1,2 +1,12 @@
 include nomenclate/core/env.yml
-include requirements.txt
+exclude .gitignore
+exclude .coverage
+exclude .circleci/config.yml
+prune .cache
+prune .circleci
+prune .git
+prune build
+prune dist
+prune cover
+recursive-exclude *.egg-info *
+recursive-exclude tests *
