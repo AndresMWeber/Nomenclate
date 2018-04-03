@@ -56,7 +56,7 @@ class VerifyVersionCommand(install):
 dev_requires = ['twine', 'Sphinx', 'docutils', 'docopt']
 
 setup(
-    name=__package__,
+    name=name,
     version=__version__,
     packages=find_packages(exclude=['tests', '*.tests', '*.tests.*']),
     package_data={'configYML': ['nomenclate/core/*.yml']},
