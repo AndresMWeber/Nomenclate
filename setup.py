@@ -1,22 +1,26 @@
 import codecs
 import os
+import re
 import sys
-from os.path import abspath, dirname, join
-from distutils.util import convert_path
 from setuptools import setup, find_packages
 from setuptools.command.install import install
 
+name = 'nomenclate'
 __author__ = 'Andres Weber'
 __author_email__ = 'andresmweber@gmail.com'
-__package__ = 'nomenclate'
 __url__ = 'https://github.com/andresmweber/%s' % __package__
 __version__ = '0.0.0'
 
-with codecs.open(abspath(join(__package__, 'version.py'))) as ver_file:
-    exec(ver_file.read())
+with codecs.open(os.path.abspath(os.path.join(name, 'version.py'))) as ver_file:
+    version_regex = r"^__version__ = ['\"]([^'\"]*)['\"]"
+    mo = re.search(version_regex, ver_file.read(), re.M)
+    try:
+        __version__ = mo.group(1)
+    except AttributeError:
+        raise IOError('Could not find version in %s' % os.path.join(name, 'version.py'))
 
-with codecs.open(join(abspath(dirname(__file__)), 'README.rst'), encoding='utf-8') as readme_file:
-    long_description = readme_file.read()
+with codecs.open(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'README.rst'), encoding='utf-8') as readme:
+    long_description = readme.read()
 
 description = 'A tool for generating strings based on a preset naming convention.'
 
