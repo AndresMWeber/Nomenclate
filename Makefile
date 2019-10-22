@@ -22,12 +22,12 @@ install-deps3: make-venv3
 
 test-unit:
 	. ~/nvenv/bin/activate
-	~/nvenv/bin/python -m nose2 -c tests/.nose2rc --with-xunit --xunit-file=$(TEST_PATH)/nose2log$(PYTHON_VERSION).xml
+	~/nvenv/bin/python -m nose2 -c tests/.nose2rc
 
 test-unit3:
 	. ~/nvenv/bin/activate
-	~/nvenv/bin/python3 -m nose2 -c tests/.nose2rc --with-xunit --xunit-file=$(TEST_PATH)/nose2log$(PYTHON_VERSION).xml
-
+	~/nvenv/bin/python3 -m nose2 -c tests/.nose2rc
+	
 upload-coverage:
 	. ~/nvenv/bin/activate
 	~/nvenv/bin/coveralls
