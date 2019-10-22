@@ -137,7 +137,7 @@ jobs:
 
       - run:
           name: install dependencies
-          command: make install-deps
+          command: make install-deps3
 
       - save_cache:
           paths:
