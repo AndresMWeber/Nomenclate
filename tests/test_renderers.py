@@ -154,7 +154,7 @@ class TestInputRendererRenderUniqueTokens(TestInputRendererBase):
 
         self.nom.merge_dict(test_values)
         self.nom.version_padding = 3
-        self.nom.version_prefix = 'v'
+        self.nom.version.prefix = 'v'
         self.ir.render_unique_tokens(self.nom, test_values)
         self.assertEquals(test_values,
                           {'var': 'A', 'type': 'LOC', 'side': 'l', 'version': 'v005'})
