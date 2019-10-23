@@ -131,10 +131,3 @@ workflows:
     jobs:
       - test_35
       - test_36
-      - deploy:
-          requires:
-            - test_35
-            - test_36
-          filters:
-            tags:
-              only: /[0-9]+(\.[0-9]+)*/
