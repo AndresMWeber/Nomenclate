@@ -16,10 +16,6 @@ Nomenclate: A tool set for automating and generating strings based on arbitrary 
 .. image:: https://coveralls.io/repos/github/AndresMWeber/Nomenclate/badge.svg?branch=master
     :target: https://coveralls.io/github/AndresMWeber/Nomenclate?branch=master
 
-.. image:: https://landscape.io/github/AndresMWeber/Nomenclate/master/landscape.svg?style=flat
-   :target: https://landscape.io/github/AndresMWeber/Nomenclate/master
-   :alt: Code Health
-
 .. image:: https://img.shields.io/pypi/pyversions/nomenclate.svg
    :target: https://pypi.python.org/pypi/nomenclate
 
