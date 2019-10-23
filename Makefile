@@ -1,5 +1,5 @@
 update-and-push:
-	sh ./update-and-push.sh version
+	sh ./scripts/update-and-push.sh version
 
 nvenv: make-venv
 
@@ -10,24 +10,25 @@ make-venv:
 	python -m virtualenv ~/nvenv
 
 make-venv3:
+	sudo chmod 777 ~/
 	python3 -m venv ~/nvenv
 
 install-deps: make-venv
 	~/nvenv/bin/pip install -Ur requirements.txt
-	~/nvenv/bin/pip install coveralls nose
+	~/nvenv/bin/pip install coveralls nose2
 
 install-deps3: make-venv3
 	~/nvenv/bin/pip3 install -Ur requirements.txt
-	~/nvenv/bin/pip3 install coveralls nose
+	~/nvenv/bin/pip3 install coveralls nose2
 
 test-unit:
 	. ~/nvenv/bin/activate
-	~/nvenv/bin/python -m nose -c tests/.noserc --with-xunit --xunit-file=$(TEST_PATH)/noselog$(PYTHON_VERSION).xml
+	~/nvenv/bin/python -m nose2 -c tests/.nose2rc
 
 test-unit3:
 	. ~/nvenv/bin/activate
-	~/nvenv/bin/python3 -m nose -c tests/.noserc --with-xunit --xunit-file=$(TEST_PATH)/noselog$(PYTHON_VERSION).xml
-
+	~/nvenv/bin/python3 -m nose2 -c tests/.nose2rc
+	
 upload-coverage:
 	. ~/nvenv/bin/activate
 	~/nvenv/bin/coveralls

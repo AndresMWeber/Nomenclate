@@ -6,9 +6,6 @@ from setuptools import setup, find_packages
 from setuptools.command.install import install
 
 name = 'nomenclate'
-__author__ = 'Andres Weber'
-__author_email__ = 'andresmweber@gmail.com'
-__url__ = 'https://github.com/andresmweber/%s' % __package__
 __version__ = '0.0.0'
 
 with codecs.open(os.path.abspath(os.path.join(name, 'version.py'))) as ver_file:
@@ -17,29 +14,11 @@ with codecs.open(os.path.abspath(os.path.join(name, 'version.py'))) as ver_file:
     try:
         __version__ = mo.group(1)
     except AttributeError:
-        raise IOError('Could not find version in %s' % os.path.join(name, 'version.py'))
+        raise IOError('Could not find version in %s' %
+                      os.path.join(name, 'version.py'))
 
 with codecs.open(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'README.rst'), encoding='utf-8') as readme:
     long_description = readme.read()
-
-description = 'A tool for generating strings based on a preset naming convention.'
-
-install_requires = [
-    'python-dateutil',
-    'PyYAML',
-    'six'
-]
-
-tests_requires = [
-    'coverage',
-    'coveralls',
-    'fixtures',
-    'unittest2',
-    'mock',
-    'nose',
-    'pyfakefs',
-    'tox'
-]
 
 
 class VerifyVersionCommand(install):
@@ -49,11 +28,9 @@ class VerifyVersionCommand(install):
     def run(self):
         tag = os.getenv('GIT_TAG')
         if __version__ not in tag:
-            info = "Git tag: {0} does not match the version of this app: {1}".format(tag, __version__)
+            info = "Git tag: {0} does not match the version of this app: {1}".format(
+                tag, __version__)
             sys.exit(info)
-
-
-dev_requires = ['twine', 'Sphinx', 'docutils', 'docopt']
 
 setup(
     name=name,
@@ -61,13 +38,14 @@ setup(
     packages=find_packages(exclude=['tests', '*.tests', '*.tests.*']),
     package_data={'configYML': ['nomenclate/core/*.yml']},
     include_package_data=True,
-    url=__url__,
+    url='https://github.com/andresmweber/%s' % __package__,
     license='MIT',
-    author=__author__,
-    author_email=__author_email__,
-    description=description,
+    author='Andres Weber',
+    author_email='andresmweber@gmail.com',
+    description='A tool for generating strings based on a preset naming convention.',
     long_description="`Online Documentation (ReadTheDocs) <http://nomenclate.readthedocs.io/en/latest/>`_",
     keywords='naming conventions labels config convention name parsing parse',
+    test_suite='tests',
     classifiers=[
         'License :: OSI Approved :: MIT License',
         'Development Status :: 4 - Beta',
@@ -82,12 +60,33 @@ setup(
         'Topic :: Documentation :: Sphinx',
         'Topic :: Multimedia :: Graphics :: 3D Modeling',
     ],
-    install_requires=install_requires,
+    setup_requires=[
+        'nose2',
+    ],
+    install_requires=[
+        'python-dateutil',
+        'PyYAML',
+        'six'
+    ],
     extras_require={
-        'tests': tests_requires,
-        'dev': dev_requires
+        'tests': [
+            'coverage',
+            'coveralls',
+            'fixtures',
+            'unittest2',
+            'mock',
+            'nose2',
+            'pyfakefs',
+            'tox'
+        ],
+        'dev': [
+            'twine',
+            'Sphinx',
+            'docutils',
+            'docopt'
+        ]
     },
     cmdclass={
-        'verify': VerifyVersionCommand,
+        'verify': VerifyVersionCommand
     }
 )
