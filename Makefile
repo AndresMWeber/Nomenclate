@@ -10,6 +10,7 @@ make-venv:
 	python -m virtualenv ~/nvenv
 
 make-venv3:
+	sudo chmod 777 ~/
 	python3 -m venv ~/nvenv
 
 install-deps: make-venv
