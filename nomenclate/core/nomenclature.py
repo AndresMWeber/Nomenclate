@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from six import iteritems
 
 import nomenclate.settings as settings
 from . import configurator as config
@@ -7,30 +6,28 @@ from . import errors
 from . import tokens
 from . import formatter
 from . import rendering
-from .tools import (
-    combine_dicts,
-    Serializable
-)
+from .tools import combine_dicts, Serializable
 
 
 class Nomenclate(Serializable):
     """This class deals with renaming of objects in an approved pattern
     """
-    SERIALIZE_ATTRS = ['format_string_object', 'token_dict', ]
 
-    CONFIG_PATH = ['overall_config']
+    SERIALIZE_ATTRS = ["format_string_object", "token_dict"]
 
-    NAMING_FORMAT_PATH = ['naming_formats']
-    DEFAULT_FORMAT_PATH = NAMING_FORMAT_PATH + ['node', 'default']
+    CONFIG_PATH = ["overall_config"]
 
-    SUFFIXES_PATH = ['suffixes']
-    OPTIONS_PATH = ['options']
-    SIDE_PATH = OPTIONS_PATH + ['side']
+    NAMING_FORMAT_PATH = ["naming_formats"]
+    DEFAULT_FORMAT_PATH = NAMING_FORMAT_PATH + ["node", "default"]
+
+    SUFFIXES_PATH = ["suffixes"]
+    OPTIONS_PATH = ["options"]
+    SIDE_PATH = OPTIONS_PATH + ["side"]
 
     CONFIG_OPTIONS = dict()
     CFG = config.ConfigParse(config_filepath=settings.DEFAULT_YML_CONFIG_FILE)
 
-    def __init__(self, input_dict=None, format_string='', *args, **kwargs):
+    def __init__(self, input_dict=None, format_string="", *args, **kwargs):
         """
 
         :param input_dict: dict, In case the user just passes a dictionary as the first arg in the init, we will merge it.
@@ -86,12 +83,16 @@ class Nomenclate(Serializable):
         original_format, original_format_order = (self.format, self.format_order)
 
         try:
-            format_target = self.CFG.get(format_target, return_type=str, throw_null_return_error=True)
+            format_target = self.CFG.get(
+                format_target, return_type=str, throw_null_return_error=True
+            )
         except (errors.ResourceNotFoundError, KeyError):
             pass
 
         self.format_string_object.swap_format(format_target)
-        self._update_tokens_from_swap_format(original_format, original_format_order, remove_obsolete=remove_obsolete)
+        self._update_tokens_from_swap_format(
+            original_format, original_format_order, remove_obsolete=remove_obsolete
+        )
 
     @classmethod
     def reset_from_config(cls):
@@ -101,10 +102,10 @@ class Nomenclate(Serializable):
     @classmethod
     def initialize_overall_config_settings(cls, input_dict=None):
         input_dict = input_dict or cls.CFG.get(cls.CONFIG_PATH, return_type=dict)
-        for setting, value in iteritems(input_dict):
+        for setting, value in input_dict.items():
             setattr(cls, setting, value)
 
-    def initialize_format_options(self, format_target=''):
+    def initialize_format_options(self, format_target=""):
         """ First attempts to use format_target as a config path or gets the default format
             if it's invalid or is empty.
 
@@ -119,7 +120,9 @@ class Nomenclate(Serializable):
             else:
                 raise errors.FormatError
         except errors.FormatError:
-            self.format_string_object.swap_format(self.CFG.get(self.DEFAULT_FORMAT_PATH, return_type=str))
+            self.format_string_object.swap_format(
+                self.CFG.get(self.DEFAULT_FORMAT_PATH, return_type=str)
+            )
 
     @classmethod
     def initialize_options(cls):
@@ -159,12 +162,18 @@ class Nomenclate(Serializable):
         """
         setting_dict = {}
 
-        for key, value in iteritems(cls.__dict__):
-            if '%s_' % token in key and not callable(key) and not isinstance(value, tokens.TokenAttr):
+        for key, value in cls.__dict__.items():
+            if (
+                "%s_" % token in key
+                and not callable(key)
+                and not isinstance(value, tokens.TokenAttr)
+            ):
                 setting_dict[key] = cls.__dict__.get(key, default)
         return setting_dict
 
-    def _update_tokens_from_swap_format(self, original_format, original_format_order, remove_obsolete=True):
+    def _update_tokens_from_swap_format(
+        self, original_format, original_format_order, remove_obsolete=True
+    ):
         """ Updates tokens based on a swap format call that will maintain synchronicity between token_dict and attrs
             If there was an accidental setting already set to one of the attrs that should now be a token attr due
             to the format swap, we wipe it and add a new TokenAttr to the Nomenclate attribute.
@@ -176,14 +185,20 @@ class Nomenclate(Serializable):
         """
         old_format_order = [_.lower() for _ in original_format_order]
         new_format_order = [_.lower() for _ in self.format_order]
-        if hasattr(self, 'token_dict') and self.format != original_format:
-            old_tokens = [token for token in list(set(old_format_order) - set(new_format_order))
-                          if hasattr(self, token)]
+        if hasattr(self, "token_dict") and self.format != original_format:
+            old_tokens = [
+                token
+                for token in list(set(old_format_order) - set(new_format_order))
+                if hasattr(self, token)
+            ]
 
-            new_tokens = [token for token in set(new_format_order) - set(old_format_order)
-                          if not hasattr(self, token) or isinstance(getattr(self, token, ''), str)]
+            new_tokens = [
+                token
+                for token in set(new_format_order) - set(old_format_order)
+                if not hasattr(self, token) or isinstance(getattr(self, token, ""), str)
+            ]
 
-            self.merge_dict(dict.fromkeys(new_tokens, ''))
+            self.merge_dict(dict.fromkeys(new_tokens, ""))
 
             if remove_obsolete:
                 self.token_dict.purge_tokens(old_tokens)
@@ -210,9 +225,10 @@ class Nomenclate(Serializable):
             Used to weed out config keys from tokens in a given input.
         """
         configs = {}
-        for k, v in iteritems(input_dict):
-            if (k not in map(str.lower, self.format_order) and
-                    any([f_order.lower() in k for f_order in self.format_order])):
+        for k, v in input_dict.items():
+            if k not in map(str.lower, self.format_order) and any(
+                [f_order.lower() in k for f_order in self.format_order]
+            ):
                 try:
                     self.CFG.get(self.CONFIG_PATH + [k])
                 except errors.ResourceNotFoundError:
@@ -220,7 +236,7 @@ class Nomenclate(Serializable):
                 finally:
                     configs[k] = v
 
-        for key, val in iteritems(configs):
+        for key in configs.keys():
             input_dict.pop(key, None)
         if configs:
             self.initialize_overall_config_settings(input_dict=configs)
@@ -235,7 +251,7 @@ class Nomenclate(Serializable):
         """ Custom setattr to detect whether they are trying to set a token, then updating the token_dict
 
         """
-        if hasattr(self, 'token_dict') and key in [s.lower() for s in self.format_order]:
+        if hasattr(self, "token_dict") and key in [s.lower() for s in self.format_order]:
             if getattr(self.token_dict, key):
                 getattr(self.token_dict, key).set(value)
             else:
@@ -245,7 +261,7 @@ class Nomenclate(Serializable):
 
     def __getattr__(self, item):
         try:
-            value = getattr(object.__getattribute__(self, 'token_dict'), item)
+            value = getattr(object.__getattribute__(self, "token_dict"), item)
         except AttributeError as error:
             try:
                 value = object.__getattribute__(self, item)
@@ -264,11 +280,11 @@ class Nomenclate(Serializable):
 
         def dir_augment(obj):
             attrs = set()
-            if not hasattr(obj, '__bases__'):
+            if not hasattr(obj, "__bases__"):
                 # obj is an instance
                 instance_class = obj.__class__
                 attrs.update(get_attrs(instance_class))
-                if hasattr(obj, 'token_dict'):
+                if hasattr(obj, "token_dict"):
                     attrs.update([token_attr.token for token_attr in obj.token_dict.token_attrs])
             else:
                 # obj is a class

@@ -59,7 +59,7 @@ Features
 -  Up to date with online help docs
 -  User-customizable YAML/human-readable config file
 -  Easy object property or dictionary state manipulation
--  Cross-Python compatible: Tested and working with Python 2.7 and 3.5
+-  Cross-Python compatible: Tested and working with Python 3.6, 3.7 and 3.8
 -  Cross-Platform compatible: Works under Linux, Mac OS ,Windows environments
 -  Full module/class documentation
 -  Sensible token value entry/conversion (like ``side='left'`` with automatic token syntax replacement)
@@ -72,9 +72,11 @@ A universal installation method (that works on Windows, Mac OS X, Linux, ..., an
 
 .. code-block:: bash
 
-    # Make sure we have an up-to-date version of pip and setuptools:
-    $ pip install --upgrade pip setuptools
     $ pip install Nomenclate
+
+.. code-block:: bash
+
+    $ poetry add Nomenclate
 
 
 (If ``pip`` installation fails for some reason, you can try ``easy_install nomenclate`` as a fallback.)
