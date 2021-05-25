@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from six import iteritems
 from . import errors as exceptions
 import nomenclate.settings as settings
 from . import tools
@@ -18,9 +17,10 @@ class TokenAttr(tools.Serializable):
         either the given prefix or suffix no matter what.
 
     """
-    SERIALIZE_ATTRS = ['token', 'label', 'case', 'prefix', 'suffix']
 
-    def __init__(self, token='', label=None, case='', prefix='', suffix=''):
+    SERIALIZE_ATTRS = ["token", "label", "case", "prefix", "suffix"]
+
+    def __init__(self, token="", label=None, case="", prefix="", suffix=""):
         """
 
         :param label: str, the label is represents the value we want to replace the given token with
@@ -78,7 +78,9 @@ class TokenAttr(tools.Serializable):
             if isinstance(entry, (str, int)) or entry is None:
                 continue
             else:
-                raise exceptions.ValidationError('Invalid type %s, expected %s' % (type(entry), str))
+                raise exceptions.ValidationError(
+                    "Invalid type %s, expected %s" % (type(entry), str)
+                )
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -89,46 +91,47 @@ class TokenAttr(tools.Serializable):
             return False
 
     def __ne__(self, other):
-        return ((self.token, self.label) != (other.token, other.label))
+        return (self.token, self.label) != (other.token, other.label)
 
     def __lt__(self, other):
-        return ((self.token, self.label) < (other.token, other.label))
+        return (self.token, self.label) < (other.token, other.label)
 
     def __le__(self, other):
-        return ((self.token, self.label) <= (other.token, other.label))
+        return (self.token, self.label) <= (other.token, other.label)
 
     def __gt__(self, other):
-        return ((self.token, self.label) > (other.token, other.label))
+        return (self.token, self.label) > (other.token, other.label)
 
     def __ge__(self, other):
-        return ((self.token, self.label) >= (other.token, other.label))
+        return (self.token, self.label) >= (other.token, other.label)
 
     def __str__(self):
-        return '%r' % (self)
+        return "%r" % (self)
 
     def __repr__(self):
-        return '<%s (%s): %r>' % (self.__class__.__name__, self.raw_token, self.to_json())
+        return "<%s (%s): %r>" % (self.__class__.__name__, self.raw_token, self.to_json())
 
     def to_json(self):
-        return {"token": self.raw_token,
-                "label": self.raw_string,
-                "case": self.case,
-                "prefix": self.prefix,
-                "suffix": self.suffix,
-                }
+        return {
+            "token": self.raw_token,
+            "label": self.raw_string,
+            "case": self.case,
+            "prefix": self.prefix,
+            "suffix": self.suffix,
+        }
 
 
 class TokenAttrList(tools.Serializable):
     def __init__(self, token_attrs):
-        self.token_attrs = [TokenAttr(token_attr, '') for token_attr in token_attrs]
+        self.token_attrs = [TokenAttr(token_attr, "") for token_attr in token_attrs]
 
     def reset(self):
         for token_attr in self.token_attrs:
-            token_attr.set('')
+            token_attr.set("")
 
     @property
     def unset_token_attrs(self):
-        return [token_attr for token_attr in self.token_attrs if token_attr.label == '']
+        return [token_attr for token_attr in self.token_attrs if token_attr.label == ""]
 
     def purge_tokens(self, input_token_attrs=None):
         """ Removes all specified token_attrs that exist in instance.token_attrs
@@ -138,9 +141,15 @@ class TokenAttrList(tools.Serializable):
         if input_token_attrs is None:
             remove_attrs = self.token_attrs
         else:
-            remove_attrs = [token_attr for token_attr in self.token_attrs if token_attr.token in input_token_attrs]
+            remove_attrs = [
+                token_attr
+                for token_attr in self.token_attrs
+                if token_attr.token in input_token_attrs
+            ]
 
-        self.token_attrs = [token_attr for token_attr in self.token_attrs if token_attr not in remove_attrs]
+        self.token_attrs = [
+            token_attr for token_attr in self.token_attrs if token_attr not in remove_attrs
+        ]
 
     @classmethod
     def from_json(cls, json_blob):
@@ -158,11 +167,11 @@ class TokenAttrList(tools.Serializable):
         return any([token_attr for token_attr in self.token_attrs if token_attr.token == token])
 
     def merge_json(self, json_blob):
-        for token_name, token_attr_blob in iteritems(json_blob):
+        for token_name, token_attr_blob in json_blob.items():
             token_name = token_name.lower()
             try:
                 if not isinstance(token_attr_blob, dict):
-                    token_attr_blob = {'token': token_name, 'label': token_attr_blob}
+                    token_attr_blob = {"token": token_name, "label": token_attr_blob}
 
                 getattr(self, token_name).merge_serialization(token_attr_blob)
             except (AttributeError, IndexError):
@@ -173,9 +182,15 @@ class TokenAttrList(tools.Serializable):
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return all(map(lambda x: x[0] == x[1],
-                           zip(sorted([t for t in self.token_attrs], key=lambda x: x.token),
-                               sorted([t for t in other.token_attrs], key=lambda x: x.token))))
+            return all(
+                map(
+                    lambda x: x[0] == x[1],
+                    zip(
+                        sorted([t for t in self.token_attrs], key=lambda x: x.token),
+                        sorted([t for t in other.token_attrs], key=lambda x: x.token),
+                    ),
+                )
+            )
         return False
 
     def __getattr__(self, item):
@@ -183,16 +198,20 @@ class TokenAttrList(tools.Serializable):
             return object.__getattribute__(self, item)
         except AttributeError:
             try:
-                return [token_attr for token_attr in self.token_attrs if token_attr.token == item][0]
+                return [token_attr for token_attr in self.token_attrs if token_attr.token == item][
+                    0
+                ]
             except IndexError:
                 pass
         raise AttributeError
 
     def __str__(self):
-        return ' '.join(['%s:%r' % (token_attr.token, token_attr.label) for token_attr in self.token_attrs])
+        return " ".join(
+            ["%s:%r" % (token_attr.token, token_attr.label) for token_attr in self.token_attrs]
+        )
 
     def __repr__(self):
-        return '<%s %s>' % (self.__class__.__name__, self.token_attrs)
+        return "<%s %s>" % (self.__class__.__name__, self.token_attrs)
 
     def __iter__(self):
         return iter(self.token_attrs)
