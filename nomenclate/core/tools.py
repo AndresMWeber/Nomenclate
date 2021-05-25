@@ -1,5 +1,5 @@
-from six import iteritems
 import collections
+
 
 class Serializable(object):
     SERIALIZE_ATTRS = []
@@ -17,14 +17,22 @@ class Serializable(object):
         return {attr: getattr(self, attr) for attr in self.SERIALIZE_ATTRS}
 
     def merge_json(self, json_blob):
-        for search_attr in [attr for attr in self.SERIALIZE_ATTRS if json_blob.get(attr) is not None]:
+        for search_attr in [
+            attr for attr in self.SERIALIZE_ATTRS if json_blob.get(attr) is not None
+        ]:
             json_attr = json_blob[search_attr]
             setattr(self, search_attr, json_attr)
         return True
 
     @classmethod
     def from_json(cls, json_blob):
-        return cls(**{attr: json_blob[attr] for attr in cls.SERIALIZE_ATTRS if json_blob.get(attr) is not None})
+        return cls(
+            **{
+                attr: json_blob[attr]
+                for attr in cls.SERIALIZE_ATTRS
+                if json_blob.get(attr) is not None
+            }
+        )
 
 
 class NomenclateNotifier(object):
@@ -71,7 +79,7 @@ def combine_dicts(*args, **kwargs):
     super_dict = collections.defaultdict(dict)
 
     for d in dicts:
-        for k, v in iteritems(d):
+        for k, v in d.items():
             if k:
                 super_dict[k] = v
     return dict(super_dict)
@@ -88,7 +96,7 @@ def get_keys_containing(search_string, input_dict, default=None, first_found=Tru
     :return: dict, dictionary filled with any matching keys
     """
     output = {}
-    for k, v in iteritems(input_dict):
+    for k, v in input_dict.items():
         if search_string in k and not callable(k):
             output[k] = v
 
@@ -112,7 +120,7 @@ def gen_dict_key_matches(key, dictionary, _path=None, full_path=False):
     """
     if _path is None:
         _path = []
-    for k, v in iteritems(dictionary):
+    for k, v in dictionary.items():
         _path.append(k)
         if k == key:
             yield (_path, v) if full_path else v

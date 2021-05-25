@@ -1,25 +1,26 @@
 #!/usr/bin/env python
-from six import add_metaclass, iteritems, moves
+import builtins
 import datetime
 import dateutil.parser as p
 from . import rendering
 from . import errors as exceptions
-from .tools import (
-    gen_dict_key_matches,
-    flatten
-)
+from .tools import gen_dict_key_matches, flatten
 
 
-@add_metaclass(rendering.InputRenderer)
-class RenderBase(object):
-    token = 'default'
+class RenderBase(metaclass=rendering.InputRenderer):
+    token = "default"
 
     @classmethod
-    def render(cls, value, token, nomenclate_object,
-               config_query_path=None,
-               return_type=list,
-               use_value_in_query_path=True,
-               **kwargs):
+    def render(
+        cls,
+        value,
+        token,
+        nomenclate_object,
+        config_query_path=None,
+        return_type=list,
+        use_value_in_query_path=True,
+        **kwargs
+    ):
         """ Default renderer for a token.  It checks the config for a match, if not found it uses the value provided.
 
         :param value: str, value we are trying to match (or config setting for the token)
@@ -33,7 +34,9 @@ class RenderBase(object):
             if use_value_in_query_path:
                 config_query_path += [value]
 
-        config_matches = cls.get_config_match(value, config_query_path, return_type, nomenclate_object, **kwargs)
+        config_matches = cls.get_config_match(
+            value, config_query_path, return_type, nomenclate_object, **kwargs
+        )
         options = cls.flatten_input(config_matches, value)
         option = cls.process_criteria(token, options, **kwargs) if options else value
         return cls.process_token_augmentations(option, token_attr=getattr(nomenclate_object, token))
@@ -50,7 +53,9 @@ class RenderBase(object):
         :param token_attr: nomenclate.core.tokens.TokenAttr, the processed TokenAttr to be used to query settings.
         :return: str, final augmented string
         """
-        return '{}{}{}'.format(token_attr.prefix, getattr(str, token_attr.case, str)(value), token_attr.suffix)
+        return "{}{}{}".format(
+            token_attr.prefix, getattr(str, token_attr.case, str)(value), token_attr.suffix
+        )
 
     @classmethod
     def get_config_match(cls, query_string, entry_path, return_type, nomenclate_object, **kwargs):
@@ -102,14 +107,16 @@ class RenderBase(object):
         """
         options = list(options)
         criteria_matches = list(options)
-        for criteria_function_name, criteria in iteritems(kwargs):
+        for criteria_function_name, criteria in kwargs.items():
             if not criteria_function_name and not criteria:
                 continue
-            criteria_function_name = criteria_function_name.replace('%s_' % token, '')
+            criteria_function_name = criteria_function_name.replace("%s_" % token, "")
 
             try:
-                builtin_func = getattr(moves.builtins, criteria_function_name)
-                criteria_matches = [option for option in options if builtin_func(option) == criteria]
+                builtin_func = getattr(builtins, criteria_function_name)
+                criteria_matches = [
+                    option for option in options if builtin_func(option) == criteria
+                ]
             except AttributeError:
                 pass
 
@@ -119,35 +126,45 @@ class RenderBase(object):
 
 
 class RenderDate(RenderBase):
-    token = 'date'
+    token = "date"
 
     @classmethod
-    def render(cls, date, token, nomenclate_object,
-               config_query_path=None,
-               return_type=list,
-               use_value_in_query_path=True,
-               **kwargs):
-        if date == 'now':
+    def render(
+        cls,
+        date,
+        token,
+        nomenclate_object,
+        config_query_path=None,
+        return_type=list,
+        use_value_in_query_path=True,
+        **kwargs
+    ):
+        if date == "now":
             d = datetime.datetime.now()
         else:
             try:
                 d = p.parse(date)
             except ValueError:
-                return ''
-        date_format = getattr(nomenclate_object, '%s_format' % cls.token, '%Y-%m-%d')
+                return ""
+        date_format = getattr(nomenclate_object, "%s_format" % cls.token, "%Y-%m-%d")
         return d.strftime(date_format)
 
 
 class RenderVar(RenderBase):
-    token = 'var'
+    token = "var"
 
     @classmethod
-    def render(cls, var, token, nomenclate_object,
-               config_query_path=None,
-               return_type=list,
-               use_value_in_query_path=True,
-               **kwargs):
-        var_format = kwargs.get('%s_format' % cls.token, 'A')
+    def render(
+        cls,
+        var,
+        token,
+        nomenclate_object,
+        config_query_path=None,
+        return_type=list,
+        use_value_in_query_path=True,
+        **kwargs
+    ):
+        var_format = kwargs.get("%s_format" % cls.token, "A")
         if isinstance(var, int):
             var = cls._get_variation_id(var, var_format.isupper())
         return cls.process_token_augmentations(var, token_attr=getattr(nomenclate_object, token))
@@ -170,44 +187,61 @@ class RenderVar(RenderBase):
         base_index = value - base_start
 
         # create alpha representation
-        alphas = ['a'] * base_power
+        alphas = ["a"] * base_power
         for index in range(base_power - 1, -1, -1):
             alphas[index] = chr(int(97 + (base_index % 26)))
             base_index /= 26
 
-        characters = ''.join(alphas)
+        characters = "".join(alphas)
         return characters.upper() if capital else characters
 
 
 class RenderLod(RenderVar):
-    token = 'lod'
+    token = "lod"
 
 
 class RenderVersion(RenderBase):
-    token = 'version'
+    token = "version"
 
     @classmethod
-    def render(cls, version, token, nomenclate_object,
-               config_query_path=None,
-               return_type=list,
-               use_value_in_query_path=True,
-               **kwargs):
-        padding = kwargs.get('%s_padding' % token, 4)
-        version_string = '%0{0}d'
+    def render(
+        cls,
+        version,
+        token,
+        nomenclate_object,
+        config_query_path=None,
+        return_type=list,
+        use_value_in_query_path=True,
+        **kwargs
+    ):
+        padding = kwargs.get("%s_padding" % token, 4)
+        version_string = "%0{0}d"
         version = version_string.format(padding) % int(version)
-        return cls.process_token_augmentations(version, token_attr=getattr(nomenclate_object, token))
+        return cls.process_token_augmentations(
+            version, token_attr=getattr(nomenclate_object, token)
+        )
 
 
 class RenderType(RenderBase):
-    token = 'type'
+    token = "type"
 
     @classmethod
-    def render(cls, engine_type, token, nomenclate_object,
-               config_query_path=None,
-               return_type=list,
-               use_value_in_query_path=True,
-               **kwargs):
-        return super(RenderType, cls).render(engine_type, cls.token, nomenclate_object,
-                                             config_query_path=nomenclate_object.SUFFIXES_PATH,
-                                             return_type=dict,
-                                             **kwargs)
+    def render(
+        cls,
+        engine_type,
+        token,
+        nomenclate_object,
+        config_query_path=None,
+        return_type=list,
+        use_value_in_query_path=True,
+        **kwargs
+    ):
+        return super(RenderType, cls).render(
+            engine_type,
+            cls.token,
+            nomenclate_object,
+            config_query_path=nomenclate_object.SUFFIXES_PATH,
+            return_type=dict,
+            **kwargs
+        )
+

@@ -1,12 +1,8 @@
-from six import iteritems
 from collections import OrderedDict
-from six import add_metaclass
 import yaml
 import os
 from . import errors as errors
-from .tools import (
-    gen_dict_key_matches
-)
+from .tools import gen_dict_key_matches
 
 
 class ConfigEntryFormatter(object):
@@ -50,8 +46,9 @@ class ConfigEntryFormatter(object):
             return FormatterRegistry.get_by_take_and_return_type(query_result_type, return_type)
         except (IndexError, AttributeError, KeyError):
             raise IndexError(
-                'Could not find function in conversion list for input type %s and return type %s' % (
-                query_result_type, return_type))
+                "Could not find function in conversion list for input type %s and return type %s"
+                % (query_result_type, return_type)
+            )
 
     @staticmethod
     def add_preceding_dict(config_entry, query_path, preceding_depth):
@@ -67,7 +64,9 @@ class ConfigEntryFormatter(object):
 
         preceding_dict = {query_path[-1]: config_entry}
         path_length_minus_query_pos = len(query_path) - 1
-        preceding_depth = path_length_minus_query_pos - preceding_depth if preceding_depth != -1 else 0
+        preceding_depth = (
+            path_length_minus_query_pos - preceding_depth if preceding_depth != -1 else 0
+        )
 
         for index in reversed(range(preceding_depth, path_length_minus_query_pos)):
             preceding_dict = {query_path[index]: preceding_dict}
@@ -78,7 +77,7 @@ class ConfigEntryFormatter(object):
 class ConfigParse(object):
     config_entry_handler = ConfigEntryFormatter()
 
-    def __init__(self, config_filepath='env.yml'):
+    def __init__(self, config_filepath="env.yml"):
         """
 
         :param config_filepath: str, the path to a user specified config, or the nomenclate default
@@ -94,9 +93,13 @@ class ConfigParse(object):
         :param config_filepath: str, file path or relative file name within package
         :return: str, resolved full file path to the config file
         """
-        search_paths = [config_filepath,
-                        os.path.normpath(os.path.join(os.getcwd(), config_filepath)),
-                        os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), config_filepath))]
+        search_paths = [
+            config_filepath,
+            os.path.normpath(os.path.join(os.getcwd(), config_filepath)),
+            os.path.normpath(
+                os.path.join(os.path.dirname(os.path.abspath(__file__)), config_filepath)
+            ),
+        ]
 
         for search_path in search_paths:
             try:
@@ -106,7 +109,8 @@ class ConfigParse(object):
                 pass
 
         raise errors.SourceError(
-            'No config file found in current working directory or nomenclate/core and %s is not a valid YAML file')
+            "No config file found in current working directory or nomenclate/core and %s is not a valid YAML file"
+        )
 
     def rebuild_config_cache(self, config_filepath):
         """ Loads from file and caches all data from the config file in the form of an OrderedDict to self.data
@@ -117,9 +121,9 @@ class ConfigParse(object):
         self.validate_config_file(config_filepath)
         config_data = None
         try:
-            with open(config_filepath, 'r') as f:
-                config_data = yaml.load(f)
-            items = list(iteritems(config_data))
+            with open(config_filepath, "r") as f:
+                config_data = yaml.safe_load(f)
+            items = config_data.items()
 
         except AttributeError:
             items = list(config_data)
@@ -127,7 +131,9 @@ class ConfigParse(object):
         self.config_file_contents = OrderedDict(sorted(items, key=lambda x: x[0], reverse=True))
         self.config_filepath = config_filepath
 
-    def get(self, query_path=None, return_type=list, preceding_depth=None, throw_null_return_error=False):
+    def get(
+        self, query_path=None, return_type=list, preceding_depth=None, throw_null_return_error=False
+    ):
         """ Traverses the list of query paths to find the data requested
 
         :param query_path: (list(str), str), list of query path branches or query string
@@ -140,18 +146,19 @@ class ConfigParse(object):
         :return: (list, str, dict, OrderedDict), the type specified from return_type
         :raises: exceptions.ResourceNotFoundError: if the query path is invalid
         """
-        function_type_lookup = {str: self._get_path_entry_from_string,
-                                list: self._get_path_entry_from_list}
+        function_type_lookup = {
+            str: self._get_path_entry_from_string,
+            list: self._get_path_entry_from_list,
+        }
 
         if query_path is None:
             return self._default_config(return_type)
 
         try:
             config_entry = function_type_lookup.get(type(query_path), str)(query_path)
-            query_result = self.config_entry_handler.format_query_result(config_entry,
-                                                                         query_path,
-                                                                         return_type=return_type,
-                                                                         preceding_depth=preceding_depth)
+            query_result = self.config_entry_handler.format_query_result(
+                config_entry, query_path, return_type=return_type, preceding_depth=preceding_depth
+            )
 
             return query_result
         except IndexError:
@@ -166,12 +173,16 @@ class ConfigParse(object):
         :return: (Generator((list, str, dict, OrderedDict)), config entries that match the query string
         :raises: exceptions.ResourceNotFoundError
         """
-        iter_matches = gen_dict_key_matches(query_string, self.config_file_contents, full_path=full_path)
+        iter_matches = gen_dict_key_matches(
+            query_string, self.config_file_contents, full_path=full_path
+        )
         try:
             return next(iter_matches) if first_found else iter_matches
         except (StopIteration, TypeError):
-            raise errors.ResourceNotFoundError('Could not find search string %s in the config file contents %s' %
-                                               (query_string, self.config_file_contents))
+            raise errors.ResourceNotFoundError(
+                "Could not find search string %s in the config file contents %s"
+                % (query_string, self.config_file_contents)
+            )
 
     def _get_path_entry_from_list(self, query_path):
         """ Returns the config entry at query path
@@ -186,8 +197,9 @@ class ConfigParse(object):
                 cur_data = cur_data[child]
             return cur_data
         except (AttributeError, KeyError):
-            raise errors.ResourceNotFoundError('Could not find query path %s in the config file contents' %
-                                               query_path)
+            raise errors.ResourceNotFoundError(
+                "Could not find query path %s in the config file contents" % query_path
+            )
 
     def _default_config(self, return_type):
         """ Generates a default instance of whatever the type requested was (in case of miss)
@@ -209,15 +221,18 @@ class ConfigParse(object):
         """
         is_file = os.path.isfile(config_filepath)
         if not is_file and os.path.isabs(config_filepath):
-            raise IOError('File path %s is not a valid yml, ini or cfg file or does not exist' % config_filepath)
+            raise IOError(
+                "File path %s is not a valid yml, ini or cfg file or does not exist"
+                % config_filepath
+            )
 
         elif is_file:
             if os.path.getsize(config_filepath) == 0:
-                raise IOError('File %s is empty' % config_filepath)
+                raise IOError("File %s is empty" % config_filepath)
 
-        with open(config_filepath, 'r') as f:
-            if yaml.load(f) is None:
-                raise IOError('No YAML config was found in file %s' % config_filepath)
+        with open(config_filepath, "r") as f:
+            if yaml.safe_load(f) is None:
+                raise IOError("No YAML config was found in file %s" % config_filepath)
 
 
 class FormatterRegistry(type):
@@ -226,9 +241,9 @@ class FormatterRegistry(type):
     def __new__(mcs, name, bases, dct):
         cls = type.__new__(mcs, name, bases, dct)
 
-        extensions = dct.get('converts')
-        accepted_input_type = extensions.get('accepted_input_type', None)
-        accepted_return_type = extensions.get('accepted_return_type', None)
+        extensions = dct.get("converts")
+        accepted_input_type = extensions.get("accepted_input_type", None)
+        accepted_return_type = extensions.get("accepted_return_type", None)
 
         if accepted_input_type and accepted_return_type:
             take_exists = mcs.CONVERSION_TABLE.get(accepted_input_type)
@@ -244,10 +259,8 @@ class FormatterRegistry(type):
         return mcs.CONVERSION_TABLE[input_type][return_type]
 
 
-@add_metaclass(FormatterRegistry)
-class BaseFormatter(object):
-    converts = {'accepted_input_type': None,
-                'accepted_return_type': None}
+class BaseFormatter(metaclass=FormatterRegistry):
+    converts = {"accepted_input_type": None, "accepted_return_type": None}
 
     @staticmethod
     def format_result(input):
@@ -255,8 +268,7 @@ class BaseFormatter(object):
 
 
 class StringToList(BaseFormatter):
-    converts = {'accepted_input_type': str,
-                'accepted_return_type': list}
+    converts = {"accepted_input_type": str, "accepted_return_type": list}
 
     @staticmethod
     def format_result(input):
@@ -264,17 +276,15 @@ class StringToList(BaseFormatter):
 
 
 class DictToString(BaseFormatter):
-    converts = {'accepted_input_type': dict,
-                'accepted_return_type': str}
+    converts = {"accepted_input_type": dict, "accepted_return_type": str}
 
     @staticmethod
     def format_result(input):
-        return ' '.join(list(input))
+        return " ".join(list(input))
 
 
 class DictToList(BaseFormatter):
-    converts = {'accepted_input_type': dict,
-                'accepted_return_type': list}
+    converts = {"accepted_input_type": dict, "accepted_return_type": list}
 
     @staticmethod
     def format_result(input):
@@ -286,20 +296,18 @@ class DictToList(BaseFormatter):
 
 
 class DictToOrderedDict(BaseFormatter):
-    converts = {'accepted_input_type': dict,
-                'accepted_return_type': OrderedDict}
+    converts = {"accepted_input_type": dict, "accepted_return_type": OrderedDict}
 
     @staticmethod
     def format_result(input):
         """From: http://stackoverflow.com/questions/13062300/convert-a-dict-to-sorted-dict-in-python
         """
-        items = list(iteritems(input))
+        items = list(input.items())
         return OrderedDict(sorted(items, key=lambda x: x[0]))
 
 
 class OrderedDictToList(BaseFormatter):
-    converts = {'accepted_input_type': OrderedDict,
-                'accepted_return_type': list}
+    converts = {"accepted_input_type": OrderedDict, "accepted_return_type": list}
 
     @staticmethod
     def format_result(input):
@@ -309,8 +317,7 @@ class OrderedDictToList(BaseFormatter):
 
 
 class NoneToDict(BaseFormatter):
-    converts = {'accepted_input_type': type(None),
-                'accepted_return_type': dict}
+    converts = {"accepted_input_type": type(None), "accepted_return_type": dict}
 
     @staticmethod
     def format_result(input):
@@ -320,17 +327,15 @@ class NoneToDict(BaseFormatter):
 
 
 class ListToString(BaseFormatter):
-    converts = {'accepted_input_type': list,
-                'accepted_return_type': str}
+    converts = {"accepted_input_type": list, "accepted_return_type": str}
 
     @staticmethod
     def format_result(input):
-        return ' '.join(input)
+        return " ".join(input)
 
 
 class IntToList(BaseFormatter):
-    converts = {'accepted_input_type': int,
-                'accepted_return_type': list}
+    converts = {"accepted_input_type": int, "accepted_return_type": list}
 
     @staticmethod
     def format_result(input):
