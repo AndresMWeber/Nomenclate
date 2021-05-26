@@ -49,6 +49,7 @@ unittest2 = "^1.1.0"
 
 [tool.poe.tasks]
 test = "coverage run -m nose2 -c tests/.nose2rc"
+docreqs = "poetry export -f requirements.txt --output docs/requirements.txt"
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
