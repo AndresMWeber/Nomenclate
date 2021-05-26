@@ -3,7 +3,7 @@ name = "alabaster"
 version = "0.7.12"
 description = "A configurable sidebar-enabled Sphinx theme"
 category = "dev"
-optional = false
+optional = true
 python-versions = "*"
 
 [[package]]
@@ -41,7 +41,7 @@ name = "babel"
 version = "2.9.1"
 description = "Internationalization utilities"
 category = "dev"
-optional = false
+optional = true
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
 [package.dependencies]
@@ -240,7 +240,7 @@ name = "imagesize"
 version = "1.2.0"
 description = "Getting image size from png/jpeg/jpeg2000/gif file"
 category = "dev"
-optional = false
+optional = true
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
 [[package]]
@@ -290,7 +290,7 @@ name = "jinja2"
 version = "3.0.1"
 description = "A very fast and expressive template engine."
 category = "dev"
-optional = false
+optional = true
 python-versions = ">=3.6"
 
 [package.dependencies]
@@ -330,7 +330,7 @@ name = "markupsafe"
 version = "2.0.1"
 description = "Safely add untrusted strings to HTML/XML markup."
 category = "dev"
-optional = false
+optional = true
 python-versions = ">=3.6"
 
 [[package]]
@@ -490,7 +490,7 @@ name = "pytz"
 version = "2021.1"
 description = "World timezone definitions, modern and historical"
 category = "dev"
-optional = false
+optional = true
 python-versions = "*"
 
 [[package]]
@@ -591,7 +591,7 @@ name = "snowballstemmer"
 version = "2.1.0"
 description = "This package provides 29 stemmers for 28 languages generated from Snowball algorithms."
 category = "dev"
-optional = false
+optional = true
 python-versions = "*"
 
 [[package]]
@@ -599,7 +599,7 @@ name = "sphinx"
 version = "4.0.2"
 description = "Python documentation generator"
 category = "dev"
-optional = false
+optional = true
 python-versions = ">=3.6"
 
 [package.dependencies]
@@ -630,7 +630,7 @@ name = "sphinxcontrib-applehelp"
 version = "1.0.2"
 description = "sphinxcontrib-applehelp is a sphinx extension which outputs Apple help books"
 category = "dev"
-optional = false
+optional = true
 python-versions = ">=3.5"
 
 [package.extras]
@@ -642,7 +642,7 @@ name = "sphinxcontrib-devhelp"
 version = "1.0.2"
 description = "sphinxcontrib-devhelp is a sphinx extension which outputs Devhelp document."
 category = "dev"
-optional = false
+optional = true
 python-versions = ">=3.5"
 
 [package.extras]
@@ -654,7 +654,7 @@ name = "sphinxcontrib-htmlhelp"
 version = "2.0.0"
 description = "sphinxcontrib-htmlhelp is a sphinx extension which renders HTML help files"
 category = "dev"
-optional = false
+optional = true
 python-versions = ">=3.6"
 
 [package.extras]
@@ -666,7 +666,7 @@ name = "sphinxcontrib-jsmath"
 version = "1.0.1"
 description = "A sphinx extension which renders display math in HTML via JavaScript"
 category = "dev"
-optional = false
+optional = true
 python-versions = ">=3.5"
 
 [package.extras]
@@ -677,7 +677,7 @@ name = "sphinxcontrib-qthelp"
 version = "1.0.3"
 description = "sphinxcontrib-qthelp is a sphinx extension which outputs QtHelp document."
 category = "dev"
-optional = false
+optional = true
 python-versions = ">=3.5"
 
 [package.extras]
@@ -689,7 +689,7 @@ name = "sphinxcontrib-serializinghtml"
 version = "1.1.5"
 description = "sphinxcontrib-serializinghtml is a sphinx extension which outputs \"serialized\" HTML files (json and pickle)."
 category = "dev"
-optional = false
+optional = true
 python-versions = ">=3.5"
 
 [package.extras]
@@ -875,7 +875,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=1.2.3)", "pytest-flake8", "pyt
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6 || 3.7 ||3.8"
-content-hash = "acb2bb09755d6a4195c8e55c088a050a16eaf9325269bddda053c93ab6480bb5"
+content-hash = "86e36f8502c60b338c30ac0d716479a704118fd3eb278757d779858691c882a9"
 
 [metadata.files]
 alabaster = [
