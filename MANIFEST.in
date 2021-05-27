@@ -1,4 +1,4 @@
-include nomenclate/core/env.yml
+include nomenclate/core/template/env.yml
 exclude .gitignore
 exclude .coverage
 exclude .circleci/config.yml

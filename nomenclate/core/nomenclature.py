@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import nomenclate.settings as settings
+from nomenclate.settings import DEFAULT_YML_CONFIG_FILE
 from . import configurator as config
 from . import errors
 from . import tokens
@@ -15,7 +15,7 @@ class Nomenclate(Serializable):
 
     SERIALIZE_ATTRS = ["format_string_object", "token_dict"]
 
-    CONFIG_PATH = ["overall_config"]
+    CONFIG_ROOT = ["overall_config"]
 
     NAMING_FORMAT_PATH = ["naming_formats"]
     DEFAULT_FORMAT_PATH = NAMING_FORMAT_PATH + ["node", "default"]
@@ -25,14 +25,13 @@ class Nomenclate(Serializable):
     SIDE_PATH = OPTIONS_PATH + ["side"]
 
     CONFIG_OPTIONS = dict()
-    CFG = config.ConfigParse(config_filepath=settings.DEFAULT_YML_CONFIG_FILE)
+    CFG = config.ConfigParse(config_filename=DEFAULT_YML_CONFIG_FILE)
 
-    def __init__(self, input_dict=None, format_string="", *args, **kwargs):
+    def __init__(self, input_dict: dict = None, format_string: str = "", *args, **kwargs):
         """
 
         :param input_dict: dict, In case the user just passes a dictionary as the first arg in the init, we will merge it.
         :param format_string: str, input format string
-        :param config_filepath: str, filepath, full or relative to a config file
         :param args: dict, any amount of dictionaries desired as input
         :param kwargs: str, kwargs to pass to the nomenclate tokens
         """
@@ -83,9 +82,7 @@ class Nomenclate(Serializable):
         original_format, original_format_order = (self.format, self.format_order)
 
         try:
-            format_target = self.CFG.get(
-                format_target, return_type=str, throw_null_return_error=True
-            )
+            format_target = self.CFG.get(format_target, return_type=str)
         except (errors.ResourceNotFoundError, KeyError):
             pass
 
@@ -95,13 +92,20 @@ class Nomenclate(Serializable):
         )
 
     @classmethod
+    def set_config(cls, config_data: dict):
+        """ Set the config file from a dictionary.
+        """
+        cls.CFG.set_from_dict(config_data)
+        cls.reset_from_config()
+
+    @classmethod
     def reset_from_config(cls):
         cls.initialize_overall_config_settings()
         cls.initialize_options()
 
     @classmethod
     def initialize_overall_config_settings(cls, input_dict=None):
-        input_dict = input_dict or cls.CFG.get(cls.CONFIG_PATH, return_type=dict)
+        input_dict = input_dict or cls.CFG.get(cls.CONFIG_ROOT, return_type=dict)
         for setting, value in input_dict.items():
             setattr(cls, setting, value)
 
@@ -129,7 +133,7 @@ class Nomenclate(Serializable):
         """ Stores options from the config file
 
         """
-        cls.CONFIG_OPTIONS = cls.CFG.get(cls.CONFIG_PATH, return_type=dict)
+        cls.CONFIG_OPTIONS = cls.CFG.get(cls.CONFIG_ROOT, return_type=dict)
 
     def get(self, **kwargs):
         """Gets the string of the current name of the object
@@ -230,7 +234,7 @@ class Nomenclate(Serializable):
                 [f_order.lower() in k for f_order in self.format_order]
             ):
                 try:
-                    self.CFG.get(self.CONFIG_PATH + [k])
+                    self.CFG.get(self.CONFIG_ROOT + [k])
                 except errors.ResourceNotFoundError:
                     pass
                 finally:

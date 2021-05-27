@@ -31,8 +31,7 @@ conventions that you designate.
 There are sets of current naming conventions (format strings) that can be replaced or extended following certain rules
 for creation. You can add arbitrary tokens as needed and register token filtering of your own designation.
 
-There is a full set of YAML defined suffix/side substitution strings as found in ``env.yml``.
-If you want you can create your own .yml file that you will pass to a Nomenclate instance to have your own configuration.
+There is a full set of YAML defined suffix/side substitution strings which gets created in `~/.nomenclate.yml`.  This is where you can customize your configuration.
 
 Concept Definitions
 -------------------
@@ -102,7 +101,7 @@ Use this tool via package level functions
     nomenclate_init_kwargs = nomenclate.Nom(name='test', type='group')
 
     # Your Nomenclate object has now been initialized and all of the default token set have been added based on
-    # The default format_string property from the env.yml config file
+    # The default format_string property from the `~/.nomenclate.yml` config file
     # default: side_location_nameDecoratorVar_childtype_purpose_type
     >>> nomenclate_init_kwargs.state
     {'name': 'test', 'childtype': '', 'location': '', 'var': '', 'type': 'group', 'side': '', 'decorator': '', 'purpose': ''}
@@ -175,7 +174,7 @@ To properly enter a naming format string:
     ``side_nameType``
     and it will automatically camelcase your for whatever you input for the given token values.
 
-    In the config YAML file ``(default is nomenclate/core/env.yml)`` define your format under the header ``naming_formats`` with a sub-section name you think is appropriate (the following example is optionally nested under "node"):
+    In the config YAML file (`~/.nomenclate.yml`) define your format under the header ``naming_formats`` with a sub-section name you think is appropriate (the following example is optionally nested under "node"):
 
     .. code-block:: yaml
 
