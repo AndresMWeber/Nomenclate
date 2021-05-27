@@ -48,7 +48,7 @@ twine = "^3.4.1"
 unittest2 = "^1.1.0"
 
 [tool.poetry.extras]
-autodoc = ['Sphinx', 'sphinx-autodoc', 'sphinx-rtd-theme']
+autodoc = ['Sphinx', 'sphinx-autodoc', 'sphinx-build', 'sphinx-rtd-theme']
 
 [tool.poe.tasks]
 docreqs = "poetry export -f requirements.txt --output docs/requirements.txt"

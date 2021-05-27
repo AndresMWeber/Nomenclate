@@ -1,4 +1,3 @@
-.. include:: ../README.rst
 
 API Reference
 =============
@@ -14,13 +13,17 @@ API Reference
    nomenclate.core.tokens
    nomenclate.core.formatter
    nomenclate.core.errors
-   nomenclate.core.nomenclate
    nomenclate.core.tools
    nomenclate.core.nameparser
+
+   
+.. include:: ../README.rst
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+
+   modules
 
 Indices and tables
 ==================

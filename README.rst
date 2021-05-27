@@ -1,3 +1,4 @@
+###############################################################################################################
 Nomenclate: A tool set for automating and generating strings based on arbitrary user-defined naming conventions
 ###############################################################################################################
 
@@ -24,7 +25,7 @@ Nomenclate: A tool set for automating and generating strings based on arbitrary 
 .. section-numbering::
 
 Synopsis
-=============
+########
 
 Nomenclate is a tool which creates persistent objects that can be used to generate strings that follow naming
 conventions that you designate.
@@ -34,7 +35,7 @@ for creation. You can add arbitrary tokens as needed and register token filterin
 There is a full set of YAML defined suffix/side substitution strings which gets created in `~/.nomenclate.yml`.  This is where you can customize your configuration.
 
 Concept Definitions
--------------------
+*******************
 token
     : A component of the format string which is a meaningful symbol/definition pair that will be filtered by
     a grammar of regular expressions.
@@ -51,7 +52,7 @@ format string
 `For a review of parsing/composition look here <https://en.wikipedia.org/wiki/Parsing>`_
 
 Features
---------
+********
 -  Applies a naming convention with arbitrary syntax/grammar to the formatting of string tokens
 -  Top down parsing of format string given token-specific grammar rule classes that are extensible
 -  Persistent state object instances
@@ -64,9 +65,9 @@ Features
 -  Sensible token value entry/conversion (like ``side='left'`` with automatic token syntax replacement)
 
 Installation
-============
+############
 Windows, etc.
--------------
+*************
 A universal installation method (that works on Windows, Mac OS X, Linux, ..., and always provides the latest version) is to use `pip`:
 
 .. code-block:: bash
@@ -81,10 +82,10 @@ A universal installation method (that works on Windows, Mac OS X, Linux, ..., an
 (If ``pip`` installation fails for some reason, you can try ``easy_install nomenclate`` as a fallback.)
 
 Usage
-=============
+########
 
 Python Package Usage
----------------------
+********************
 Use this tool via package level functions
 
 .. code-block:: python
@@ -156,7 +157,7 @@ Use this tool via package level functions
 
 
 YAML Configuration File Rules
------------------------------
+*****************************
 
 So far the suffixes is a look up dictionary for Maya objects, however I will be adding support for more later.
 
@@ -243,11 +244,11 @@ Further version/var/date specific token notes:
 
 
 Version Support
-===============
+###############
 Currently this package supports Python 2.7, 3.5 and 3.6
 
 Attribution
-===========
+###########
 WPZOOM Developer Icon Set by WPZOOM License_ Source_ - Designed by David Ferreira.
     .. _License: http://creativecommons.org/licenses/by-sa/3.0/
     .. _Source: http://www.wpzoom.com
