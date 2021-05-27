@@ -1,8 +1,14 @@
-from collections import OrderedDict
 import yaml
-import os
-from . import errors as errors
+from typing import List
+from collections import OrderedDict
 from .tools import gen_dict_key_matches
+from ..settings import TEMPLATE_YML_CONFIG_FILE_PATH, DEFAULT_YML_CONFIG_FILE
+from .file_utils import (
+    search_relative_cwd_user_dirs_for_file,
+    validate_yaml_file,
+    copy_file_to_home_dir,
+)
+from .errors import ResourceNotFoundError
 
 
 class ConfigEntryFormatter(object):
@@ -75,65 +81,66 @@ class ConfigEntryFormatter(object):
 
 
 class ConfigParse(object):
+    """ Responsible for finding + loading the configuration file contents then transmuting any config queries.
+        It can also be simply set from a dictionary.
+    """
+
     config_entry_handler = ConfigEntryFormatter()
 
-    def __init__(self, config_filepath="env.yml"):
+    def __init__(self, data: dict = None, config_filename: str = None):
         """
 
         :param config_filepath: str, the path to a user specified config, or the nomenclate default
         """
-        self.config_filepath = self.resolve_config_file_path(config_filepath)
-        self.config_file_contents = None
-        self.rebuild_config_cache(self.config_filepath)
+        self.config = None
+        self.config_filepath = None
 
-    def resolve_config_file_path(self, config_filepath):
-        """ Determines whether given path is valid, and if so uses it.
-            Otherwise searches both the working directory and nomenclate/core for the specified config file.
+        if data:
+            self.set_from_dict(data)
 
-        :param config_filepath: str, file path or relative file name within package
-        :return: str, resolved full file path to the config file
+        if config_filename:
+            self.set_from_file(config_filename)
+
+        if not self.config:
+            self.create_user_config()
+
+        self.function_type_lookup = {
+            str: self._get_path_entry_from_string,
+            list: self._get_path_entry_from_list,
+        }
+
+    def create_user_config(self):
+        file_path = copy_file_to_home_dir(TEMPLATE_YML_CONFIG_FILE_PATH, DEFAULT_YML_CONFIG_FILE)
+        self.set_from_file(file_path)
+
+    def set_from_dict(self, data: dict):
+        """ Set the config from a dictionary to allow for non-config file based real time modifications to the config.
+        :param data: dict, the input data that will override the current config settings.
         """
-        search_paths = [
-            config_filepath,
-            os.path.normpath(os.path.join(os.getcwd(), config_filepath)),
-            os.path.normpath(
-                os.path.join(os.path.dirname(os.path.abspath(__file__)), config_filepath)
-            ),
-        ]
+        self.config = OrderedDict(sorted(data, key=lambda x: x[0], reverse=True))
 
-        for search_path in search_paths:
-            try:
-                self.validate_config_file(search_path)
-                return search_path
-            except (IOError, OSError):
-                pass
+    @classmethod
+    def validate_config_file(cls, config_filename: str):
+        return search_relative_cwd_user_dirs_for_file(config_filename, validator=validate_yaml_file)
 
-        raise errors.SourceError(
-            "No config file found in current working directory or nomenclate/core and %s is not a valid YAML file"
-        )
-
-    def rebuild_config_cache(self, config_filepath):
+    def set_from_file(self, config_filename):
         """ Loads from file and caches all data from the config file in the form of an OrderedDict to self.data
 
         :param config_filepath: str, the full filepath to the config file
         :return: bool, success status
         """
-        self.validate_config_file(config_filepath)
+        self.config_filepath = self.validate_config_file(config_filename)
         config_data = None
+        with open(self.config_filepath, "r") as f:
+            config_data = yaml.safe_load(f)
         try:
-            with open(config_filepath, "r") as f:
-                config_data = yaml.safe_load(f)
             items = config_data.items()
-
         except AttributeError:
             items = list(config_data)
+        finally:
+            self.set_from_dict(items)
 
-        self.config_file_contents = OrderedDict(sorted(items, key=lambda x: x[0], reverse=True))
-        self.config_filepath = config_filepath
-
-    def get(
-        self, query_path=None, return_type=list, preceding_depth=None, throw_null_return_error=False
-    ):
+    def get(self, query_path=None, return_type=list, preceding_depth: int = None):
         """ Traverses the list of query paths to find the data requested
 
         :param query_path: (list(str), str), list of query path branches or query string
@@ -142,20 +149,14 @@ class ConfigParse(object):
         :param preceding_depth: int, returns a dictionary containing the data that traces back up the path for x depth
                                      -1: for the full traversal back up the path
                                      None: is default for no traversal
-        :param throw_null_return_error: bool, whether or not to throw an error if we get an empty result but no error
         :return: (list, str, dict, OrderedDict), the type specified from return_type
         :raises: exceptions.ResourceNotFoundError: if the query path is invalid
         """
-        function_type_lookup = {
-            str: self._get_path_entry_from_string,
-            list: self._get_path_entry_from_list,
-        }
-
         if query_path is None:
             return self._default_config(return_type)
 
         try:
-            config_entry = function_type_lookup.get(type(query_path), str)(query_path)
+            config_entry = self.function_type_lookup.get(type(query_path), str)(query_path)
             query_result = self.config_entry_handler.format_query_result(
                 config_entry, query_path, return_type=return_type, preceding_depth=preceding_depth
             )
@@ -173,16 +174,11 @@ class ConfigParse(object):
         :return: (Generator((list, str, dict, OrderedDict)), config entries that match the query string
         :raises: exceptions.ResourceNotFoundError
         """
-        iter_matches = gen_dict_key_matches(
-            query_string, self.config_file_contents, full_path=full_path
-        )
+        iter_matches = gen_dict_key_matches(query_string, self.config, full_path=full_path)
         try:
             return next(iter_matches) if first_found else iter_matches
         except (StopIteration, TypeError):
-            raise errors.ResourceNotFoundError(
-                "Could not find search string %s in the config file contents %s"
-                % (query_string, self.config_file_contents)
-            )
+            raise ResourceNotFoundError(f"{query_string} not found in the config: {self.config}")
 
     def _get_path_entry_from_list(self, query_path):
         """ Returns the config entry at query path
@@ -191,15 +187,13 @@ class ConfigParse(object):
         :return: (list, str, dict, OrderedDict), config entry requested
         :raises: exceptions.ResourceNotFoundError
         """
-        cur_data = self.config_file_contents
+        cur_data = self.config
         try:
             for child in query_path:
                 cur_data = cur_data[child]
             return cur_data
         except (AttributeError, KeyError):
-            raise errors.ResourceNotFoundError(
-                "Could not find query path %s in the config file contents" % query_path
-            )
+            raise ResourceNotFoundError("{query_path} not found in in the config.")
 
     def _default_config(self, return_type):
         """ Generates a default instance of whatever the type requested was (in case of miss)
@@ -208,34 +202,15 @@ class ConfigParse(object):
         :return: object, instance of return_type
         """
         if return_type == list:
-            return [k for k in self.config_file_contents]
+            return [k for k in self.config]
         return return_type()
-
-    @classmethod
-    def validate_config_file(cls, config_filepath):
-        """ Validates the filepath to the config.  Detects whether it is a true YAML file + existance
-
-        :param config_filepath: str, file path to the config file to query
-        :return: None
-        :raises: IOError
-        """
-        is_file = os.path.isfile(config_filepath)
-        if not is_file and os.path.isabs(config_filepath):
-            raise IOError(
-                "File path %s is not a valid yml, ini or cfg file or does not exist"
-                % config_filepath
-            )
-
-        elif is_file:
-            if os.path.getsize(config_filepath) == 0:
-                raise IOError("File %s is empty" % config_filepath)
-
-        with open(config_filepath, "r") as f:
-            if yaml.safe_load(f) is None:
-                raise IOError("No YAML config was found in file %s" % config_filepath)
 
 
 class FormatterRegistry(type):
+    """ Factory class responsible for registering all input type to type conversions.
+    E.G. - String -> List, Dict -> String etc.
+    """
+
     CONVERSION_TABLE = {}
 
     def __new__(mcs, name, bases, dct):

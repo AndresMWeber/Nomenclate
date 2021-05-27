@@ -28,10 +28,10 @@ class TestConfiguratorBase(TestBase):
 
 
 class TestValidateConfigFile(TestConfiguratorBase):
-    @mock.patch("nomenclate.core.configurator.os.path.isfile")
+    @mock.patch("nomenclate.core.file_utils.os.path.isfile")
     def test_valid_file_no_file(self, mock_isfile):
         mock_isfile.return_value = False
-        self.assertRaises(IOError, self.cfg.validate_config_file, "/mock/config.yml")
+        self.assertRaises(exceptions.SourceError, self.cfg.validate_config_file, "/mock/config.yml")
 
 
 class TestGet(TestConfiguratorBase):
@@ -123,6 +123,7 @@ class TestGet(TestConfiguratorBase):
         self.assertEquals(self.cfg.get(self.format_title, return_type=list), ["node", "texturing"])
 
     def test_default_get(self):
+        print(self.cfg.get(return_type=str))
         self.assertEquals(self.cfg.get(return_type=str), "")
 
     def test_default_get_no_return_type(self):
@@ -138,16 +139,18 @@ class TestGetDefaultConfigFile(TestConfiguratorBase):
         f = open(temp_path, "w")
         f.write(json.dumps({"name": "john", "location": "top"}))
         f.close()
-        custom_config = config.ConfigParse(temp_path)
+        custom_config = config.ConfigParse(config_filename=temp_path)
         self.assertDictEqual(
-            custom_config.config_file_contents, OrderedDict([("name", "john"), ("location", "top")])
+            custom_config.config, OrderedDict([("name", "john"), ("location", "top")])
         )
         os.close(fd)
         os.remove(temp_path)
 
     def test_custom_empty(self):
         fd, temp_path = mkstemp()
-        self.assertRaises(IOError, config.ConfigParse.validate_config_file, temp_path)
+        self.assertRaises(
+            exceptions.SourceError, config.ConfigParse.validate_config_file, temp_path
+        )
         os.close(fd)
         os.remove(temp_path)
 
@@ -156,14 +159,16 @@ class TestGetDefaultConfigFile(TestConfiguratorBase):
         f = open(temp_path, "w")
         f.write("#Empty YAML File")
         f.close()
-        self.assertRaises(IOError, config.ConfigParse.validate_config_file, temp_path)
+        self.assertRaises(
+            exceptions.SourceError, config.ConfigParse.validate_config_file, temp_path
+        )
         os.close(fd)
         os.remove(temp_path)
 
-    @mock.patch("nomenclate.core.configurator.ConfigParse.validate_config_file")
-    def test_no_valid_config_file(self, mock_validate_config_file):
-        mock_validate_config_file.side_effect = IOError("mock: config file not found")
-        self.assertRaises(exceptions.SourceError, config.ConfigParse)
+    # @mock.patch("nomenclate.core.file_utils.validate_yaml_file")
+    # def test_no_valid_config_file(self, mock_validate_yaml_file):
+    #     mock_validate_yaml_file.side_effect = IOError("mock: config file not found")
+    #     self.assertRaises(exceptions.SourceError, config.ConfigParse)
 
 
 class TestGetHandler(TestConfiguratorBase):
@@ -202,9 +207,10 @@ class MockConfig(object):
     def __init__(self):
         self.build_test_config()
 
-    @mock.patch("nomenclate.core.configurator.os.path.getsize")
-    @mock.patch("nomenclate.core.configurator.os.path.isfile")
+    @mock.patch("nomenclate.core.file_utils.os.path.getsize")
+    @mock.patch("nomenclate.core.file_utils.os.path.isfile")
     @mock.patch("nomenclate.core.configurator.open", mock.mock_open(read_data=test_data))
+    @mock.patch("nomenclate.core.file_utils.open", mock.mock_open(read_data=test_data))
     def build_test_config(self, mock_isfile, mock_getsize):
         mock_isfile.return_value = True
         mock_getsize.return_value = 700
@@ -214,7 +220,7 @@ class MockConfig(object):
         self.fake_file_path = "/var/env/foobar.yml"
         self.fake_file = self.fakefs.create_file(self.fake_file_path, contents=self.test_data)
         fake_filesystem.FakeFile("foobar.yml", filesystem=self.fakefs)
-        self.parser.rebuild_config_cache(self.fake_file_path)
+        self.parser.set_from_file(self.fake_file_path)
 
         # test values
         self.format_title = "naming_formats"
