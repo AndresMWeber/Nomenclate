@@ -28,7 +28,6 @@ keywords = ["naming", "conventions", "labels", "config", "convention", "name", "
 
 [tool.poetry.dependencies]
 PyYAML = "^5.4.1"
-Sphinx = {version = "^4.0.2", optional = true, extras = ["autodoc"]}
 python = "^3.6 || 3.7 ||3.8"
 python-dateutil = "^2.8.1"
 toml = "^0.10.2"
