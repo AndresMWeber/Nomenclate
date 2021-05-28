@@ -2,7 +2,7 @@
 authors = ["Andres Weber <andresmweber@gmail.com>"]
 description = "A tool set for automating and generating strings based on arbitrary user-defined naming conventions."
 name = "nomenclate"
-version = "2.5.4"
+version = "2.6.4"
 
 documentation = "https://nomenclate.readthedocs.io/en/latest/"
 homepage = "https://nomenclate.andresmweber.com"
